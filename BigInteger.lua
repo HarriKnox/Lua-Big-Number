@@ -37,7 +37,31 @@ local function makepositive(val)
     
     return result
 end
+
+local function copyofrange(val, start, fin)
+    local copy = {}
     
+    for index = start, fin do
+        copy[index - start + 1] = val[index]
+    end
+    
+    return copy
+end
+
+local function stripleadingzeros(val)
+    local vallength = #val
+    local keep = 1
+    
+    while keep <= vallength and val[keep] == 0 do
+        keep = keep + 1
+    end
+    
+    return copyofrange(val, keep, vallength)
+end
+
+local function createbiginteger(mag, signum)
+    return {mag = mag, signum = signum}
+end
 
 function biginteger(val)
     local mag, signum
@@ -56,11 +80,4 @@ function biginteger(val)
         --checkrange(mag)
     --end
     return createbiginteger(mag, signum)
-end
-
-new = function()
-    --[[
-    set initial values for big integer here, like signum and mag
-    --]]
-    return {signum = 0, mag = {}}
 end
