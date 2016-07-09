@@ -9,12 +9,12 @@ local function makepositive(val)
     local resultlength
     
     keep = 1
-    while keep <= vallength and val[keep] == -1 then
+    while keep <= vallength and val[keep] == -1 do
         keep = keep + 1
     end
     
     index = keep
-    while index <= vallength and val[index] == 0 then
+    while index <= vallength and val[index] == 0 do
         index = index + 1
     end
     
@@ -38,11 +38,15 @@ local function makepositive(val)
     return result
 end
 
+local function make32bitinteger(number)
+    return bit32.extract(number, 0, 32)
+end
+
 local function copyofrange(val, start, fin)
     local copy = {}
     
     for index = start, fin do
-        copy[index - start + 1] = val[index]
+        copy[index - start + 1] = make32biginteger(val[index])
     end
     
     return copy
@@ -59,14 +63,26 @@ local function stripleadingzeros(val)
     return copyofrange(val, keep, vallength)
 end
 
-local function createbiginteger(mag, signum)
-    return {mag = mag, signum = signum}
+local function createbiginteger(val, sig)
+    return {mag = val, signum = sig}
 end
 
-function biginteger(val)
+local function validbytearray(val)
+    for i = 1, #val do
+        if type(val[i]) ~= 'number' then
+            return false
+        end
+    end
+    return true
+end
+
+local function constructormagnitude(val)
     local mag, signum
     if #val == 0 then
-        error("Zero length BigInteger")
+        error("Zero length BigInteger", 3)
+    end
+    if not validbytearray(val) then
+        error("Invalid byte array", 3)
     end
     
     if val[1] < 0 then
@@ -81,3 +97,43 @@ function biginteger(val)
     --end
     return createbiginteger(mag, signum)
 end
+
+local function constructorsignmagnitude(sig, val)
+    local mag, signum
+    if sig < -1 or sig > 1 or sig % 1 ~= 0 then
+        error("Invalid sign value", 3)
+    end
+    
+    if not validbytearray(val) then
+        error("Invalid byte array", 3)
+    end
+    
+    mag = stripleadingzeros(val)
+    
+    if #mag == 0 then
+        signum = 0
+    else
+        if sig == 0 then
+            error("Sign-magnitude mismatch", 3)
+        end
+        signum = sig
+    end
+    --if #mag >= MAX_MAG_LENGTH then
+        --checkrange(mag)
+    --end
+    
+    return createbiginteger(mag, signum)
+end
+
+local biginteger
+function biginteger(a, b)
+    local typea = type(a)
+    local typeb = type(b)
+    if a == "table" and typeb == "nil" then
+        return constructormagnitude(a)
+    elseif typea == "number" and typeb == "table" then
+        return constructorsignmagnitude(a, b)
+    end
+end
+
+return {biginteger = biginteger}
