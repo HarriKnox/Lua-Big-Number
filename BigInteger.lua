@@ -1,6 +1,46 @@
+-- Local fields/constants
+
 local bit32 = bit32
 local math = math
 local maxinteger = math.maxinteger or (2 ^ 53 - 1)
+
+
+-- Testing functions
+local function isvalidbytearray(val)
+    for i = 1, #val do
+        if type(val[i]) ~= 'number' then
+            return false
+        end
+    end
+    return true
+end
+
+
+-- Helper Functions
+local function make32bitinteger(number)
+    return bit32.bor(number, 0)
+end
+
+local function copyofrange(val, start, fin)
+    local copy = {}
+    
+    for index = start, fin do
+        copy[index - start + 1] = make32bitinteger(val[index])
+    end
+    
+    return copy
+end
+
+local function stripleadingzeros(val)
+    local vallength = #val
+    local keep = 1
+    
+    while keep <= vallength and val[keep] == 0 do
+        keep = keep + 1
+    end
+    
+    return copyofrange(val, keep, vallength)
+end
 
 local function makepositive(val)
     local vallength = #val
@@ -40,42 +80,10 @@ local function makepositive(val)
     return result
 end
 
-local function make32bitinteger(number)
-    return bit32.bor(number, 0)
-end
 
-local function copyofrange(val, start, fin)
-    local copy = {}
-    
-    for index = start, fin do
-        copy[index - start + 1] = make32bitinteger(val[index])
-    end
-    
-    return copy
-end
-
-local function stripleadingzeros(val)
-    local vallength = #val
-    local keep = 1
-    
-    while keep <= vallength and val[keep] == 0 do
-        keep = keep + 1
-    end
-    
-    return copyofrange(val, keep, vallength)
-end
-
+-- Constructors
 local function createbiginteger(val, sig)
     return {mag = val, signum = sig}
-end
-
-local function validbytearray(val)
-    for i = 1, #val do
-        if type(val[i]) ~= 'number' then
-            return false
-        end
-    end
-    return true
 end
 
 local function constructornumber(num)
@@ -129,7 +137,7 @@ local function constructorsignmagnitude(sig, val)
         error("Invalid sign value", 3)
     end
     
-    if not validbytearray(val) then
+    if not isvalidbytearray(val) then
         error("Invalid byte array", 3)
     end
     
