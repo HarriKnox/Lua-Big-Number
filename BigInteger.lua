@@ -48,7 +48,7 @@ local function copyofrange(val, start, fin)
     local copy = {}
     
     for index = start, fin do
-        copy[index - start + 1] = make32biginteger(val[index])
+        copy[index - start + 1] = make32bitinteger(val[index])
     end
     
     return copy
