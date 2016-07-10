@@ -1,4 +1,6 @@
 local bit32 = bit32
+local math = math
+local maxinteger = math.maxinteger or (2 ^ 53 - 1)
 
 local function makepositive(val)
     local vallength = #val
@@ -39,7 +41,7 @@ local function makepositive(val)
 end
 
 local function make32bitinteger(number)
-    return bit32.extract(number, 0, 32)
+    return bit32.bor(number, 0)
 end
 
 local function copyofrange(val, start, fin)
@@ -74,6 +76,29 @@ local function validbytearray(val)
         end
     end
     return true
+end
+
+local function constructornumber(num)
+    local mag, signum
+    local higherword
+    
+    if num < 0 then
+        signum = -1
+        num = -num
+    else
+        signum = num == 0 and 0 or 1
+    end
+    
+    if num > maxinteger then
+        error("Number too large to be an integer")
+    end
+    
+    higherword = math.floor(num / (2 ^ 32))
+    lowerword = make32bitinteger(num)
+    
+    mag = stripleadingzeros({higherword, lowerword})
+    
+    return createbiginteger(mag, signum)
 end
 
 local function constructormagnitude(val)
@@ -129,7 +154,9 @@ local biginteger
 function biginteger(a, b)
     local typea = type(a)
     local typeb = type(b)
-    if a == "table" and typeb == "nil" then
+    if typea == "number" and typeb == "nil" then
+        return constructornumber(a)
+    elseif a == "table" and typeb == "nil" then
         return constructormagnitude(a)
     elseif typea == "number" and typeb == "table" then
         return constructorsignmagnitude(a, b)
