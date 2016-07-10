@@ -171,4 +171,9 @@ function biginteger(a, b)
     end
 end
 
+if textutils then
+    _ENV.biginteger = biginteger
+    return
+end
+
 return {biginteger = biginteger}
