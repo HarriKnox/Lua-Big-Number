@@ -4,6 +4,13 @@ local math = math
 local maxinteger = math.maxinteger or (2 ^ 53 - 1)
 
 
+local bitsperdigit = {   0, 1024, 1624, 2048, 2378, 2648,
+                      2875, 3072, 3247, 3402, 3543, 3672,
+                      3790, 3899, 4001, 4096, 4186, 4271,
+                      4350, 4426, 4498, 4567, 4633, 4696,
+                      4756, 4814, 4870, 4923, 4975, 5025,
+                      5074, 5120, 5166, 5210, 5253, 5295}
+
 -- Testing functions
 local function isvalidbytearray(val)
     for i = 1, #val do
@@ -15,10 +22,11 @@ local function isvalidbytearray(val)
 end
 
 local function isvalidradix(radix)
-    if radix < 2 or radix > 36 or radix % 1 ~= 0 then
-        return false
-    end
-    return true
+    return radix >= 2 and radix <= 36 and radix % 1 == 0
+end
+
+local function isvalidstringnumber(str)
+    return not not string.match(str, '^[%-+]?[0-9A-Za-z]+$')
 end
 
 
@@ -176,41 +184,42 @@ local function constructormagnitude(val)
     return createbiginteger(mag, signum)
 end
 
-local function constructorstringradix(val, radix)
+local function constructorstringradix(str, radix)
     local mag, signum
     
-    local vallength = #val
-    local cursor, numberofdigits, sign
-    local plusindex, minusindex, _
+    local strlength = #str
+    local sign, cursor, strsign, numberofdigits
+    local numberofbits, numberofwords, magnitude
+    local firstgrouplength, superradix, groupvalue
     
     if not isvalidradix(radix) then
         error("Invalid radix: " .. radix, 3)
     end
     
-    minusindex, _ = string.find(val, '-[^-]*$')
-    plusindex, _ = string.find(val, '+[^+]*$')
-    
-    if (minusindex and minusindex > 1) or (plusindex and plusindex > 1) then
-        error("Illegal imbedded sign character", 3)
+    if not isvalidstringnumber(str) then
+        error("Invalid string integer", 3)
     end
     
-    sign = minusindex and -1 or 1
-    cursor = (minusindex or plusindex) and 2 or 1
+    strsign = string.match(str, '[-+]')
     
-    if cursor == vallength then
+    sign = strsign == '-' and -1 or 1
+    cursor = strsign and 2 or 1
+    
+    if cursor == strlength then
         error("Zero length BigInteger", 3)
     end
     
-    while cursor <= vallength and string.sub(val, cursor, cursor) == '0' then
+    while cursor <= strlength and string.sub(str, cursor, cursor) == '0' then
         cursor = cursor + 1
     end
     
-    if cursor == vallength then
-        mag = {}
-        signum = 0
-    else
-        
+    if cursor == strlength then
+        return createbiginteger({}, 0)
     end
+    
+    numberofdigits = strlength - cursor
+    numberofbits = bit32.lrshift(numberofdigits * bitsperdigit[radix], 10) + 1
+    
 end
 
 
