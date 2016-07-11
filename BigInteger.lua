@@ -2,6 +2,7 @@
 local bit32 = bit32
 local math = math
 local maxinteger = math.maxinteger or (2 ^ 53 - 1)
+local maxmagnitudelength = 2 ^ 32
 
 
 local bitsperdigit = {   0, 1024, 1624, 2048, 2378, 2648,
@@ -10,6 +11,12 @@ local bitsperdigit = {   0, 1024, 1624, 2048, 2378, 2648,
                       4350, 4426, 4498, 4567, 4633, 4696,
                       4756, 4814, 4870, 4923, 4975, 5025,
                       5074, 5120, 5166, 5210, 5253, 5295}
+local digitsperinteger = { 0, 30, 19, 15, 13, 11,
+                          11, 10,  9,  9,  8,  8,
+                           8,  8,  7,  7,  7,  7,
+                           7,  7,  7,  6,  6,  6,
+                           6,  6,  6,  6,  6,  6,
+                           6,  6,  6,  6,  6,  5}
 
 -- Testing functions
 local function isvalidbytearray(val)
@@ -189,9 +196,9 @@ local function constructorstringradix(str, radix)
     
     local strlength = #str
     local sign, cursor, strsign, numberofdigits
-    local numberofbits, numberofwords, magnitude
-    local firstgrouplength, superradix, groupvalue
-    
+    local numberofbits, numberofwords, tempmagnitude
+    local firstgrouplength, superradix, group, groupvalue
+    -- Some edits and changes occurred here
     if not isvalidradix(radix) then
         error("Invalid radix: " .. radix, 3)
     end
@@ -205,21 +212,38 @@ local function constructorstringradix(str, radix)
     sign = strsign == '-' and -1 or 1
     cursor = strsign and 2 or 1
     
-    if cursor == strlength then
-        error("Zero length BigInteger", 3)
+    if string.match(str, '^[-+]?0+') then
+        return createbiginteger({}, 0)
     end
     
     while cursor <= strlength and string.sub(str, cursor, cursor) == '0' then
         cursor = cursor + 1
     end
-    
-    if cursor == strlength then
-        return createbiginteger({}, 0)
-    end
-    
+    -- Back to Java-faithful code
     numberofdigits = strlength - cursor
     numberofbits = bit32.lrshift(numberofdigits * bitsperdigit[radix], 10) + 1
     
+    if numberofbits + 31 >= maxmagnitudelength then
+        error("BigInteger would overflow supported range", 3)
+    end
+    
+    numberofwords = bit32.lrshift(numberofbits + 31, 5)
+    tempmagnitude = {}
+    
+    firstgrouplength = numberofdigits % digitsperinteger[radix]
+    if firstgrouplength == 0 then
+        firstgrouplength = digitsperinteger[radix]
+    end
+    -- Process first group
+    group = string.sub(val, cursor, cursor + firstgrouplength)
+    cursor = cursor + firstgrouplength
+    groupvalue = tonumber(group, radix)
+    if not groupvalue then
+        error("Illegal digit", 3)
+    end
+    tempmagnitude[numberofwords] = groupvalue
+    
+    -- Process remaining groups
 end
 
 
