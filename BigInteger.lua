@@ -1,5 +1,4 @@
 -- Local fields/constants
-
 local bit32 = bit32
 local math = math
 local maxinteger = math.maxinteger or (2 ^ 53 - 1)
@@ -171,7 +170,10 @@ function biginteger(a, b)
     end
 end
 
-if textutils then
+if _CC_VERSION then
+    if tonumber(_CC_VERSION) < 1.75 then
+        error("BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
+    end
     _ENV.biginteger = biginteger
     return
 end
