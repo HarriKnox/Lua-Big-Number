@@ -309,6 +309,9 @@ local function constructorstringradix(str, radix)
    
    numberofwords = bit32.rshift(numberofbits + 31, 5)
    tempmagnitude = {}
+   for i = 1, numberofwords do
+      tempmagnitude[i] = 0
+   end
    
    -- a small deviation but here to prevent numerous calls to digitsperinteger
    digitsperintegerradix = digitsperinteger[radix]
@@ -317,10 +320,12 @@ local function constructorstringradix(str, radix)
    if firstgrouplength == 0 then
       firstgrouplength = digitsperintegerradix
    end
+   
    -- Process first group
-   group = string.sub(str, cursor, cursor + firstgrouplength)
+   group = string.sub(str, cursor, cursor + firstgrouplength - 1)
    cursor = cursor + firstgrouplength
    groupvalue = tonumber(group, radix)
+   
    if not groupvalue then
       error("Illegal digit", 3)
    end
@@ -329,7 +334,7 @@ local function constructorstringradix(str, radix)
    -- Process remaining groups
    superradix = intradix[radix]
    while cursor <= strlength do
-      group = string.sub(str, cursor, cursor + digitsperintegerradix)
+      group = string.sub(str, cursor, cursor + digitsperintegerradix - 1)
       cursor = cursor + digitsperintegerradix
       groupvalue = tonumber(group, radix)
       if not groupvalue then
