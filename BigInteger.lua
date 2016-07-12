@@ -5,9 +5,9 @@ local maxinteger = math.maxinteger or (2 ^ 53 - 1)
 local maxmagnitudelength = 2 ^ 32
 
 -- Number of bits contained in a digit grouping in a string integer
--- indexed by radix and rounded up
+-- rounded up, indexed by radix
 local bitsperdigit = {
-   0, 1024, 1624, 2048, 2378, 2648,
+      0, 1024, 1624, 2048, 2378, 2648,
    2875, 3072, 3247, 3402, 3543, 3672,
    3790, 3899, 4001, 4096, 4186, 4271,
    4350, 4426, 4498, 4567, 4633, 4696,
@@ -15,9 +15,9 @@ local bitsperdigit = {
    5074, 5120, 5166, 5210, 5253, 5295}
 
 -- The number of digits of a given radix that can fit in a 32 bit integer
--- without overflowing / going negative, indexed by radix
+-- without overflowing or going negative, indexed by radix
 local digitsperinteger = {
-   0, 30, 19, 15, 13, 11,
+    0, 30, 19, 15, 13, 11,
    11, 10,  9,  9,  8,  8,
     8,  8,  7,  7,  7,  7,
     7,  7,  7,  6,  6,  6,
@@ -25,9 +25,10 @@ local digitsperinteger = {
     6,  6,  6,  6,  6,  5}
 
 -- Casts each number to "int digits" which contain the number of digits
--- specified in digitsperinteger. = radix * digitsperinteger[radix]
+-- specified in digitsperinteger
+-- intradix[radix] = radix * digitsperinteger[radix]
 local intradix = {
-             0, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
+   0x00000000, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
    0x75db9c97, 0x40000000, 0x17179149, 0x3b9aca00, 0x0cc6db61, 0x19a10000,
    0x309f1021, 0x57f6c100, 0x0a2f1b6f, 0x10000000, 0x18754571, 0x247dbc80,
    0x3547667b, 0x4c4b4000, 0x6b5a6e1d, 0x06c20a40, 0x08d2d931, 0x0b640000,
@@ -59,11 +60,39 @@ local function make32bitinteger(number)
 end
 
 local function long32bitrightshift(number)
-   return math.floor(number / (2 ^ 32))
+   return math.floor(number / 0x100000000)
+end
+
+local function long16bitrightshift(number)
+   return math.floor(number / 0x10000)
 end
 
 local function long32bitleftshift(number)
-   return number * (2 ^ 32)
+   return number * 0x100000000
+end
+
+local function long16bitleftshift(number)
+   return number * 0x10000
+end
+
+local function integermultiplicationandaddtolong(x, ab, c)
+   local a = bit32.rshift(ab, 16)
+   local b = bit32.band(ab, 0xffff)
+   
+   local xa = x * a
+   local xb = x * b
+   
+   local xahigh = long16bitrightshift(xa)
+   local xalow = bit32.lshift(xa, 16)
+   
+   local xbhigh = long32bitrightshift(xb)
+   local xblow = bit32.bor(xb, 0)
+   
+   local lowword = xalow + xblow + c
+   local highword = xahigh + xbhigh + long32bitrightshift(lowword)
+   lowword = bit32.bor(lowword, 0)
+   
+   return highword, lowword
 end
 
 local function getdigitvalue(character)
@@ -140,8 +169,16 @@ local function makepositive(val)
    return result
 end
 
-local function destructivemultiplyandadd(magnitude, factor, addend)
+local function destructivemultiplyandadd(mag, factor, addend)
+   local maglength = #mag
+   local product = 0
+   local carry = 0
+   local index = maglength
    
+   while index > 0 do
+      carry, mag[index] = integermultiplyandaddtolong(factor, mag[index], carry)
+      index = index - 1
+   end
 end
 
 
