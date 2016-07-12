@@ -174,9 +174,19 @@ local function destructivemultiplyandadd(mag, factor, addend)
    local product = 0
    local carry = 0
    local index = maglength
+   local sum = 0
    
    while index > 0 do
       carry, mag[index] = integermultiplyandaddtolong(factor, mag[index], carry)
+      index = index - 1
+   end
+   
+   carry = addend
+   index = maglength
+   while index > 0 do
+      sum = mag[index] + carry
+      carry = long32bitrightshift(sum)
+      mag[index] = make32bitinteger(sum)
       index = index - 1
    end
 end
