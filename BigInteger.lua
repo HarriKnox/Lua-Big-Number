@@ -75,7 +75,7 @@ local function long16bitleftshift(number)
    return number * 0x10000
 end
 
-local function integermultiplicationandaddtolong(x, ab, c)
+local function integermultiplyandaddtolong(x, ab, c)
    local a = bit32.rshift(ab, 16)
    local b = bit32.band(ab, 0xffff)
    
@@ -294,20 +294,20 @@ local function constructorstringradix(str, radix)
       return createbiginteger({}, 0)
    end
    
-   while cursor <= strlength and string.sub(str, cursor, cursor) == '0' then
+   while cursor <= strlength and string.sub(str, cursor, cursor) == '0' do
       cursor = cursor + 1
    end
    -- Back to Java-faithful code
-   numberofdigits = strlength - cursor
+   numberofdigits = strlength - cursor + 1
    signum = sign
    
-   numberofbits = bit32.lrshift(numberofdigits * bitsperdigit[radix], 10) + 1
+   numberofbits = bit32.rshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
    if numberofbits + 31 >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
    
-   numberofwords = bit32.lrshift(numberofbits + 31, 5)
+   numberofwords = bit32.rshift(numberofbits + 31, 5)
    tempmagnitude = {}
    
    -- a small deviation but here to prevent numerous calls to digitsperinteger
@@ -318,7 +318,7 @@ local function constructorstringradix(str, radix)
       firstgrouplength = digitsperintegerradix
    end
    -- Process first group
-   group = string.sub(val, cursor, cursor + firstgrouplength)
+   group = string.sub(str, cursor, cursor + firstgrouplength)
    cursor = cursor + firstgrouplength
    groupvalue = tonumber(group, radix)
    if not groupvalue then
@@ -329,7 +329,7 @@ local function constructorstringradix(str, radix)
    -- Process remaining groups
    superradix = intradix[radix]
    while cursor <= strlength do
-      group = string.sub(val, cursor, cursor + digitsperintegerradix)
+      group = string.sub(str, cursor, cursor + digitsperintegerradix)
       cursor = cursor + digitsperintegerradix
       groupvalue = tonumber(group, radix)
       if not groupvalue then
