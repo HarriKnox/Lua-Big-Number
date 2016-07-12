@@ -1,8 +1,21 @@
 -- Local fields/constants
-local bit32 = bit32
-local math = math
+local bitand = (bit32 or bit).band
+local bitor = (bit32 or bit).bor
+local bitnot = (bit32 or bit).bnot
+local bitxor = (bit32 or bit).bxor
+local bitleftshift = (bit32 and bit32.lshift) or (bit and bit.blshift)
+local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogit_rshift)
+local bitarithmaticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
+
+local floor = floor or math.floor
+local max = max or math.max
+local min = min or math.min
+
 local maxinteger = math.maxinteger or (2 ^ 53 - 1)
-local maxmagnitudelength = 2 ^ 32
+local maxmagnitudelength = 67108864 -- Integer.maxvalue / Integer.size = 2 ^ 26
+
+local stringsub = string.sub
+local stringmatch = string.match
 
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
@@ -50,21 +63,21 @@ local function isvalidradix(radix)
 end
 
 local function isvalidstringnumber(str)
-   return not not string.match(str, '^[%-+]?[0-9A-Za-z]+$')
+   return not not stringmatch(str, '^[%-+]?[0-9A-Za-z]+$')
 end
 
 
 -- Helper Functions
 local function make32bitinteger(number)
-   return bit32.bor(number, 0)
+   return bitand(number, 0xffffffff)
 end
 
 local function long32bitrightshift(number)
-   return math.floor(number / 0x100000000)
+   return floor(number / 0x100000000)
 end
 
 local function long16bitrightshift(number)
-   return math.floor(number / 0x10000)
+   return floor(number / 0x10000)
 end
 
 local function long32bitleftshift(number)
@@ -76,21 +89,21 @@ local function long16bitleftshift(number)
 end
 
 local function integermultiplyandaddtolong(x, ab, c)
-   local a = bit32.rshift(ab, 16)
-   local b = bit32.band(ab, 0xffff)
+   local a = bitrightshift(ab, 16)
+   local b = bitand(ab, 0xffff)
    
    local xa = x * a
    local xb = x * b
    
    local xahigh = long16bitrightshift(xa)
-   local xalow = bit32.lshift(xa, 16)
+   local xalow = bitleftshift(xa, 16)
    
    local xbhigh = long32bitrightshift(xb)
-   local xblow = bit32.bor(xb, 0)
+   local xblow = make32bitinteger(xb)
    
    local lowword = xalow + xblow + c
    local highword = xahigh + xbhigh + long32bitrightshift(lowword)
-   lowword = bit32.bor(lowword, 0)
+   lowword = make32bitinteger(lowword)
    
    return highword, lowword
 end
@@ -155,7 +168,7 @@ local function makepositive(val)
    
    index = keep
    while index <= vallength do
-      result[index - keep + extraint + 1] = bit32.bnot(val[index])
+      result[index - keep + extraint + 1] = bitnot(val[index])
       index = index + 1
    end
    
@@ -285,29 +298,29 @@ local function constructorstringradix(str, radix)
       error("Invalid string integer", 3)
    end
    
-   strsign = string.match(str, '[-+]')
+   strsign = stringmatch(str, '[-+]')
    
    sign = strsign == '-' and -1 or 1
    cursor = strsign and 2 or 1
    
-   if string.match(str, '^[-+]?0+$') then
+   if stringmatch(str, '^[-+]?0+$') then
       return createbiginteger({}, 0)
    end
    
-   while cursor <= strlength and string.sub(str, cursor, cursor) == '0' do
+   while cursor <= strlength and stringsub(str, cursor, cursor) == '0' do
       cursor = cursor + 1
    end
    -- Back to Java-faithful code
    numberofdigits = strlength - cursor + 1
    signum = sign
    
-   numberofbits = bit32.rshift(numberofdigits * bitsperdigit[radix], 10) + 1
+   numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
-   if numberofbits + 31 >= maxmagnitudelength then
+   if numberofbits + 31 >= 2 ^ 32 then
       error("BigInteger would overflow supported range", 3)
    end
    
-   numberofwords = bit32.rshift(numberofbits + 31, 5)
+   numberofwords = bitrightshift(numberofbits + 31, 5)
    tempmagnitude = {}
    for i = 1, numberofwords do
       tempmagnitude[i] = 0
@@ -322,7 +335,7 @@ local function constructorstringradix(str, radix)
    end
    
    -- Process first group
-   group = string.sub(str, cursor, cursor + firstgrouplength - 1)
+   group = stringsub(str, cursor, cursor + firstgrouplength - 1)
    cursor = cursor + firstgrouplength
    groupvalue = tonumber(group, radix)
    
@@ -334,7 +347,7 @@ local function constructorstringradix(str, radix)
    -- Process remaining groups
    superradix = intradix[radix]
    while cursor <= strlength do
-      group = string.sub(str, cursor, cursor + digitsperintegerradix - 1)
+      group = stringsub(str, cursor, cursor + digitsperintegerradix - 1)
       cursor = cursor + digitsperintegerradix
       groupvalue = tonumber(group, radix)
       if not groupvalue then
@@ -344,6 +357,9 @@ local function constructorstringradix(str, radix)
    end
    
    mag = stripleadingzeros(tempmagnitude)
+   --if #mag >= MAX_MAG_LENGTH then
+      --checkrange(mag)
+   --end
    return createbiginteger(mag, signum)
 end
 
