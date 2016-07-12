@@ -10,6 +10,7 @@ local bitarithmaticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshif
 local floor = floor or math.floor
 local max = max or math.max
 local min = min or math.min
+local random = random or math.random
 
 local maxinteger = math.maxinteger or (2 ^ 53 - 1)
 local maxmagnitudelength = 67108864 -- Integer.maxvalue / Integer.size = 2 ^ 26
@@ -222,7 +223,7 @@ local function constructornumber(num)
    end
    
    if num > maxinteger then
-      error("Number too large to be an integer")
+      error("Number too large to be an integer", 3)
    end
    
    higherword = long32bitrightshift(num)
@@ -253,9 +254,36 @@ local function constructorsignmagnitude(sig, val)
       end
       signum = sig
    end
-   --if #mag >= MAX_MAG_LENGTH then
-      --checkrange(mag)
-   --end
+   if #mag >= maxmagnitudelength then
+      error("BigInteger would overflow supported range", 3)
+   end
+   
+   return createbiginteger(mag, signum)
+end
+
+local function constructorbitsrng(bitlength, randomnumbergenerator)
+   local mag, signum
+   local tempmagnitude = {}
+   local numberofwords, excessbytes
+   
+   if bitlength < 0 or bitlength % 1 ~= 0 then
+      error("bitlength must be a non-negative integer", 3)
+   end
+   
+   if type(randomnumbergenerator()) ~= "number" then
+      error("RNG function must return a number between 0 and 1", 3)
+   end
+   
+   numberofwords = floor((bitlength + 15) / 16)
+   for i = 1, numberofwords do
+      tempmagnitude[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 + floor(randomnumbergenerator() * 0x10000)
+   end
+   
+   excessbytes = 16 * numberofwords - bitlength
+   tempmagnitude[1] = bitand(tempmagnitude[1], 2 ^ (16 - excessbytes) - 1)
+   
+   signum = 1
+   mag = stripleadingzeros(tempmagnitude)
    
    return createbiginteger(mag, signum)
 end
@@ -276,9 +304,9 @@ local function constructormagnitude(val)
       mag = stripleadingzeros(val)
       signum = #mag == 0 and 0 or 1
    end
-   --if #mag >= MAX_MAG_LENGTH then
-      --checkrange(mag)
-   --end
+   if #mag >= maxmagnitudelength then
+      error("BigInteger would overflow supported range", 3)
+   end
    return createbiginteger(mag, signum)
 end
 
@@ -316,7 +344,7 @@ local function constructorstringradix(str, radix)
    
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
-   if numberofbits + 31 >= 2 ^ 32 then
+   if numberofbits + 31 > 0xffffffff then
       error("BigInteger would overflow supported range", 3)
    end
    
@@ -357,9 +385,9 @@ local function constructorstringradix(str, radix)
    end
    
    mag = stripleadingzeros(tempmagnitude)
-   --if #mag >= MAX_MAG_LENGTH then
-      --checkrange(mag)
-   --end
+   if #mag >= maxmagnitudelength then
+      error("BigInteger would overflow supported range", 3)
+   end
    return createbiginteger(mag, signum)
 end
 
@@ -373,6 +401,8 @@ local function biginteger(a, b)
          return constructornumber(a)
       elseif typeb == "table" then
          return constructorsignmagnitude(a, b)
+      elseif typeb == "function" then
+         return constructorbitsrng(a, b)
       end
    elseif typea == "table" and typeb == "nil" then
       return constructormagnitude(a)
@@ -391,7 +421,7 @@ end
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
       error("BigInteger library compatibility for ComputerCraft requires CC " ..
-         "version 1.75 or later")
+         "version 1.75 or later", 2)
    end
    _ENV.biginteger = biginteger
    return
