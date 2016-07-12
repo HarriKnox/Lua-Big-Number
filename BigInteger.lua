@@ -290,7 +290,7 @@ local function constructorstringradix(str, radix)
    sign = strsign == '-' and -1 or 1
    cursor = strsign and 2 or 1
    
-   if string.match(str, '^[-+]?0+') then
+   if string.match(str, '^[-+]?0+$') then
       return createbiginteger({}, 0)
    end
    
@@ -381,4 +381,5 @@ if _CC_VERSION then
    return
 end
 
+_G.bi = biginteger
 return {biginteger = biginteger}
