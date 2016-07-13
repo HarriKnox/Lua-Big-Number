@@ -50,6 +50,10 @@ local intradix = {
    0x34e63b41, 0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x039aa400}
 
 -- Testing functions
+local function isbiginteger(bigint)
+   return type(bigint) == 'table' and bigint.magnitude and bigint.sign
+end
+
 local function isvalidbytearray(val)
    for i = 1, #val do
       if type(val[i]) ~= 'number' then
@@ -426,6 +430,38 @@ local function biginteger(a, b)
 end
 
 
+-- Comparison Functions
+local function equals(thisbigint, thatbigint)
+   local thismag, thatmag
+   
+   if rawequal(thisbigint, thatbigint) then
+      return true
+   end
+   
+   if not isbiginteger(thatbigint) then
+      return false
+   end
+   
+   if thisbigint.sign ~= thatbigint.sign then
+      return false
+   end
+   
+   thismag = thisbigint.magnitude
+   thatmag = thatbigint.magnitude
+   
+   if #thismag ~= #thatmag then
+      return false
+   end
+   
+   for i = 1, #thismag do
+      if thismag[i] ~= thatmag[i] then
+         return false
+      end
+   end
+   return true
+end
+
+
 -- Math Functions
 local function negate(bigint)
    return createbiginteger(copyofrange(bigint.magnitude, 1, -1), -bigint.sign)
@@ -436,6 +472,7 @@ local function abs(bigint)
 end
 
 
+-- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
       error("BigInteger library compatibility for ComputerCraft requires CC " ..
