@@ -461,6 +461,34 @@ local function equals(thisbigint, thatbigint)
    return true
 end
 
+local function compare(thisbigint, thatbigint)
+   local thismag, thatmag
+   
+   if rawequal(thisbigint, thatbigint) then
+      return 0
+   end
+   
+   if thisbigint.sign ~= thatbigint.sign then
+      -- If the signs differ, then they cannot be equal
+      return thisbigint.sign > thatbigint.sign and 1 or -1
+   end
+   
+   thismag = thisbigint.magnitude
+   thatmag = thatbigint.magnitude
+   
+   if #thismag ~= #thatmag then
+      -- If the numbers are different sizes, then they cannot be equal
+      return #thismag > #thatmag and 1 or -1
+   end
+   
+   for i = 1, #thismag do
+      if thismag[i] ~= thatmag[i] then
+         return thismag[i] > thatmag[i] and 1 or -1
+      end
+   end
+   
+   return 0
+end
 
 -- Math Functions
 local function negate(bigint)
@@ -482,10 +510,12 @@ if _CC_VERSION then
    return
 end
 
----[[
+--[[ Uncomment for testing
 _G.bi = biginteger
 _G.cp = copyofrange
 _G.negate = negate
 _G.abs = abs
+_G.compare = compare
+_G.equals = equals
 --]]
 return {biginteger = biginteger}
