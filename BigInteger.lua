@@ -126,6 +126,19 @@ end
 
 local function copyofrange(val, start, fin)
    local copy = {}
+   local vallength = #val
+   
+   if start < 0 then
+      -- adjust for negative index (index from end of val)
+      start = vallength + start + 1
+   end
+   if fin < 0 then
+      fin = vallength + fin + 1
+   end
+   
+   if start > fin then
+      error("start > fin")
+   end
    
    for index = start, fin do
       copy[index - start + 1] = make32bitinteger(val[index])
@@ -205,14 +218,13 @@ local function destructivemultiplyandadd(mag, factor, addend)
    end
 end
 
-
 -- Constructors
 local function createbiginteger(val, sig)
-   return {mag = val, signum = sig}
+   return {magnitude = val, sign = sig}
 end
 
 local function constructornumber(num)
-   local mag, signum
+   local signum
    local higherword
    
    if num < 0 then
@@ -229,9 +241,7 @@ local function constructornumber(num)
    higherword = long32bitrightshift(num)
    lowerword = make32bitinteger(num)
    
-   mag = stripleadingzeros({higherword, lowerword})
-   
-   return createbiginteger(mag, signum)
+   return createbiginteger(stripleadingzeros({higherword, lowerword}), signum)
 end
 
 local function constructorsignmagnitude(sig, val)
@@ -262,7 +272,6 @@ local function constructorsignmagnitude(sig, val)
 end
 
 local function constructorbitsrng(bitlength, randomnumbergenerator)
-   local mag, signum
    local tempmagnitude = {}
    local numberofwords, excessbytes
    
@@ -282,10 +291,7 @@ local function constructorbitsrng(bitlength, randomnumbergenerator)
    excessbytes = 16 * numberofwords - bitlength
    tempmagnitude[1] = bitand(tempmagnitude[1], 2 ^ (16 - excessbytes) - 1)
    
-   signum = 1
-   mag = stripleadingzeros(tempmagnitude)
-   
-   return createbiginteger(mag, signum)
+   return createbiginteger(stripleadingzeros(tempmagnitude), 1)
 end
 
 local function constructormagnitude(val)
@@ -391,7 +397,8 @@ local function constructorstringradix(str, radix)
    return createbiginteger(mag, signum)
 end
 
-
+-- Main Constructor
+-- will interpret passed arguments to call appropriate constructor
 local function biginteger(a, b)
    local typea = type(a)
    local typeb = type(b)
@@ -418,6 +425,17 @@ local function biginteger(a, b)
       typea .. " and " .. typeb, 2)
 end
 
+
+-- Math Functions
+local function negate(bigint)
+   return createbiginteger(copyofrange(bigint.magnitude, 1, -1), -bigint.sign)
+end
+
+local function abs(bigint)
+   return bigint.sign < 0 and negate(bigint) or bigint
+end
+
+
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
       error("BigInteger library compatibility for ComputerCraft requires CC " ..
@@ -427,5 +445,10 @@ if _CC_VERSION then
    return
 end
 
+---[[
 _G.bi = biginteger
+_G.cp = copyofrange
+_G.negate = negate
+_G.abs = abs
+--]]
 return {biginteger = biginteger}
