@@ -54,6 +54,10 @@ local function isbiginteger(bigint)
    return type(bigint) == 'table' and bigint.magnitude and bigint.sign
 end
 
+local function issmallinteger(smallint)
+   return type(smallint) == 'number' and smallint % 1 == 0
+end
+
 local function isvalidbytearray(val)
    for i = 1, #val do
       if type(val[i]) ~= 'number' then
@@ -113,6 +117,63 @@ local function integermultiplyandaddtolong(x, ab, c)
    return highword, lowword
 end
 
+local function getmagnitude(thing)
+   if isbiginteger(thing) then
+      return thing.magnitude
+   elseif isvalidbytearray(thing) then
+      return thing
+   elseif issmallinteger(thing) then
+      return {thing}
+   end
+   error("Cannot construct magnitude", 3)
+end
+
+local function getfirstnonzerointfromend(mag)
+   local maglen = #mag
+   for i = 0, maglen - 1 do
+      if mag[maglen - i] ~= 0 then
+         return i
+      end
+   end
+end
+
+local function getintfromend(bigint, disp)
+   -- Get the 32 bit integer segment that is disp from the end,
+   -- disp = 0 will return the last segment
+   local magint, signint, bimag, bilen
+   
+   if not isbiginteger(bigint) then
+      error("Not a biginteger", 3)
+   end
+   
+   if not issmallinteger(disp) then
+      error("Displacement not an integer", 3)
+   end
+   
+   bimag = bigint.magnitude
+   bilen = #bimag
+   signint = bigint.sign == -1 and -1 or 0
+   
+   if disp >= bilen then
+      return signint
+   end
+   
+   if disp < 0 then
+      return 0
+   end
+   
+   magint = bimag[bilen - disp]
+   
+   if signint == 0 then
+      return magint
+   end
+   
+   if disp <= getfirstnonzerointfromend(bimag) then
+      return -magint
+   end
+   return bitnot(magint)
+end
+
 local function getdigitvalue(character)
    local bytevalue = string.byte(character)
    
@@ -138,10 +199,6 @@ local function copyofrange(val, start, fin)
    end
    if fin < 0 then
       fin = vallength + fin + 1
-   end
-   
-   if start > fin then
-      error("start > fin")
    end
    
    for index = start, fin do
@@ -231,6 +288,10 @@ local function constructornumber(num)
    local signum
    local higherword
    
+   if not issmallinteger(num) then
+      error("Number not an integer", 3)
+   end
+   
    if num < 0 then
       signum = -1
       num = -num
@@ -284,12 +345,13 @@ local function constructorbitsrng(bitlength, randomnumbergenerator)
    end
    
    if type(randomnumbergenerator()) ~= "number" then
-      error("RNG function must return a number between 0 and 1", 3)
+      error("RNG function must return a number in the range [0, 1)", 3)
    end
    
    numberofwords = floor((bitlength + 15) / 16)
    for i = 1, numberofwords do
-      tempmagnitude[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 + floor(randomnumbergenerator() * 0x10000)
+      tempmagnitude[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 +
+         floor(randomnumbergenerator() * 0x10000)
    end
    
    excessbytes = 16 * numberofwords - bitlength
@@ -303,7 +365,7 @@ local function constructormagnitude(val)
    if #val == 0 then
       error("Zero length BigInteger", 3)
    end
-   if not validbytearray(val) then
+   if not isvalidbytearray(val) then
       error("Invalid byte array", 3)
    end
    
@@ -431,6 +493,7 @@ end
 
 
 -- Comparison Functions
+--[[
 local function equals(thisbigint, thatbigint)
    local thismag, thatmag
    
@@ -460,6 +523,7 @@ local function equals(thisbigint, thatbigint)
    end
    return true
 end
+--]]
 
 local function compare(thisbigint, thatbigint)
    local thismag, thatmag
@@ -490,6 +554,42 @@ local function compare(thisbigint, thatbigint)
    return 0
 end
 
+local function equals(thisbigint, thatbigint)
+   return compare(thisbigint, thatbigint) == 0
+end
+
+
+-- Bitwise functions
+local function bitwisenot(bigint)
+   local mag
+   local bimag
+   
+   bimag = getmagnitude(bigint)
+   mag = {}
+   for i = 1, #bimag do
+      mag[i] = bitnot(bimag[i])
+   end
+   
+   return constructormagnitude(mag)
+end
+
+local function bitwiseand(thisbigint, thatbigint)
+   local mag, signum
+   local thismag, thatmag, longermag, shortermag
+   
+   thismag = getmagnitude(thisbigint)
+   thatmag = getmagnitude(thatbigint)
+   mag = {}
+   
+   if #thismag >= #thatmag then
+      longermag = thismag
+      shortermag = thatmag
+   else
+      longermag = thatmag
+      shortermag = thismag
+   end
+end
+
 -- Math Functions
 local function negate(bigint)
    return createbiginteger(copyofrange(bigint.magnitude, 1, -1), -bigint.sign)
@@ -517,5 +617,7 @@ _G.negate = negate
 _G.abs = abs
 _G.compare = compare
 _G.equals = equals
+_G.bitwisenot = bitwisenot
+_G.getintfromend = getintfromend
 --]]
 return {biginteger = biginteger}
