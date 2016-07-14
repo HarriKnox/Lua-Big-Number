@@ -284,6 +284,10 @@ local function createbiginteger(val, sig)
    return {magnitude = val, sign = sig}
 end
 
+local function clone(bigint)
+   return createbiginteger(copyofrange(bigint.magnitude, 1, -1), bigint.sign)
+end
+
 local function constructornumber(num)
    local signum
    local higherword
@@ -575,19 +579,21 @@ end
 
 local function bitwiseand(thisbigint, thatbigint)
    local mag, signum
-   local thismag, thatmag, longermag, shortermag
+   local thismag, thatmag
+   local thislen, thatlen, longerlen
    
    thismag = getmagnitude(thisbigint)
    thatmag = getmagnitude(thatbigint)
    mag = {}
    
-   if #thismag >= #thatmag then
-      longermag = thismag
-      shortermag = thatmag
-   else
-      longermag = thatmag
-      shortermag = thismag
+   longerlen = max(#thismag, #thatmag)
+   
+   for i = 0, longerlen - 1 do
+      mag[longerlen - i] = bitand(getintfromend(thismag, i),
+                                  getintfromend(thatmag, i))
    end
+   
+   return constructormagnitude(mag)
 end
 
 -- Math Functions
