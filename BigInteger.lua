@@ -605,6 +605,24 @@ local function bitwiseand(thisbigint, thatbigint)
                                                bitand))
 end
 
+local function bitwiseandnot(thisbigint, thatbigint)
+   return constructormagnitude(mergemagnitudes(thisbigint,
+                                               thatbigint,
+                                               bitandnot))
+end
+
+local function bitwiseor(thisbigint, thatbigint)
+   return constructormagnitude(mergemagnitudes(thisbigint,
+                                               thatbigint,
+                                               bitor))
+end
+
+local function bitwisexor(thisbigint, thatbigint)
+   return constructormagnitude(mergemagnitudes(thisbigint,
+                                               thatbigint,
+                                               bitxor))
+end
+
 -- Math Functions
 local function negate(bigint)
    return createbiginteger(copyofrange(bigint.magnitude, 1, -1), -bigint.sign)
