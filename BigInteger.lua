@@ -6,6 +6,7 @@ local bitxor = (bit32 or bit).bxor
 local bitleftshift = (bit32 and bit32.lshift) or (bit and bit.blshift)
 local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogit_rshift)
 local bitarithmaticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
+local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
 local floor = floor or math.floor
 local max = max or math.max
@@ -125,7 +126,7 @@ local function getmagnitude(thing)
    elseif issmallinteger(thing) then
       return {thing}
    end
-   error("Cannot construct magnitude", 3)
+   error("Cannot construct magnitude")
 end
 
 local function getfirstnonzerointfromend(mag)
@@ -172,6 +173,36 @@ local function getintfromend(bigint, disp)
       return -magint
    end
    return bitnot(magint)
+end
+
+local function mapmagnitude(bigint, mapfunction)
+   local mag
+   local bimag
+   
+   bimag = getmagnitude(bigint)
+   mag = {}
+   for i = 1, #bimag do
+      mag[i] = mapfunction(bimag[i])
+   end
+   
+   return mag
+end
+
+local function mergemagnitudes(thisbigint, thatbigint, mergefunction)
+   local mag, thismag, thatmag
+   local thislen, thatlen, longerlen
+   
+   thismag = getmagnitude(thisbigint)
+   thatmag = getmagnitude(thatbigint)
+   
+   longerlen = max(#thismag, #thatmag)
+   
+   mag = {}
+   for i = 0, longerlen - 1 do
+      mag[longerlen - i] = mergefunction(getintfromend(thisbigint, i),
+                                         getintfromend(thatbigint, i))
+   end
+   return mag
 end
 
 local function getdigitvalue(character)
@@ -565,35 +596,13 @@ end
 
 -- Bitwise functions
 local function bitwisenot(bigint)
-   local mag
-   local bimag
-   
-   bimag = getmagnitude(bigint)
-   mag = {}
-   for i = 1, #bimag do
-      mag[i] = bitnot(bimag[i])
-   end
-   
-   return constructormagnitude(mag)
+   return constructormagnitude(mapmagnitude(bigint, bitnot))
 end
 
 local function bitwiseand(thisbigint, thatbigint)
-   local mag, signum
-   local thismag, thatmag
-   local thislen, thatlen, longerlen
-   
-   thismag = getmagnitude(thisbigint)
-   thatmag = getmagnitude(thatbigint)
-   mag = {}
-   
-   longerlen = max(#thismag, #thatmag)
-   
-   for i = 0, longerlen - 1 do
-      mag[longerlen - i] = bitand(getintfromend(thismag, i),
-                                  getintfromend(thatmag, i))
-   end
-   
-   return constructormagnitude(mag)
+   return constructormagnitude(mergemagnitudes(thisbigint,
+                                               thatbigint,
+                                               bitand))
 end
 
 -- Math Functions
