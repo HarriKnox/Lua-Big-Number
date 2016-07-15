@@ -55,8 +55,16 @@ local function isbiginteger(bigint)
    return type(bigint) == 'table' and bigint.magnitude and bigint.sign
 end
 
+local function isinteger(int)
+   return type(int) == 'number' and int % 1 == 0
+end
+
 local function issmallinteger(smallint)
-   return type(smallint) == 'number' and smallint % 1 == 0
+   return isinteger(smallint) and smallint < 0x100000000
+end
+
+local function islonginteger(longint)
+   return isinteger(longint) and longint >= 0x100000000 and longint < maxint
 end
 
 local function isvalidbytearray(val)
@@ -98,6 +106,10 @@ local function long16bitleftshift(number)
    return number * 0x10000
 end
 
+local function splitlong(number)
+   return long32bitrightshift(number), make32biginteger(number)
+end
+
 local function integermultiplyandaddtolong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
@@ -125,8 +137,21 @@ local function getmagnitude(thing)
       return thing
    elseif issmallinteger(thing) then
       return {thing}
+   elseif islonginteger(thing) then
+      return {splitlong(thing)}
    end
    error("Cannot construct magnitude")
+end
+
+local function getsign(thing)
+   if isbiginteger(thing) then
+      return thing.sign
+   elseif isvalidbytearray(thing) then
+      return thing[1] and (thing[1] < 0 and -1 or 1) or 0
+   elseif isinteger(thing) then
+      return thing < 0 and -1 or thing > 0 and 1 or 0
+   end
+   error("Cannot obtain sign")
 end
 
 local function getfirstnonzerointfromend(mag)
@@ -205,7 +230,7 @@ local function mergemagnitudes(thisbigint, thatbigint, mergefunction)
    return mag
 end
 
-local function getdigitvalue(character)
+local function getcharvalue(character)
    local bytevalue = string.byte(character)
    
    if bytevalue >= 48 and bytevalue <= 57 then
@@ -304,8 +329,7 @@ local function destructivemultiplyandadd(mag, factor, addend)
    index = maglength
    while index > 0 do
       sum = mag[index] + carry
-      carry = long32bitrightshift(sum)
-      mag[index] = make32bitinteger(sum)
+      carry, mag[index] = splitlong(sum)
       index = index - 1
    end
 end
@@ -338,8 +362,7 @@ local function constructornumber(num)
       error("Number too large to be an integer", 3)
    end
    
-   higherword = long32bitrightshift(num)
-   lowerword = make32bitinteger(num)
+   higherword, lowerword = splitlong(num)
    
    return createbiginteger(stripleadingzeros({higherword, lowerword}), signum)
 end
@@ -528,8 +551,7 @@ end
 
 
 -- Comparison Functions
---[[
-local function equals(thisbigint, thatbigint)
+--[[local function equals(thisbigint, thatbigint)
    local thismag, thatmag
    
    if rawequal(thisbigint, thatbigint) then
@@ -560,23 +582,14 @@ local function equals(thisbigint, thatbigint)
 end
 --]]
 
-local function compare(thisbigint, thatbigint)
+local function comparemagnitudes(thisbigint, thatbigint)
    local thismag, thatmag
    
-   if rawequal(thisbigint, thatbigint) then
-      return 0
-   end
-   
-   if thisbigint.sign ~= thatbigint.sign then
-      -- If the signs differ, then they cannot be equal
-      return thisbigint.sign > thatbigint.sign and 1 or -1
-   end
-   
-   thismag = thisbigint.magnitude
-   thatmag = thatbigint.magnitude
+   thismag = getmagnitude(thisbigint)
+   thatmag = getmagnitude(thatbigint)
    
    if #thismag ~= #thatmag then
-      -- If the numbers are different sizes, then they cannot be equal
+      -- If the magnitudes are different sizes, then they cannot be equal
       return #thismag > #thatmag and 1 or -1
    end
    
@@ -587,6 +600,25 @@ local function compare(thisbigint, thatbigint)
    end
    
    return 0
+end
+
+local function compare(thisbigint, thatbigint)
+   local thismag, thatmag
+   local thissign, thatsign
+   
+   if rawequal(thisbigint, thatbigint) then
+      return 0
+   end
+   
+   thissign = getsign(thisbigint)
+   thatsign = getsign(thatbigint)
+   
+   if thissign ~= thatsign then
+      -- If the signs differ, then they cannot be equal
+      return thissign > thatsign and 1 or -1
+   end
+   
+   return comparemagnitudes(thisbigint, thatbigint)
 end
 
 local function equals(thisbigint, thatbigint)
@@ -630,6 +662,44 @@ end
 
 local function abs(bigint)
    return bigint.sign < 0 and negate(bigint) or bigint
+end
+
+local function add(thisbigint, thatbigint)
+   local mag, signum
+   local thismag, thatmag
+   local thissign, thatsign
+   local comparison
+   
+   thissign = getsign(thisbigint)
+   thatsign = getsign(thatbigint)
+   
+   if thissign == 0 then   
+      return thatbigint
+   elseif thatsign == 0 then
+      return thisbigint
+   end
+   
+   thismag = getmagnitude(thisbigint)
+   thatmag = getmagnitude(thatbigint)
+   
+   if thissign == thatsign then
+      signum = thissign
+      mag = addmagnitudes(thismag, thatmag)
+   else
+      comparison = comparemagnitudes(thisbigint, thatbigint)
+      if comparison > 0 then
+         sign = 1
+         mag = subtractmagnitudes(thismag, thatmag)
+      elseif comparison < 0 then
+         sign = -1
+         mag = subtractmagnitudes(thatmag, thismag)
+      else
+         sign = 0
+         mag = {}
+      end
+   end
+   
+   return constructorsignmagnitude(mag, sign)
 end
 
 
