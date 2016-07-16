@@ -56,7 +56,7 @@ local function isbiginteger(bigint)
 end
 
 local function isinteger(int)
-   return type(int) == 'number' and int % 1 == 0
+   return type(int) == 'number' and int < maxint and int % 1 == 0
 end
 
 local function issmallinteger(smallint)
@@ -64,12 +64,12 @@ local function issmallinteger(smallint)
 end
 
 local function islonginteger(longint)
-   return isinteger(longint) and longint >= 0x100000000 and longint < maxint
+   return isinteger(longint) and longint >= 0x100000000
 end
 
 local function isvalidbytearray(val)
    for i = 1, #val do
-      if type(val[i]) ~= 'number' then
+      if not isinteger(val[i]) then
          return false
       end
    end
@@ -85,7 +85,7 @@ local function isvalidstringnumber(str)
 end
 
 
--- Helper Functions
+-- Helper Bitwise Functions
 local function make32bitinteger(number)
    return bitand(number, 0xffffffff)
 end
@@ -106,6 +106,8 @@ local function long16bitleftshift(number)
    return number * 0x10000
 end
 
+
+-- Helper Integer and Long Functions
 local function splitlong(number)
    return long32bitrightshift(number), make32biginteger(number)
 end
@@ -130,6 +132,8 @@ local function integermultiplyandaddtolong(x, ab, c)
    return highword, lowword
 end
 
+
+-- Private Getter functions
 local function getmagnitude(thing)
    if isbiginteger(thing) then
       return thing.magnitude
@@ -163,11 +167,21 @@ local function getfirstnonzerointfromend(mag)
    end
 end
 
-local function getintfromend(bigint, disp)
+local function getintfromend(mag, disp)
+   local maglen = #mag
+   
+   if disp < 0 or disp >= maglen then
+      return 0
+   end
+   return mag[maglen - disp]
+end
+
+local function getintfromendwithsign(bigint, disp)
    -- Get the 32 bit integer segment that is disp from the end,
    -- disp = 0 will return the last segment
    local magint, signint, bimag, bilen
    
+   -- No error checks should be needed since this will be private, but here in case
    if not isbiginteger(bigint) then
       error("Not a biginteger", 3)
    end
@@ -195,56 +209,16 @@ local function getintfromend(bigint, disp)
    end
    
    if disp <= getfirstnonzerointfromend(bimag) then
-      return -magint
+      if magint == 0 then
+         return 0
+      end
+      return bitnot(magint) + 1
    end
    return bitnot(magint)
 end
 
-local function mapmagnitude(bigint, mapfunction)
-   local mag
-   local bimag
-   
-   bimag = getmagnitude(bigint)
-   mag = {}
-   for i = 1, #bimag do
-      mag[i] = mapfunction(bimag[i])
-   end
-   
-   return mag
-end
 
-local function mergemagnitudes(thisbigint, thatbigint, mergefunction)
-   local mag, thismag, thatmag
-   local thislen, thatlen, longerlen
-   
-   thismag = getmagnitude(thisbigint)
-   thatmag = getmagnitude(thatbigint)
-   
-   longerlen = max(#thismag, #thatmag)
-   
-   mag = {}
-   for i = 0, longerlen - 1 do
-      mag[longerlen - i] = mergefunction(getintfromend(thisbigint, i),
-                                         getintfromend(thatbigint, i))
-   end
-   return mag
-end
-
-local function getcharvalue(character)
-   local bytevalue = string.byte(character)
-   
-   if bytevalue >= 48 and bytevalue <= 57 then
-      -- if character is a number, returns in [0, 9]
-      return bytevalue - 48
-   elseif bytevalue >= 65 and bytevalue <= 90 then
-      -- if character is uppercase Latin, returns in [10, 35]
-      return bytevalue - 55
-   elseif bytevalue >= 97 and bytevalue <= 122 then
-      -- if character is lowercase Latin, returns in [10, 35]
-      return bytevalue - 87
-   end
-end
-
+-- Byte Array Functions
 local function copyofrange(val, start, fin)
    local copy = {}
    local vallength = #val
@@ -318,7 +292,6 @@ local function destructivemultiplyandadd(mag, factor, addend)
    local product = 0
    local carry = 0
    local index = maglength
-   local sum = 0
    
    while index > 0 do
       carry, mag[index] = integermultiplyandaddtolong(factor, mag[index], carry)
@@ -328,14 +301,66 @@ local function destructivemultiplyandadd(mag, factor, addend)
    carry = addend
    index = maglength
    while index > 0 do
-      sum = mag[index] + carry
-      carry, mag[index] = splitlong(sum)
+      carry, mag[index] = mag[index] + carry
       index = index - 1
    end
 end
 
+local function mapmagnitude(bigint, mapfunction)
+   local mag
+   local bimag
+   
+   bimag = getmagnitude(bigint)
+   mag = {}
+   for i = 1, #bimag do
+      mag[i] = mapfunction(bimag[i])
+   end
+   
+   return mag
+end
+
+local function mergemagnitudes(thisbigint, thatbigint, mergefunction)
+   local mag, thismag, thatmag
+   local thislen, thatlen, longerlen
+   
+   thismag = getmagnitude(thisbigint)
+   thatmag = getmagnitude(thatbigint)
+   
+   longerlen = max(#thismag, #thatmag)
+   
+   mag = {}
+   for i = 0, longerlen - 1 do
+      mag[longerlen - i] = mergefunction(getintfromendwithsign(thisbigint, i),
+                                         getintfromendwithsign(thatbigint, i))
+   end
+   return mag
+end
+
+
+-- Other Helper Functions
+local function getcharvalue(character)
+   local bytevalue = string.byte(character)
+   
+   if bytevalue >= 48 and bytevalue <= 57 then
+      -- if character is a number, returns in [0, 9]
+      return bytevalue - 48
+   elseif bytevalue >= 65 and bytevalue <= 90 then
+      -- if character is uppercase Latin, returns in [10, 35]
+      return bytevalue - 55
+   elseif bytevalue >= 97 and bytevalue <= 122 then
+      -- if character is lowercase Latin, returns in [10, 35]
+      return bytevalue - 87
+   end
+end
+
+
 -- Constructors
 local function createbiginteger(val, sig)
+   if sign ~= -1 and sign ~= 0 and sign ~= 1 then
+      error("sign not in {-1, 0, 1}")
+   elseif sign == 0 and #val ~= 0 then
+      error("sign-magnitude mismatch")
+   end
    return {magnitude = val, sign = sig}
 end
 
@@ -347,7 +372,7 @@ local function constructornumber(num)
    local signum
    local higherword
    
-   if not issmallinteger(num) then
+   if not isinteger(num) then
       error("Number not an integer", 3)
    end
    
@@ -356,10 +381,6 @@ local function constructornumber(num)
       num = -num
    else
       signum = num == 0 and 0 or 1
-   end
-   
-   if num > maxinteger then
-      error("Number too large to be an integer", 3)
    end
    
    higherword, lowerword = splitlong(num)
@@ -408,8 +429,10 @@ local function constructorbitsrng(bitlength, randomnumbergenerator)
    
    numberofwords = floor((bitlength + 15) / 16)
    for i = 1, numberofwords do
-      tempmagnitude[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 +
-         floor(randomnumbergenerator() * 0x10000)
+      -- This weird multiplication-addition is necessary since the default
+      -- math.random would not operate on all 32 bits
+      tempmagnitude[i] = make32bitinteger(floor(randomnumbergenerator() * 0x10000) * 0x10000 +
+                                          floor(randomnumbergenerator() * 0x10000))
    end
    
    excessbytes = 16 * numberofwords - bitlength
@@ -427,7 +450,8 @@ local function constructormagnitude(val)
       error("Invalid byte array", 3)
    end
    
-   if val[1] < 0 then
+   if val[1] < 0 or val[1] >= 0x80000000 then
+      -- number >= 0x80000000 would be negative as a Java int
       mag = makepositive(val)
       signum = -1
    else
@@ -582,12 +606,7 @@ end
 end
 --]]
 
-local function comparemagnitudes(thisbigint, thatbigint)
-   local thismag, thatmag
-   
-   thismag = getmagnitude(thisbigint)
-   thatmag = getmagnitude(thatbigint)
-   
+local function comparemagnitudes(thismag, thatmag)
    if #thismag ~= #thatmag then
       -- If the magnitudes are different sizes, then they cannot be equal
       return #thismag > #thatmag and 1 or -1
@@ -618,7 +637,10 @@ local function compare(thisbigint, thatbigint)
       return thissign > thatsign and 1 or -1
    end
    
-   return comparemagnitudes(thisbigint, thatbigint)
+   thismag = getmagnitude(thisbigint)
+   thatmag = getmagnitude(thatbigint)
+   
+   return comparemagnitudes(thismag, thatmag)
 end
 
 local function equals(thisbigint, thatbigint)
@@ -655,13 +677,54 @@ local function bitwisexor(thisbigint, thatbigint)
                                                bitxor))
 end
 
--- Math Functions
+
+-- Private Magnitude Functions
+local function addmagnitudes(thismag, thatmag)
+   local mag
+   local longermag, shortermag
+   local longerlen, shorterlen
+   local carry
+   
+   longermag = thismag
+   shorterlen = thatmag
+   
+   longerlen = #longermag
+   shorterlen = #shortermag
+   
+   if longerlen < shorterlen then
+      longermag, shortermag = shortermag, longermag
+      longerlen, shorterlen = shorterlen, longerlen
+   end
+   
+   mag = {}
+   carry = 0
+   
+   for i = 0, longerlen - 1 do
+      carry, mag[longerlen - i] = splitlong(getintfromend(longermag, i) +
+                                            getintfromend(shorterlen, i) +
+                                            carry)
+   end
+   
+   if carry ~= 0 then
+      -- If the carry amount exceeds the size of both magnitudes, then insert
+      -- the value of the carry in front of everything.
+      table.insert(mag, 1, carry)
+   end
+   
+   return mag
+end
+
+local function subtractmagnitudes(minuend, subtrahend)
+   return addmagnitudes(minuend, subtrahend)
+end
+
+-- Public Math Functions
 local function negate(bigint)
-   return createbiginteger(copyofrange(bigint.magnitude, 1, -1), -bigint.sign)
+   return constructorsignmagnitude(-getsign(bigint), getmagnitude(bigint.magnitude))
 end
 
 local function abs(bigint)
-   return bigint.sign < 0 and negate(bigint) or bigint
+   return getsign(bigint) < 0 and negate(bigint) or bigint
 end
 
 local function add(thisbigint, thatbigint)
@@ -721,6 +784,6 @@ _G.abs = abs
 _G.compare = compare
 _G.equals = equals
 _G.bitwisenot = bitwisenot
-_G.getintfromend = getintfromend
+_G.getintfromendwithsign = getintfromendwithsign
 --]]
 return {biginteger = biginteger}
