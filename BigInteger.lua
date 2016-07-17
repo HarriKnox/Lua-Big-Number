@@ -33,6 +33,8 @@ random = random or math.random
 maxinteger = math.maxinteger or 0x7ffffffffffff
 --local
 maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
+--local
+negativemask = 0x80000000
 
 --local
 stringsub = string.sub
@@ -225,7 +227,7 @@ function getmagnitude(thing)
    elseif isvalidinteger(thing) then
       return splitlongandstripleadingzeros(thing < 0 and -thing or thing)
    end
-   error("Cannot construct magnitude")
+   error("Cannot obtain magnitude")
 end
 
 --local
@@ -233,11 +235,23 @@ function getsign(thing)
    if isbiginteger(thing) then
       return thing.sign
    elseif isvalidbytearray(thing) then
-      return thing[1] and (thing[1] < 0 and -1 or 1) or 0
+      return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0
    elseif isvalidinteger(thing) then
       return (thing < 0 and -1) or (thing > 0 and 1) or 0
    end
    error("Cannot obtain sign")
+end
+
+--local
+function getsignandmagnitude(thing)
+   if isbiginteger(thing) then
+      return thing.sign, thing.magnitude
+   elseif isvalidbytearray(thing)
+      return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0, thing
+   elseif isvalidinteger(thing) then
+      return (thing < 0 and -1) or (thing > 0 and 1) or 0, splitlongandstripleadingzeros(thing < 0 and -thing or thing)
+   end
+   error("Cannot obtain sign and magnitude")
 end
 
 --local
@@ -535,7 +549,7 @@ function constructormagnitude(val)
       error("Invalid byte array", 3)
    end
    
-   if val[1] < 0 or val[1] >= 0x80000000 then
+   if val[1] >= negativemask then
       -- number >= 0x80000000 would be negative as a Java int
       mag = makepositive(val)
       signum = -1
@@ -723,22 +737,29 @@ function compare(thisbigint, thatbigint)
       return 0
    end
    
-   thissign = getsign(thisbigint)
-   thatsign = getsign(thatbigint)
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform comparison on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
+   thissign, thismag = getsignandmagnitude(thisbigint)
+   thatsign, thatmag = getsignandmagnitude(thatbigint)
    
    if thissign ~= thatsign then
       -- If the signs differ, then they cannot be equal
       return thissign > thatsign and 1 or -1
    end
    
-   thismag = getmagnitude(thisbigint)
-   thatmag = getmagnitude(thatbigint)
-   
    return comparemagnitudes(thismag, thatmag)
 end
 
 --local
 function equals(thisbigint, thatbigint)
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform equals on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
    return compare(thisbigint, thatbigint) == 0
 end
 
@@ -746,11 +767,20 @@ end
 -- Bitwise functions
 --local
 function bitwisenot(bigint)
+   if not isoperablenumber(bigint) then
+      error("Number is not operable", 2)
+   end
+   
    return constructormagnitude(mapmagnitude(bigint, bitnot))
 end
 
 --local
 function bitwiseand(thisbigint, thatbigint)
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform equals on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitand))
@@ -758,6 +788,11 @@ end
 
 --local
 function bitwiseandnot(thisbigint, thatbigint)
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform equals on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitandnot))
@@ -765,6 +800,11 @@ end
 
 --local
 function bitwiseor(thisbigint, thatbigint)
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform equals on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitor))
@@ -772,6 +812,11 @@ end
 
 --local
 function bitwisexor(thisbigint, thatbigint)
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform equals on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitxor))
@@ -849,17 +894,14 @@ function add(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   thissign = getsign(thisbigint)
-   thatsign = getsign(thatbigint)
+   thissign, thismag = getsignandmagnitude(thisbigint)
+   thatsign, thatmag = getsignandmagnitude(thatbigint)
    
    if thissign == 0 then   
       return thatbigint
    elseif thatsign == 0 then
       return thisbigint
    end
-   
-   thismag = getmagnitude(thisbigint)
-   thatmag = getmagnitude(thatbigint)
    
    if thissign == thatsign then
       signum = thissign
