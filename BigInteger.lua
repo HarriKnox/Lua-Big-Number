@@ -1,5 +1,5 @@
-_G.bi = {} -- Sandbox for testing purposes. That's why all the `local`s are
-setmetatable(_G.bi, {__index = _G}) -- commented out.
+_G.bi = {} -- Sandbox for testing purposes. That's why all the 'local's are commented out.
+setmetatable(_G.bi, {__index = _G})
 _ENV = _G.bi
 
 -- Local fields/constants
@@ -89,22 +89,31 @@ end
 
 --local
 function isvalidsign(sig)
-   return sig == -1 or sig == 0 or sig == 1
+   return sig == -1 or
+          sig == 0 or
+          sig == 1
 end
 
 --local
 function isbiginteger(bigint)
-   return type(bigint) == 'table' and isvalidbytearray(bigint.magnitude) and isvalidsign(bigint.sign)
+   return type(bigint) == 'table' and
+          isvalidbytearray(bigint.magnitude) and
+          isvalidsign(bigint.sign)
 end
 
 --local
 function isvalidinteger(int)
-   return type(int) == 'number' and int <= maxinteger and int >= -maxinteger and int % 1 == 0
+   return type(int) == 'number' and
+          int <= maxinteger and
+          int >= -maxinteger and
+          int % 1 == 0
 end
 
 --local
 function isoperablenumber(thing)
-   return isbiginteger(thing) or isvalidinteger(thing) or isvalidbytearray(thing)
+   return isbiginteger(thing) or
+          isvalidinteger(thing) or
+          isvalidbytearray(thing)
 end
 
 --local
@@ -117,7 +126,10 @@ end
 
 --local
 function isvalidradix(radix)
-   return isvalidinteger(radix) and radix >= 2 and radix <= 36 and radix % 1 == 0
+   return isvalidinteger(radix) and
+          radix >= 2 and
+          radix <= 36 and
+          radix % 1 == 0
 end
 
 --local
@@ -809,7 +821,7 @@ function negate(bigint)
 end
 
 --local
-function abs(bigint)
+function absolutevalue(bigint)
    if not isbiginteger(bigint) then
       error("number is not biginteger", 2)
    end
@@ -870,16 +882,5 @@ if _CC_VERSION then
    _ENV.biginteger = biginteger
    return
 end
-
---[[ Uncomment for testing
-_G.bi = biginteger
-_G.cp = copyofrange
-_G.negate = negate
-_G.abs = abs
-_G.compare = compare
-_G.equals = equals
-_G.bitwisenot = bitwisenot
-_G.getintfromendwithsign = getintfromendwithsign
---]]
 
 return {biginteger = biginteger}
