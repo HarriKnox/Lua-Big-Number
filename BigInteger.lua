@@ -13,8 +13,8 @@ local max = max or math.max
 local min = min or math.min
 local random = random or math.random
 
-local maxinteger = math.maxinteger or (2 ^ 53 - 1)
-local maxmagnitudelength = 67108864 -- Integer.maxvalue / Integer.size = 2 ^ 26
+local maxinteger = math.maxinteger or 0x7ffffffffffff
+local maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
 
 local stringsub = string.sub
 local stringmatch = string.match
@@ -55,21 +55,21 @@ local function isbiginteger(bigint)
    return type(bigint) == 'table' and bigint.magnitude and bigint.sign
 end
 
-local function isinteger(int)
-   return type(int) == 'number' and int < maxint and int % 1 == 0
+local function isvalidinteger(int)
+   return type(int) == 'number' and int <= maxinteger and int % 1 == 0
 end
 
 local function issmallinteger(smallint)
-   return isinteger(smallint) and smallint < 0x100000000
+   return isvalidinteger(smallint) and smallint < 0x100000000
 end
 
 local function islonginteger(longint)
-   return isinteger(longint) and longint >= 0x100000000
+   return isvalidinteger(longint) and longint >= 0x100000000
 end
 
 local function isvalidbytearray(val)
    for i = 1, #val do
-      if not isinteger(val[i]) then
+      if not isvalidinteger(val[i]) then
          return false
       end
    end
@@ -77,7 +77,7 @@ local function isvalidbytearray(val)
 end
 
 local function isvalidradix(radix)
-   return radix >= 2 and radix <= 36 and radix % 1 == 0
+   return isvalidinteger(radix) and radix >= 2 and radix <= 36 and radix % 1 == 0
 end
 
 local function isvalidstringnumber(str)
@@ -109,7 +109,7 @@ end
 
 -- Helper Integer and Long Functions
 local function splitlong(number)
-   return long32bitrightshift(number), make32biginteger(number)
+   return long32bitrightshift(number), make32bitinteger(number)
 end
 
 local function integermultiplyandaddtolong(x, ab, c)
@@ -152,7 +152,7 @@ local function getsign(thing)
       return thing.sign
    elseif isvalidbytearray(thing) then
       return thing[1] and (thing[1] < 0 and -1 or 1) or 0
-   elseif isinteger(thing) then
+   elseif isvalidinteger(thing) then
       return thing < 0 and -1 or thing > 0 and 1 or 0
    end
    error("Cannot obtain sign")
@@ -301,7 +301,7 @@ local function destructivemultiplyandadd(mag, factor, addend)
    carry = addend
    index = maglength
    while index > 0 do
-      carry, mag[index] = mag[index] + carry
+      carry, mag[index] = splitlong(mag[index] + carry)
       index = index - 1
    end
 end
@@ -356,24 +356,20 @@ end
 
 -- Constructors
 local function createbiginteger(val, sig)
-   if sign ~= -1 and sign ~= 0 and sign ~= 1 then
+   if sig ~= -1 and sig ~= 0 and sig ~= 1 then
       error("sign not in {-1, 0, 1}")
-   elseif sign == 0 and #val ~= 0 then
+   elseif sig == 0 and #val ~= 0 then
       error("sign-magnitude mismatch")
    end
    return {magnitude = val, sign = sig}
-end
-
-local function clone(bigint)
-   return createbiginteger(copyofrange(bigint.magnitude, 1, -1), bigint.sign)
 end
 
 local function constructornumber(num)
    local signum
    local higherword
    
-   if not isinteger(num) then
-      error("Number not an integer", 3)
+   if not isvalidinteger(num) then
+      error("Number not a valid integer", 3)
    end
    
    if num < 0 then
@@ -465,8 +461,7 @@ local function constructormagnitude(val)
 end
 
 local function constructorstringradix(str, radix)
-   local mag, signum
-   
+   local mag
    local strlength = #str
    local sign, cursor, strsign, numberofdigits, digitsperintegerradix
    local numberofbits, numberofwords, tempmagnitude
@@ -494,7 +489,6 @@ local function constructorstringradix(str, radix)
    end
    -- Back to Java-faithful code
    numberofdigits = strlength - cursor + 1
-   signum = sign
    
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
@@ -542,7 +536,11 @@ local function constructorstringradix(str, radix)
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
-   return createbiginteger(mag, signum)
+   return createbiginteger(mag, sign)
+end
+
+local function clone(bigint)
+   return constructorsignmangitude(bigint.sign, bigint.magnitude)
 end
 
 -- Main Constructor
@@ -686,7 +684,7 @@ local function addmagnitudes(thismag, thatmag)
    local carry
    
    longermag = thismag
-   shorterlen = thatmag
+   shortermag = thatmag
    
    longerlen = #longermag
    shorterlen = #shortermag
@@ -701,7 +699,7 @@ local function addmagnitudes(thismag, thatmag)
    
    for i = 0, longerlen - 1 do
       carry, mag[longerlen - i] = splitlong(getintfromend(longermag, i) +
-                                            getintfromend(shorterlen, i) +
+                                            getintfromend(shortermag, i) +
                                             carry)
    end
    
@@ -786,4 +784,5 @@ _G.equals = equals
 _G.bitwisenot = bitwisenot
 _G.getintfromendwithsign = getintfromendwithsign
 --]]
+
 return {biginteger = biginteger}
