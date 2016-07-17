@@ -246,7 +246,7 @@ end
 function getsignandmagnitude(thing)
    if isbiginteger(thing) then
       return thing.sign, thing.magnitude
-   elseif isvalidbytearray(thing)
+   elseif isvalidbytearray(thing) then
       return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0, thing
    elseif isvalidinteger(thing) then
       return (thing < 0 and -1) or (thing > 0 and 1) or 0, splitlongandstripleadingzeros(thing < 0 and -thing or thing)
