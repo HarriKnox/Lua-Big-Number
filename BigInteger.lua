@@ -98,6 +98,19 @@ function isvalidbytearray(val)
 end
 
 --local
+function isoperablenumber(thing)
+   return isbiginteger(thing) or isvalidinteger(thing) or isvalidbytearray(thing)
+end
+
+--local
+function gettype(thing)
+   return (isbiginteger(thing) and 'biginteger') or
+          (isvalidbytearray(thing) and 'byte-array') or
+          (isvalidinteger(thing) and 'integer') or
+          type(thing)
+end
+
+--local
 function isvalidradix(radix)
    return isvalidinteger(radix) and radix >= 2 and radix <= 36 and radix % 1 == 0
 end
@@ -196,7 +209,7 @@ function getsign(thing)
    elseif isvalidbytearray(thing) then
       return thing[1] and (thing[1] < 0 and -1 or 1) or 0
    elseif isvalidinteger(thing) then
-      return thing < 0 and -1 or thing > 0 and 1 or 0
+      return (thing < 0 and -1) or (thing > 0 and 1) or 0
    end
    error("Cannot obtain sign")
 end
@@ -249,6 +262,7 @@ function getintfromendwithsign(bigint, disp)
       if magint == 0 then
          return 0
       end
+      -- 2's compliment of magint since the return value must be non-negative
       return bitnot(magint) + 1
    end
    return bitnot(magint)
@@ -402,9 +416,9 @@ end
 --local
 function createbiginteger(val, sig)
    if sig ~= -1 and sig ~= 0 and sig ~= 1 then
-      error("sign not in {-1, 0, 1}")
+      error("sign not in {-1, 0, 1}", 4)
    elseif sig == 0 and #val ~= 0 then
-      error("sign-magnitude mismatch")
+      error("sign-magnitude mismatch", 4)
    end
    return {magnitude = val, sign = sig}
 end
@@ -658,12 +672,14 @@ end
 
 --local
 function comparemagnitudes(thismag, thatmag)
-   if #thismag ~= #thatmag then
+   local thislen = #thismag
+   local thatlen = #thatmag
+   if thislen ~= thatlen then
       -- If the magnitudes are different sizes, then they cannot be equal
-      return #thismag > #thatmag and 1 or -1
+      return thislen > thatlen and 1 or -1
    end
    
-   for i = 1, #thismag do
+   for i = 1, thislen do
       if thismag[i] ~= thatmag[i] then
          return thismag[i] > thatmag[i] and 1 or -1
       end
@@ -781,12 +797,18 @@ end
 -- Public Math Functions
 --local
 function negate(bigint)
-   return constructorsignmagnitude(-getsign(bigint), getmagnitude(bigint.magnitude))
+   if not isbiginteger(bigint) then
+      error("number is not biginteger", 2)
+   end
+   return constructorsignmagnitude(-bigint.sign, bigint.magnitude)
 end
 
 --local
 function abs(bigint)
-   return getsign(bigint) < 0 and negate(bigint) or bigint
+   if not isbiginteger(bigint) then
+      error("number is not biginteger", 2)
+   end
+   return bigint.sign < 0 and negate(bigint) or bigint
 end
 
 --local
@@ -795,6 +817,11 @@ function add(thisbigint, thatbigint)
    local thismag, thatmag
    local thissign, thatsign
    local comparison
+   
+   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+      error("Attempt to perform addition on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
    
    thissign = getsign(thisbigint)
    thatsign = getsign(thatbigint)
