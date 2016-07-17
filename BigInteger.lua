@@ -219,6 +219,16 @@ end
 
 -- Private Getter functions
 --local
+function getbytearraysign(thing)
+   return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0
+end
+
+--local
+function getnumbersign(thing)
+   return (thing < 0 and -1) or (thing > 0 and 1) or 0
+end
+
+--local
 function getmagnitude(thing)
    if isbiginteger(thing) then
       return thing.magnitude
@@ -235,9 +245,9 @@ function getsign(thing)
    if isbiginteger(thing) then
       return thing.sign
    elseif isvalidbytearray(thing) then
-      return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0
+      return getbytearraysign(bytearray)
    elseif isvalidinteger(thing) then
-      return (thing < 0 and -1) or (thing > 0 and 1) or 0
+      return getnumbersign(thing)
    end
    error("Cannot obtain sign")
 end
@@ -247,9 +257,10 @@ function getsignandmagnitude(thing)
    if isbiginteger(thing) then
       return thing.sign, thing.magnitude
    elseif isvalidbytearray(thing) then
-      return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0, thing
+      return getbytearraysign(thing), thing
    elseif isvalidinteger(thing) then
-      return (thing < 0 and -1) or (thing > 0 and 1) or 0, splitlongandstripleadingzeros(thing < 0 and -thing or thing)
+      return getnumbersign(thing),
+             splitlongandstripleadingzeros(thing < 0 and -thing or thing)
    end
    error("Cannot obtain sign and magnitude")
 end
@@ -549,8 +560,7 @@ function constructormagnitude(val)
       error("Invalid byte array", 3)
    end
    
-   if val[1] >= negativemask then
-      -- number >= 0x80000000 would be negative as a Java int
+   if getbytearraysign(val) < 0 then
       mag = makepositive(val)
       signum = -1
    else
