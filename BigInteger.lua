@@ -81,21 +81,14 @@ end
 
 --local
 function isvalidinteger(int)
-   return type(int) == 'number' and int <= maxinteger and int % 1 == 0
-end
-
---local
-function issmallinteger(smallint)
-   return isvalidinteger(smallint) and smallint < 0x100000000
-end
-
---local
-function islonginteger(longint)
-   return isvalidinteger(longint) and longint >= 0x100000000
+   return type(int) == 'number' and int <= maxinteger and int >= -maxinteger and int % 1 == 0
 end
 
 --local
 function isvalidbytearray(val)
+   if type(val) ~= 'table' then
+      return false
+   end
    for i = 1, #val do
       if not isvalidinteger(val[i]) then
          return false
@@ -149,6 +142,19 @@ function splitlong(number)
 end
 
 --local
+function splitlongandstripleadingzeros(number)
+   local highword, lowword = splitlong(number)
+   
+   if highword == 0 then
+      if lowword == 0 then
+         return {}
+      end
+      return {lowword}
+   end
+   return {highword, lowword}
+end
+
+--local
 function integermultiplyandaddtolong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
@@ -177,10 +183,8 @@ function getmagnitude(thing)
       return thing.magnitude
    elseif isvalidbytearray(thing) then
       return thing
-   elseif issmallinteger(thing) then
-      return {thing}
-   elseif islonginteger(thing) then
-      return {splitlong(thing)}
+   elseif isvalidinteger(thing) then
+      return splitlongandstripleadingzeros(thing)
    end
    error("Cannot construct magnitude")
 end
@@ -222,15 +226,6 @@ function getintfromendwithsign(bigint, disp)
    -- Get the 32 bit integer segment that is disp from the end,
    -- disp = 0 will return the last segment
    local magint, signint, bimag, bilen
-   
-   -- No error checks should be needed since this will be private, but here in case
-   if not isbiginteger(bigint) then
-      error("Not a biginteger", 3)
-   end
-   
-   if not issmallinteger(disp) then
-      error("Displacement not an integer", 3)
-   end
    
    bimag = bigint.magnitude
    bilen = #bimag
