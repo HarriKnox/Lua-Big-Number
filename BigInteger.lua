@@ -214,7 +214,7 @@ function getmagnitude(thing)
    elseif isvalidbytearray(thing) then
       return thing
    elseif isvalidinteger(thing) then
-      return splitlongandstripleadingzeros(thing)
+      return splitlongandstripleadingzeros(thing < 0 and -thing or thing)
    end
    error("Cannot construct magnitude")
 end
