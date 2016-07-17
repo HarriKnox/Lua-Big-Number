@@ -1,27 +1,48 @@
+_G.bi = {} -- Sandbox for testing purposes. That's why all the `local`s are
+setmetatable(_G.bi, {__index = _G}) -- commented out.
+_ENV = _G.bi
+
 -- Local fields/constants
-local bitand = (bit32 or bit).band
-local bitor = (bit32 or bit).bor
-local bitnot = (bit32 or bit).bnot
-local bitxor = (bit32 or bit).bxor
-local bitleftshift = (bit32 and bit32.lshift) or (bit and bit.blshift)
-local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogit_rshift)
-local bitarithmaticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
-local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
+--local
+bitand = (bit32 or bit).band
+--local
+bitor = (bit32 or bit).bor
+--local
+bitnot = (bit32 or bit).bnot
+--local
+bitxor = (bit32 or bit).bxor
+--local
+bitleftshift = (bit32 and bit32.lshift) or (bit and bit.blshift)
+--local
+bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogit_rshift)
+--local
+bitarithmaticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
+--local
+bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
-local floor = floor or math.floor
-local max = max or math.max
-local min = min or math.min
-local random = random or math.random
+--local
+floor = floor or math.floor
+--local
+max = max or math.max
+--local
+min = min or math.min
+--local
+random = random or math.random
 
-local maxinteger = math.maxinteger or 0x7ffffffffffff
-local maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
+--local
+maxinteger = math.maxinteger or 0x7ffffffffffff
+--local
+maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
 
-local stringsub = string.sub
-local stringmatch = string.match
+--local
+stringsub = string.sub
+--local
+stringmatch = string.match
 
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
-local bitsperdigit = {
+--local
+bitsperdigit = {
       0, 1024, 1624, 2048, 2378, 2648,
    2875, 3072, 3247, 3402, 3543, 3672,
    3790, 3899, 4001, 4096, 4186, 4271,
@@ -31,7 +52,8 @@ local bitsperdigit = {
 
 -- The number of digits of a given radix that can fit in a 32 bit integer
 -- without overflowing or going negative, indexed by radix
-local digitsperinteger = {
+--local
+digitsperinteger = {
     0, 30, 19, 15, 13, 11,
    11, 10,  9,  9,  8,  8,
     8,  8,  7,  7,  7,  7,
@@ -42,7 +64,8 @@ local digitsperinteger = {
 -- Casts each number to "int digits" which contain the number of digits
 -- specified in digitsperinteger
 -- intradix[radix] = radix * digitsperinteger[radix]
-local intradix = {
+--local
+intradix = {
    0x00000000, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
    0x75db9c97, 0x40000000, 0x17179149, 0x3b9aca00, 0x0cc6db61, 0x19a10000,
    0x309f1021, 0x57f6c100, 0x0a2f1b6f, 0x10000000, 0x18754571, 0x247dbc80,
@@ -51,23 +74,28 @@ local intradix = {
    0x34e63b41, 0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x039aa400}
 
 -- Testing functions
-local function isbiginteger(bigint)
+--local
+function isbiginteger(bigint)
    return type(bigint) == 'table' and bigint.magnitude and bigint.sign
 end
 
-local function isvalidinteger(int)
+--local
+function isvalidinteger(int)
    return type(int) == 'number' and int <= maxinteger and int % 1 == 0
 end
 
-local function issmallinteger(smallint)
+--local
+function issmallinteger(smallint)
    return isvalidinteger(smallint) and smallint < 0x100000000
 end
 
-local function islonginteger(longint)
+--local
+function islonginteger(longint)
    return isvalidinteger(longint) and longint >= 0x100000000
 end
 
-local function isvalidbytearray(val)
+--local
+function isvalidbytearray(val)
    for i = 1, #val do
       if not isvalidinteger(val[i]) then
          return false
@@ -76,43 +104,52 @@ local function isvalidbytearray(val)
    return true
 end
 
-local function isvalidradix(radix)
+--local
+function isvalidradix(radix)
    return isvalidinteger(radix) and radix >= 2 and radix <= 36 and radix % 1 == 0
 end
 
-local function isvalidstringnumber(str)
+--local
+function isvalidstringnumber(str)
    return not not stringmatch(str, '^[%-+]?[0-9A-Za-z]+$')
 end
 
 
 -- Helper Bitwise Functions
-local function make32bitinteger(number)
+--local
+function make32bitinteger(number)
    return bitand(number, 0xffffffff)
 end
 
-local function long32bitrightshift(number)
+--local
+function long32bitrightshift(number)
    return floor(number / 0x100000000)
 end
 
-local function long16bitrightshift(number)
+--local
+function long16bitrightshift(number)
    return floor(number / 0x10000)
 end
 
-local function long32bitleftshift(number)
+--local
+function long32bitleftshift(number)
    return number * 0x100000000
 end
 
-local function long16bitleftshift(number)
+--local
+function long16bitleftshift(number)
    return number * 0x10000
 end
 
 
 -- Helper Integer and Long Functions
-local function splitlong(number)
+--local
+function splitlong(number)
    return long32bitrightshift(number), make32bitinteger(number)
 end
 
-local function integermultiplyandaddtolong(x, ab, c)
+--local
+function integermultiplyandaddtolong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
@@ -134,7 +171,8 @@ end
 
 
 -- Private Getter functions
-local function getmagnitude(thing)
+--local
+function getmagnitude(thing)
    if isbiginteger(thing) then
       return thing.magnitude
    elseif isvalidbytearray(thing) then
@@ -147,7 +185,8 @@ local function getmagnitude(thing)
    error("Cannot construct magnitude")
 end
 
-local function getsign(thing)
+--local
+function getsign(thing)
    if isbiginteger(thing) then
       return thing.sign
    elseif isvalidbytearray(thing) then
@@ -158,7 +197,8 @@ local function getsign(thing)
    error("Cannot obtain sign")
 end
 
-local function getfirstnonzerointfromend(mag)
+--local
+function getfirstnonzerointfromend(mag)
    local maglen = #mag
    for i = 0, maglen - 1 do
       if mag[maglen - i] ~= 0 then
@@ -167,7 +207,8 @@ local function getfirstnonzerointfromend(mag)
    end
 end
 
-local function getintfromend(mag, disp)
+--local
+function getintfromend(mag, disp)
    local maglen = #mag
    
    if disp < 0 or disp >= maglen then
@@ -176,7 +217,8 @@ local function getintfromend(mag, disp)
    return mag[maglen - disp]
 end
 
-local function getintfromendwithsign(bigint, disp)
+--local
+function getintfromendwithsign(bigint, disp)
    -- Get the 32 bit integer segment that is disp from the end,
    -- disp = 0 will return the last segment
    local magint, signint, bimag, bilen
@@ -219,7 +261,8 @@ end
 
 
 -- Byte Array Functions
-local function copyofrange(val, start, fin)
+--local
+function copyofrange(val, start, fin)
    local copy = {}
    local vallength = #val
    
@@ -238,7 +281,8 @@ local function copyofrange(val, start, fin)
    return copy
 end
 
-local function stripleadingzeros(val)
+--local
+function stripleadingzeros(val)
    local vallength = #val
    local keep = 1
    
@@ -249,7 +293,8 @@ local function stripleadingzeros(val)
    return copyofrange(val, keep, vallength)
 end
 
-local function makepositive(val)
+--local
+function makepositive(val)
    local vallength = #val
    local keep
    local index
@@ -287,7 +332,8 @@ local function makepositive(val)
    return result
 end
 
-local function destructivemultiplyandadd(mag, factor, addend)
+--local
+function destructivemultiplyandadd(mag, factor, addend)
    local maglength = #mag
    local product = 0
    local carry = 0
@@ -306,7 +352,8 @@ local function destructivemultiplyandadd(mag, factor, addend)
    end
 end
 
-local function mapmagnitude(bigint, mapfunction)
+--local
+function mapmagnitude(bigint, mapfunction)
    local mag
    local bimag
    
@@ -319,7 +366,8 @@ local function mapmagnitude(bigint, mapfunction)
    return mag
 end
 
-local function mergemagnitudes(thisbigint, thatbigint, mergefunction)
+--local
+function mergemagnitudes(thisbigint, thatbigint, mergefunction)
    local mag, thismag, thatmag
    local thislen, thatlen, longerlen
    
@@ -338,7 +386,8 @@ end
 
 
 -- Other Helper Functions
-local function getcharvalue(character)
+--local
+function getcharvalue(character)
    local bytevalue = string.byte(character)
    
    if bytevalue >= 48 and bytevalue <= 57 then
@@ -355,7 +404,8 @@ end
 
 
 -- Constructors
-local function createbiginteger(val, sig)
+--local
+function createbiginteger(val, sig)
    if sig ~= -1 and sig ~= 0 and sig ~= 1 then
       error("sign not in {-1, 0, 1}")
    elseif sig == 0 and #val ~= 0 then
@@ -364,7 +414,8 @@ local function createbiginteger(val, sig)
    return {magnitude = val, sign = sig}
 end
 
-local function constructornumber(num)
+--local
+function constructornumber(num)
    local signum
    local higherword
    
@@ -384,7 +435,8 @@ local function constructornumber(num)
    return createbiginteger(stripleadingzeros({higherword, lowerword}), signum)
 end
 
-local function constructorsignmagnitude(sig, val)
+--local
+function constructorsignmagnitude(sig, val)
    local mag, signum
    if sig < -1 or sig > 1 or sig % 1 ~= 0 then
       error("Invalid sign value", 3)
@@ -411,7 +463,8 @@ local function constructorsignmagnitude(sig, val)
    return createbiginteger(mag, signum)
 end
 
-local function constructorbitsrng(bitlength, randomnumbergenerator)
+--local
+function constructorbitsrng(bitlength, randomnumbergenerator)
    local tempmagnitude = {}
    local numberofwords, excessbytes
    
@@ -437,7 +490,8 @@ local function constructorbitsrng(bitlength, randomnumbergenerator)
    return createbiginteger(stripleadingzeros(tempmagnitude), 1)
 end
 
-local function constructormagnitude(val)
+--local
+function constructormagnitude(val)
    local mag, signum
    if #val == 0 then
       error("Zero length BigInteger", 3)
@@ -460,7 +514,8 @@ local function constructormagnitude(val)
    return createbiginteger(mag, signum)
 end
 
-local function constructorstringradix(str, radix)
+--local
+function constructorstringradix(str, radix)
    local mag
    local strlength = #str
    local sign, cursor, strsign, numberofdigits, digitsperintegerradix
@@ -539,13 +594,15 @@ local function constructorstringradix(str, radix)
    return createbiginteger(mag, sign)
 end
 
-local function clone(bigint)
+--local
+function clone(bigint)
    return constructorsignmangitude(bigint.sign, bigint.magnitude)
 end
 
 -- Main Constructor
 -- will interpret passed arguments to call appropriate constructor
-local function biginteger(a, b)
+--local
+function biginteger(a, b)
    local typea = type(a)
    local typeb = type(b)
    
@@ -604,7 +661,8 @@ end
 end
 --]]
 
-local function comparemagnitudes(thismag, thatmag)
+--local
+function comparemagnitudes(thismag, thatmag)
    if #thismag ~= #thatmag then
       -- If the magnitudes are different sizes, then they cannot be equal
       return #thismag > #thatmag and 1 or -1
@@ -619,7 +677,8 @@ local function comparemagnitudes(thismag, thatmag)
    return 0
 end
 
-local function compare(thisbigint, thatbigint)
+--local
+function compare(thisbigint, thatbigint)
    local thismag, thatmag
    local thissign, thatsign
    
@@ -641,35 +700,41 @@ local function compare(thisbigint, thatbigint)
    return comparemagnitudes(thismag, thatmag)
 end
 
-local function equals(thisbigint, thatbigint)
+--local
+function equals(thisbigint, thatbigint)
    return compare(thisbigint, thatbigint) == 0
 end
 
 
 -- Bitwise functions
-local function bitwisenot(bigint)
+--local
+function bitwisenot(bigint)
    return constructormagnitude(mapmagnitude(bigint, bitnot))
 end
 
-local function bitwiseand(thisbigint, thatbigint)
+--local
+function bitwiseand(thisbigint, thatbigint)
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitand))
 end
 
-local function bitwiseandnot(thisbigint, thatbigint)
+--local
+function bitwiseandnot(thisbigint, thatbigint)
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitandnot))
 end
 
-local function bitwiseor(thisbigint, thatbigint)
+--local
+function bitwiseor(thisbigint, thatbigint)
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitor))
 end
 
-local function bitwisexor(thisbigint, thatbigint)
+--local
+function bitwisexor(thisbigint, thatbigint)
    return constructormagnitude(mergemagnitudes(thisbigint,
                                                thatbigint,
                                                bitxor))
@@ -677,7 +742,8 @@ end
 
 
 -- Private Magnitude Functions
-local function addmagnitudes(thismag, thatmag)
+--local
+function addmagnitudes(thismag, thatmag)
    local mag
    local longermag, shortermag
    local longerlen, shorterlen
@@ -712,20 +778,24 @@ local function addmagnitudes(thismag, thatmag)
    return mag
 end
 
-local function subtractmagnitudes(minuend, subtrahend)
+--local
+function subtractmagnitudes(minuend, subtrahend)
    return addmagnitudes(minuend, subtrahend)
 end
 
 -- Public Math Functions
-local function negate(bigint)
+--local
+function negate(bigint)
    return constructorsignmagnitude(-getsign(bigint), getmagnitude(bigint.magnitude))
 end
 
-local function abs(bigint)
+--local
+function abs(bigint)
    return getsign(bigint) < 0 and negate(bigint) or bigint
 end
 
-local function add(thisbigint, thatbigint)
+--local
+function add(thisbigint, thatbigint)
    local mag, signum
    local thismag, thatmag
    local thissign, thatsign
