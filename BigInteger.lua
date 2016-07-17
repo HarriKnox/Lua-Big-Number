@@ -75,16 +75,6 @@ intradix = {
 
 -- Testing functions
 --local
-function isbiginteger(bigint)
-   return type(bigint) == 'table' and bigint.magnitude and bigint.sign
-end
-
---local
-function isvalidinteger(int)
-   return type(int) == 'number' and int <= maxinteger and int >= -maxinteger and int % 1 == 0
-end
-
---local
 function isvalidbytearray(val)
    if type(val) ~= 'table' then
       return false
@@ -95,6 +85,21 @@ function isvalidbytearray(val)
       end
    end
    return true
+end
+
+--local
+function isvalidsign(sig)
+   return sig == -1 or sig == 0 or sig == 1
+end
+
+--local
+function isbiginteger(bigint)
+   return type(bigint) == 'table' and isvalidbytearray(bigint.magnitude) and isvalidsign(bigint.sign)
+end
+
+--local
+function isvalidinteger(int)
+   return type(int) == 'number' and int <= maxinteger and int >= -maxinteger and int % 1 == 0
 end
 
 --local
@@ -447,7 +452,7 @@ end
 --local
 function constructorsignmagnitude(sig, val)
    local mag, signum
-   if sig < -1 or sig > 1 or sig % 1 ~= 0 then
+   if not isvalidsign(sig) then
       error("Invalid sign value", 3)
    end
    
