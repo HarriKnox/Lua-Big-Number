@@ -75,6 +75,14 @@ intradix = {
 
 -- Testing functions
 --local
+function isvalidinteger(int)
+   return type(int) == 'number' and
+          int <= maxinteger and
+          int >= -maxinteger and
+          int % 1 == 0
+end
+
+--local
 function isvalidbytearray(val)
    if type(val) ~= 'table' then
       return false
@@ -99,14 +107,6 @@ function isbiginteger(bigint)
    return type(bigint) == 'table' and
           isvalidbytearray(bigint.magnitude) and
           isvalidsign(bigint.sign)
-end
-
---local
-function isvalidinteger(int)
-   return type(int) == 'number' and
-          int <= maxinteger and
-          int >= -maxinteger and
-          int % 1 == 0
 end
 
 --local
