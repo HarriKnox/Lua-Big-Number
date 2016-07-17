@@ -73,6 +73,7 @@ intradix = {
    0x0e8d4a51, 0x1269ae40, 0x17179149, 0x1cb91000, 0x23744899, 0x2b73a840,
    0x34e63b41, 0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x039aa400}
 
+
 -- Testing functions
 --local
 function isvalidinteger(int)
@@ -83,12 +84,20 @@ function isvalidinteger(int)
 end
 
 --local
+function is32bitinteger(int)
+   return type(int) == 'number' and
+          int <= 0xffffffff and
+          int >= 0 and
+          int % 1 == 0
+   end
+
+--local
 function isvalidbytearray(val)
    if type(val) ~= 'table' then
       return false
    end
    for i = 1, #val do
-      if not isvalidinteger(val[i]) then
+      if not is32bitinteger(val[i]) then
          return false
       end
    end
