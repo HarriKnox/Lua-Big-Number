@@ -2,6 +2,30 @@ local bi = {} -- Sandbox for testing purposes. That's why all the 'local's are c
 setmetatable(bi, {__index = _G})
 _ENV = bi
 
+--[[
+Since I would inevitably need to write this, I'll just write it now to get it
+taken care of right away. Here are some definitions:
+   1) valid 32 bit integer: a value of type 'number' that is non-negative, less
+      than 2 ^ 32, and an integer (no decimal)
+   2) byte-array: a table of numbers that follow these rules
+      a) all numbers are valid 32 bit integers
+      b) the array is one-indexed (indices start at 1 not 0)
+      c) a zero-length array is logically equivalent to 0 (zero)
+      d) if the first element is negative (in two's-compliment form) then the
+         byte-array is considered negative (leading zeros will prevent the first
+         non-zero element from being interpreted as negative)
+   3) magnitude: inherently unsigned; a type of byte-array with exceptions:
+      a) all numbers are treated as unsigned (ignores negatives in
+         two's-compliment form)
+      b) leading zeros are not allowed, and thus a magnitude of only zeros is
+         not allowed
+   4) sign: Either -1, 0, or 1; determines whether the value is negative, zero,
+      or positive, respectively. A sign of 0 cannot be assigned to a value that
+      is not logically equivalent to 0 (zero)
+   5) biginteger: a table with two values (sign and magnitude) such that every
+      number has a unique combination of sign and magnitude.
+--]] 
+
 -- Local fields/constants
 --local
 bitand = (bit32 or bit).band
@@ -107,6 +131,20 @@ function isvalidbytearray(val)
 end
 
 --local
+function isvalidmagnitude(mag)
+   if notisvalidbytearray(mag) then
+      return false
+   end
+   if #mag == 0 then
+      return true
+   end
+   if mag[1] == 0 then
+      return false
+   end
+   return true
+end
+
+--local
 function isvalidsign(sig)
    return sig == -1 or
           sig == 0 or
@@ -116,7 +154,7 @@ end
 --local
 function isbiginteger(bigint)
    return type(bigint) == 'table' and
-          isvalidbytearray(bigint.magnitude) and
+          isvalidmagnitude(bigint.magnitude) and
           isvalidsign(bigint.sign)
 end
 
@@ -217,6 +255,88 @@ function integermultiplyandaddtolong(x, ab, c)
 end
 
 
+-- Byte Array Functions
+--local
+function copyofrange(val, start, fin)
+   local copy = {}
+   local vallength = #val
+   
+   if start < 0 then
+      -- adjust for negative index (index from end of val)
+      start = vallength + start + 1
+   end
+   if fin < 0 then
+      fin = vallength + fin + 1
+   end
+   
+   for index = start, fin do
+      copy[index - start + 1] = val[index]
+   end
+   
+   return copy
+end
+
+--local
+function stripleadingzeros(val)
+   local vallength = #val
+   local keep = 1
+   
+   while keep <= vallength and val[keep] == 0 do
+      keep = keep + 1
+   end
+   
+   return copyofrange(val, keep, vallength)
+end
+
+--local
+function destructiveaddonetobytearray(bytearray)
+   local addend = 1
+   local index = #bytearray
+   
+   while addend ~= 0 and index > 0 do
+      addend, bytearray[index] = splitlong(bytearray[index] + addend)
+      index = index - 1
+   end
+   
+   if addend ~= 0 then
+      table.insert(bytearray, 1, addend)
+   end
+end
+
+--local
+function negatebytearray(bytearray)
+   local mag = {}
+   local balen = #bytearray
+   
+   for i = 1, balen do
+      mag[i] = bitnot(bytearray[i])
+   end
+   
+   destructiveaddonetobytearray(mag)
+   return stripleadingzeros(mag)
+end
+
+--local
+function destructivemultiplyandadd(mag, factor, addend)
+   local maglength = #mag
+   local product = 0
+   local carry = 0
+   local index = maglength
+   
+   while index > 0 do
+      carry, mag[index] = integermultiplyandaddtolong(factor, mag[index], carry)
+      index = index - 1
+   end
+   
+   carry = addend
+   index = maglength
+   while index > 0 do
+      carry, mag[index] = splitlong(mag[index] + carry)
+      index = index - 1
+   end
+end
+
+
 -- Private Getter functions
 --local
 function getbytearraysign(thing)
@@ -235,6 +355,23 @@ function getbytearraysign(thing)
 end
 
 --local
+function getbytearraymagnitude(thing)
+   if getbytearraysign(thing) == -1 then
+      return negatebytearray(thing)
+   end
+   return stripleadingzeros(thing)
+end
+
+--local
+function getbytearraysignandmagnitude(thing)
+   local sign = getbytearraysign(thing)
+   if sign == -1 then
+      return sign, negatebytearray(thing)
+   end
+   return sign, stripleadingzeros(thing)
+end
+
+--local
 function getnumbersign(thing)
    return (thing < 0 and -1) or (thing > 0 and 1) or 0
 end
@@ -243,8 +380,10 @@ end
 function getmagnitude(thing)
    if isbiginteger(thing) then
       return thing.magnitude
+      
    elseif isvalidbytearray(thing) then
-      return thing
+      return getbytearraymagnitude(thing)
+      
    elseif isvalidinteger(thing) then
       return splitlongandstripleadingzeros(thing < 0 and -thing or thing)
    end
@@ -255,8 +394,10 @@ end
 function getsign(thing)
    if isbiginteger(thing) then
       return thing.sign
+      
    elseif isvalidbytearray(thing) then
-      return getbytearraysign(bytearray)
+      return getbytearraysign(thing)
+      
    elseif isvalidinteger(thing) then
       return getnumbersign(thing)
    end
@@ -267,8 +408,10 @@ end
 function getsignandmagnitude(thing)
    if isbiginteger(thing) then
       return thing.sign, thing.magnitude
+      
    elseif isvalidbytearray(thing) then
-      return getbytearraysign(thing), thing
+      return getbytearraysignandmagnitude(thing)
+      
    elseif isvalidinteger(thing) then
       return getnumbersign(thing),
              splitlongandstripleadingzeros(thing < 0 and -thing or thing)
@@ -302,9 +445,9 @@ function getintfromendwithsign(bigint, disp)
    -- disp = 0 will return the last segment
    local magint, signint, bimag, bilen
    
-   bimag = bigint.magnitude
+   bimag = getmagnitude(bigint)
    bilen = #bimag
-   signint = bigint.sign == -1 and -1 or 0
+   signint = getsign(bigint) == -1 and -1 or 0
    
    if disp >= bilen then
       return signint
@@ -330,99 +473,7 @@ function getintfromendwithsign(bigint, disp)
    return bitnot(magint)
 end
 
-
--- Byte Array Functions
---local
-function copyofrange(val, start, fin)
-   local copy = {}
-   local vallength = #val
-   
-   if start < 0 then
-      -- adjust for negative index (index from end of val)
-      start = vallength + start + 1
-   end
-   if fin < 0 then
-      fin = vallength + fin + 1
-   end
-   
-   for index = start, fin do
-      copy[index - start + 1] = make32bitinteger(val[index])
-   end
-   
-   return copy
-end
-
---local
-function stripleadingzeros(val)
-   local vallength = #val
-   local keep = 1
-   
-   while keep <= vallength and val[keep] == 0 do
-      keep = keep + 1
-   end
-   
-   return copyofrange(val, keep, vallength)
-end
-
---local
-function makepositive(val)
-   local vallength = #val
-   local keep
-   local index
-   local extraint
-   local result
-   local resultlength
-   
-   keep = 1
-   while keep <= vallength and val[keep] == 0xffffffff do
-      keep = keep + 1
-   end
-   
-   index = keep
-   while index <= vallength and val[index] == 0 do
-      index = index + 1
-   end
-   
-   extraint = index == vallength + 1 and 1 or 0
-   resultlength = vallength - keep + extraint
-   result = {}
-   
-   index = keep
-   while index <= vallength do
-      result[index - keep + extraint + 1] = bitnot(val[index])
-      index = index + 1
-   end
-   
-   index = vallength
-   result[index] = result[index] + 1
-   while result[index] == 0 do
-      index = index - 1
-      result[index] = result[index] + 1
-   end
-   
-   return result
-end
-
---local
-function destructivemultiplyandadd(mag, factor, addend)
-   local maglength = #mag
-   local product = 0
-   local carry = 0
-   local index = maglength
-   
-   while index > 0 do
-      carry, mag[index] = integermultiplyandaddtolong(factor, mag[index], carry)
-      index = index - 1
-   end
-   
-   carry = addend
-   index = maglength
-   while index > 0 do
-      carry, mag[index] = splitlong(mag[index] + carry)
-      index = index - 1
-   end
-end
-
+-- Magnitude Mappers
 --local
 function mapmagnitude(bigint, mapfunction)
    local mag
@@ -571,13 +622,8 @@ function constructormagnitude(val)
       error("Invalid byte array", 3)
    end
    
-   signum = getbytearraysign(val)
+   signum, mag = getbytearraysignandmagnitude(val)
    
-   if signum == -1 then
-      mag = makepositive(val)
-   else
-      mag = stripleadingzeros(val)
-   end
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
