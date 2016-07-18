@@ -1,6 +1,6 @@
-_G.bi = {} -- Sandbox for testing purposes. That's why all the 'local's are commented out.
-setmetatable(_G.bi, {__index = _G})
-_ENV = _G.bi
+local bi = {} -- Sandbox for testing purposes. That's why all the 'local's are commented out.
+setmetatable(bi, {__index = _G})
+_ENV = bi
 
 -- Local fields/constants
 --local
@@ -363,7 +363,7 @@ function makepositive(val)
    local resultlength
    
    keep = 1
-   while keep <= vallength and val[keep] == -1 do
+   while keep <= vallength and val[keep] == 0xffffffff do
       keep = keep + 1
    end
    
@@ -467,9 +467,9 @@ end
 --local
 function createbiginteger(val, sig)
    if sig ~= -1 and sig ~= 0 and sig ~= 1 then
-      error("sign not in {-1, 0, 1}", 4)
+      error("Sign not in {-1, 0, 1}", 4)
    elseif sig == 0 and #val ~= 0 then
-      error("sign-magnitude mismatch", 4)
+      error("Sign-magnitude mismatch", 4)
    end
    return {magnitude = val, sign = sig}
 end
@@ -529,14 +529,14 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    local numberofwords, excessbytes
    
    if bitlength < 0 or bitlength % 1 ~= 0 then
-      error("bitlength must be a non-negative integer", 3)
+      error("Bit length must be a non-negative integer", 3)
    end
    
    if type(randomnumbergenerator()) ~= "number" then
       error("RNG function must return a number in the range [0, 1)", 3)
    end
    
-   numberofwords = floor((bitlength + 15) / 16)
+   numberofwords = floor((bitlength + 31) / 32)
    for i = 1, numberofwords do
       -- This weird multiplication-addition is necessary since the default
       -- math.random would not operate on all 32 bits
@@ -544,8 +544,8 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
                                           floor(randomnumbergenerator() * 0x10000))
    end
    
-   excessbytes = 16 * numberofwords - bitlength
-   tempmagnitude[1] = bitand(tempmagnitude[1], 2 ^ (16 - excessbytes) - 1)
+   excessbytes = 32 * numberofwords - bitlength
+   tempmagnitude[1] = bitand(tempmagnitude[1], 2 ^ (32 - excessbytes) - 1)
    
    return createbiginteger(stripleadingzeros(tempmagnitude), 1)
 end
@@ -560,12 +560,12 @@ function constructormagnitude(val)
       error("Invalid byte array", 3)
    end
    
-   if getbytearraysign(val) < 0 then
+   signum = getbytearraysign(val)
+   
+   if signum == -1 then
       mag = makepositive(val)
-      signum = -1
    else
       mag = stripleadingzeros(val)
-      signum = #mag == 0 and 0 or 1
    end
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
@@ -747,7 +747,7 @@ function compare(thisbigint, thatbigint)
       return 0
    end
    
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform comparison on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -765,7 +765,7 @@ end
 
 --local
 function equals(thisbigint, thatbigint)
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -786,7 +786,7 @@ end
 
 --local
 function bitwiseand(thisbigint, thatbigint)
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -798,7 +798,7 @@ end
 
 --local
 function bitwiseandnot(thisbigint, thatbigint)
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -810,7 +810,7 @@ end
 
 --local
 function bitwiseor(thisbigint, thatbigint)
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -822,7 +822,7 @@ end
 
 --local
 function bitwisexor(thisbigint, thatbigint)
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -879,7 +879,7 @@ end
 --local
 function negate(bigint)
    if not isbiginteger(bigint) then
-      error("number is not biginteger", 2)
+      error("Number is not biginteger", 2)
    end
    return constructorsignmagnitude(-bigint.sign, bigint.magnitude)
 end
@@ -887,7 +887,7 @@ end
 --local
 function absolutevalue(bigint)
    if not isbiginteger(bigint) then
-      error("number is not biginteger", 2)
+      error("Number is not biginteger", 2)
    end
    return bigint.sign < 0 and negate(bigint) or bigint
 end
@@ -899,7 +899,7 @@ function add(thisbigint, thatbigint)
    local thissign, thatsign
    local comparison
    
-   if not isoperable(thisbigint) or not isoperable(thatbigint) then
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
       error("Attempt to perform addition on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
@@ -944,4 +944,4 @@ if _CC_VERSION then
    return
 end
 
-return {biginteger = biginteger}
+return bi--{biginteger = biginteger}
