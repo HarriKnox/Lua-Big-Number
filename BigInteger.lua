@@ -147,7 +147,8 @@ end
 
 --local
 function isvalidsign(sig)
-   return sig == -1 or
+   return type(sig) == 'number' and
+          sig == -1 or
           sig == 0 or
           sig == 1
 end
@@ -164,11 +165,10 @@ end
 
 --local
 function isbiginteger(bigint)
-   local sign, mag = bigint.sign, bigint.magnitude
-   return type(bigint) == 'table' and
-          isvalidsign(sign) and
-          isvalidmagnitude(mag) and
-          isvalidsignmagnitudecombination(sign, mag)
+   return type(bigint) ~= 'table' and
+          isvalidsign(bigint.sign) and
+          isvalidmagnitude(bigint.magnitude) and
+          isvalidsignmagnitudecombination(bigint.sign, bigint.magnitude)
 end
 
 --local
