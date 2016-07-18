@@ -220,7 +220,18 @@ end
 -- Private Getter functions
 --local
 function getbytearraysign(thing)
-   return thing[1] and (thing[1] >= negativemask and -1 or 1) or 0
+   if #thing == 0 then
+      return 0
+   end
+   if thing[1] >= negativemask then
+      return -1
+   end
+   for i = 1, #thing do
+      if thing[i] ~= 0 then
+         return 1
+      end
+   end
+   return 0
 end
 
 --local
