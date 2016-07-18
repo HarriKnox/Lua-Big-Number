@@ -22,9 +22,10 @@ taken care of right away. Here are some definitions:
    4) sign: Either -1, 0, or 1; determines whether the value is negative, zero,
       or positive, respectively. A sign of 0 cannot be assigned to a value that
       is not logically equivalent to 0 (zero)
-   5) biginteger: a table with two values (sign and magnitude) such that every
-      number has a unique combination of sign and magnitude.
---]] 
+   5) biginteger: a table with (at minimum) two values (sign and magnitude) such
+      that every integer is logically equivalent to a unique combination of sign
+      and magnitude.
+--]]
 
 -- Local fields/constants
 --local
@@ -132,7 +133,7 @@ end
 
 --local
 function isvalidmagnitude(mag)
-   if notisvalidbytearray(mag) then
+   if not isvalidbytearray(mag) then
       return false
    end
    if #mag == 0 then
@@ -165,8 +166,8 @@ end
 function isbiginteger(bigint)
    local sign, mag = bigint.sign, bigint.magnitude
    return type(bigint) == 'table' and
-          isvalidmagnitude(mag) and
           isvalidsign(sign) and
+          isvalidmagnitude(mag) and
           isvalidsignmagnitudecombination(sign, mag)
 end
 
@@ -399,20 +400,6 @@ function getnumbersignandmagnitude(thing)
 end
 
 --local
-function getmagnitude(thing)
-   if isbiginteger(thing) then
-      return thing.magnitude
-      
-   elseif isvalidbytearray(thing) then
-      return getbytearraymagnitude(thing)
-      
-   elseif isvalidinteger(thing) then
-      return getnumbermagnitude(thing)
-   end
-   error("Cannot obtain magnitude")
-end
-
---local
 function getsign(thing)
    if isbiginteger(thing) then
       return thing.sign
@@ -424,6 +411,20 @@ function getsign(thing)
       return getnumbersign(thing)
    end
    error("Cannot obtain sign")
+end
+
+--local
+function getmagnitude(thing)
+   if isbiginteger(thing) then
+      return thing.magnitude
+      
+   elseif isvalidbytearray(thing) then
+      return getbytearraymagnitude(thing)
+      
+   elseif isvalidinteger(thing) then
+      return getnumbermagnitude(thing)
+   end
+   error("Cannot obtain magnitude")
 end
 
 --local
@@ -1005,7 +1006,7 @@ end
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
       error("BigInteger library compatibility for ComputerCraft requires CC " ..
-         "version 1.75 or later", 2)
+         "version 1.75 or later")
    end
    _ENV.biginteger = biginteger
    return
