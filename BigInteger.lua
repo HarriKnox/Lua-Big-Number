@@ -389,6 +389,16 @@ function getnumbersign(thing)
 end
 
 --local
+function getnumbermagnitude(thing)
+   return splitlongandstripleadingzeros(thing < 0 and -thing or thing)
+end
+
+--local
+function getnumbersignandmagnitude(thing)
+   return getnumbersign(thing), getnumbermagnitude(thing)
+end
+
+--local
 function getmagnitude(thing)
    if isbiginteger(thing) then
       return thing.magnitude
@@ -397,7 +407,7 @@ function getmagnitude(thing)
       return getbytearraymagnitude(thing)
       
    elseif isvalidinteger(thing) then
-      return splitlongandstripleadingzeros(thing < 0 and -thing or thing)
+      return getnumbermagnitude(thing)
    end
    error("Cannot obtain magnitude")
 end
@@ -425,8 +435,7 @@ function getsignandmagnitude(thing)
       return getbytearraysignandmagnitude(thing)
       
    elseif isvalidinteger(thing) then
-      return getnumbersign(thing),
-             splitlongandstripleadingzeros(thing < 0 and -thing or thing)
+      return getnumbersignandmagnitude(thing)
    end
    error("Cannot obtain sign and magnitude")
 end
@@ -539,34 +548,24 @@ end
 
 -- Constructors
 --local
-function createbiginteger(val, sig)
-   if sig ~= -1 and sig ~= 0 and sig ~= 1 then
+function createbiginteger(sign, mag)
+   if not isvalidsign(sign) then
       error("Sign not in {-1, 0, 1}", 4)
-   elseif sig == 0 and #val ~= 0 then
+   elseif not isvalidmagnitude(mag) then
+      error("Magnitude not valid", 4)
+   elseif not isvalidsignmagnitudecombination(sign, mag) then
       error("Sign-magnitude mismatch", 4)
    end
-   return {magnitude = val, sign = sig}
+   return {sign = sign, magnitude = mag}
 end
 
 --local
 function constructornumber(num)
-   local signum
-   local higherword
-   
    if not isvalidinteger(num) then
       error("Number not a valid integer", 3)
    end
    
-   if num < 0 then
-      signum = -1
-      num = -num
-   else
-      signum = num == 0 and 0 or 1
-   end
-   
-   higherword, lowerword = splitlong(num)
-   
-   return createbiginteger(stripleadingzeros({higherword, lowerword}), signum)
+   return createbiginteger(getnumbersignandmagnitude(num))
 end
 
 --local
@@ -581,20 +580,17 @@ function constructorsignmagnitude(sig, val)
    end
    
    mag = stripleadingzeros(val)
+   signum = sig
    
-   if #mag == 0 then
-      signum = 0
-   else
-      if sig == 0 then
-         error("Sign-magnitude mismatch", 3)
-      end
-      signum = sig
+   if not isvalidsignmagnitudecombination(signum, mag) then
+      error("Sign-magnitude mismatch", 3)
    end
+   
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
    
-   return createbiginteger(mag, signum)
+   return createbiginteger(signum, mag)
 end
 
 --local
@@ -621,7 +617,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    excessbytes = 32 * numberofwords - bitlength
    tempmagnitude[1] = bitand(tempmagnitude[1], 2 ^ (32 - excessbytes) - 1)
    
-   return createbiginteger(stripleadingzeros(tempmagnitude), 1)
+   return createbiginteger(1, stripleadingzeros(tempmagnitude))
 end
 
 --local
@@ -639,7 +635,8 @@ function constructormagnitude(val)
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
-   return createbiginteger(mag, signum)
+   
+   return createbiginteger(signum, mag)
 end
 
 --local
@@ -719,7 +716,8 @@ function constructorstringradix(str, radix)
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
-   return createbiginteger(mag, sign)
+   
+   return createbiginteger(sign, mag)
 end
 
 --local
