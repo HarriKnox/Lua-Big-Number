@@ -152,10 +152,22 @@ function isvalidsign(sig)
 end
 
 --local
+function isvalidsignmagnitudecombination(sign, mag)
+   if sign == 0 then
+      -- logically equal to 0 (zero)
+      return #mag == 0
+   end
+   -- logically cannot equal 0 (zero)
+   return #mag ~= 0
+end
+
+--local
 function isbiginteger(bigint)
+   local sign, mag = bigint.sign, bigint.magnitude
    return type(bigint) == 'table' and
-          isvalidmagnitude(bigint.magnitude) and
-          isvalidsign(bigint.sign)
+          isvalidmagnitude(mag) and
+          isvalidsign(sign) and
+          isvalidsignmagnitudecombination(sign, mag)
 end
 
 --local
