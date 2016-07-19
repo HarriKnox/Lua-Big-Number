@@ -1003,7 +1003,7 @@ function add(thisbigint, thatbigint)
    thissign, thismag = getsignandmagnitude(thisbigint)
    thatsign, thatmag = getsignandmagnitude(thatbigint)
    
-   if thissign == 0 then   
+   if thissign == 0 then
       return thatbigint
    elseif thatsign == 0 then
       return thisbigint
@@ -1013,12 +1013,12 @@ function add(thisbigint, thatbigint)
       sign = thissign
       mag = addmagnitudes(thismag, thatmag)
    else
-      comparison = comparemagnitudes(thisbigint, thatbigint)
+      comparison = comparemagnitudes(thismag, thatmag)
       if comparison > 0 then
-         sign = 1
+         sign = thissign
          mag = subtractmagnitudes(thismag, thatmag)
       elseif comparison < 0 then
-         sign = -1
+         sign = thatsign
          mag = subtractmagnitudes(thatmag, thismag)
       else
          sign = 0
@@ -1029,6 +1029,46 @@ function add(thisbigint, thatbigint)
    return constructorsignmagnitude(sign, mag)
 end
 
+--local
+function subtract(thisbigint, thatbigint)
+   local sign, mag
+   local thissign, thatsign
+   local thismag, thatmag
+   local comparison
+   
+   if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
+      error("attempt to perform addition on "
+         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+   end
+   
+   thissign, thismag = getsignandmagnitude(thisbigint)
+   thatsign, thatmag = getsignandmagnitude(thatbigint)
+   
+   if thissign == 0 then
+      return negate(thatbigint)
+   elseif thatsign == 0 then
+      return thisbigint
+   end
+   
+   if thissign ~= thatsign then
+      sign = thissign
+      mag = addmagnitudes(thismag, thatmag)
+   else
+      comparison = comparemagnitudes(thismag, thatmag)
+      if comparison > 0 then
+         sign = thissign
+         mag = subtractmagnitudes(thismag, thatmag)
+      elseif comparison < 0 then
+         sign = thatsign
+         mag = subtractmagnitudes(thatmag, thismag)
+      else
+         sign = 0
+         mag = {}
+      end
+   end
+   
+   return constructorsignmagnitude(sign, mag)
+end
 
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
