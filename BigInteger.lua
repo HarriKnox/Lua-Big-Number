@@ -300,15 +300,15 @@ function copyandstripleadingzeros(val)
    for i = 1, vallength do
       if val[i] ~= 0 then
          difference = i - 1
+         break
       end
    end
-   
    if difference == 0 then
       return copyarray(val)
    end
    
    copy = {}
-   endpoint = max(vallengh - difference, difference)
+   endpoint = max(vallength - difference, difference)
    for i = 1, endpoint do
       copy[i] = val[i + difference]
    end
@@ -507,11 +507,12 @@ end
 function getintfromendwithsign(bigint, disp)
    -- Get the 32 bit integer segment that is disp from the end,
    -- disp = 0 will return the last segment
-   local magint, signint, bimag, bilen
+   local magint, signint
+   local bimag, bisign, bilen
    
-   bimag = getmagnitude(bigint)
+   bisign, bimag = getsignandmagnitude(bigint)
    bilen = #bimag
-   signint = getsign(bigint) == -1 and -1 or 0
+   signint = bisign == -1 and -1 or 0
    
    if disp >= bilen then
       return signint
@@ -586,6 +587,8 @@ function getcharvalue(character)
       -- if character is lowercase Latin, returns in [10, 35]
       return bytevalue - 87
    end
+   -- if character is not valid in base36, then return 36 to always fail test
+   return 36
 end
 
 
@@ -1138,7 +1141,7 @@ function getintegerstringbinary(number)
 end
 
 --local
-function magnitudetostring(bigint, dobinary)
+function stringofbigintmagnitude(bigint, dobinary)
    local mag, maglen, str
    if not isoperablenumber(bigint) then
       error("number is not operable", 2)
@@ -1152,22 +1155,20 @@ function magnitudetostring(bigint, dobinary)
          return string.rep('0', 32)
       end
       
-      str = getintegerstringbinary(mag[1])
+      str = getintegerstringbinary(getintfromendwithsign(bigint, 0))
    
-      for i = 2, maglen do
-         str = str .. '_' .. getintegerstringbinary(mag[i])
+      for i = 1, maglen - 1 do
+         str = getintegerstringbinary(getintfromendwithsign(bigint, i)) .. '_' .. str
       end
-      
-      
    else
       if maglen == 0 then
          return string.rep('0', 8)
       end
+      
+      str = getintegerstringhexadecimal(getintfromendwithsign(bigint, 0))
    
-      str = getintegerstringhexadecimal(mag[1])
-   
-      for i = 2, maglen do
-         str = str .. '_' .. getintegerstringhexadecimal(mag[i])
+      for i = 1, maglen - 1 do
+         str = getintegerstringhexadecimal(getintfromendwithsign(bigint, i)) .. '_' .. str
       end
    end
    
