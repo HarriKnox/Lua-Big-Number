@@ -660,6 +660,12 @@ function constructorstringradix(str, radix)
    sign = strsign == '-' and -1 or 1
    cursor = strsign and 2 or 1
    
+   for i = cursor, strlength do
+      if getcharvalue(stringsub(str, i, i)) >= radix then
+         error("illegal digit", 3)
+      end
+   end
+   
    if stringmatch(str, '^[-+]?0+$') then
       return createbiginteger({}, 0)
    end
