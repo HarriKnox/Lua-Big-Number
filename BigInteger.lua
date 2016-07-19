@@ -280,35 +280,60 @@ end
 
 -- Byte Array Functions
 --local
-function copyofrange(val, start, fin)
+function copyarray(arr)
    local copy = {}
-   local vallength = #val
    
-   if start < 0 then
-      -- adjust for negative index (index from end of val)
-      start = vallength + start + 1
-   end
-   if fin < 0 then
-      fin = vallength + fin + 1
-   end
-   
-   for index = start, fin do
-      copy[index - start + 1] = val[index]
+   for i = 1, #arr do
+      copy[i] = arr[i]
    end
    
    return copy
 end
 
 --local
-function stripleadingzeros(val)
+function copyandstripleadingzeros(val)
    local vallength = #val
-   local keep = 1
+   local difference = vallength
+   local copy
    
-   while keep <= vallength and val[keep] == 0 do
-      keep = keep + 1
+   for i = 1, vallength do
+      if val[i] ~= 0 then
+         difference = i - 1
+      end
    end
    
-   return copyofrange(val, keep, vallength)
+   if difference == 0 then
+      return copyarray(val)
+   end
+   
+   copy = {}
+   
+   for i = 1, vallength - difference do
+      copy[i] = val[i + difference]
+   end
+   
+   return copy
+end
+
+--local
+function destructivestripleadingzeros(mag)
+   local difference
+   local maglen = #mag
+   
+   for i = 1, maglen do
+      if mag[i] ~= 0 then
+         difference = i - 1
+         break
+      end
+   end
+   
+   if difference ~= 0 then
+      for i = 1, maglen - difference do
+         mag[i], mag[i + difference] = mag[i + difference], nil
+      end
+   end
+   
+   return mag
 end
 
 --local
@@ -324,6 +349,8 @@ function destructiveaddonetobytearray(bytearray)
    if addend ~= 0 then
       table.insert(bytearray, 1, addend)
    end
+   
+   return bytearray
 end
 
 --local
@@ -336,7 +363,7 @@ function negatebytearray(bytearray)
    end
    
    destructiveaddonetobytearray(mag)
-   return stripleadingzeros(mag)
+   return destructivestripleadingzeros(mag)
 end
 
 --local
@@ -382,7 +409,7 @@ function getbytearraymagnitude(thing)
    if getbytearraysign(thing) == -1 then
       return negatebytearray(thing)
    end
-   return stripleadingzeros(thing)
+   return copyandstripleadingzeros(thing)
 end
 
 --local
@@ -391,7 +418,7 @@ function getbytearraysignandmagnitude(thing)
    if sign == -1 then
       return sign, negatebytearray(thing)
    end
-   return sign, stripleadingzeros(thing)
+   return sign, copyandstripleadingzeros(thing)
 end
 
 --local
@@ -590,7 +617,7 @@ function constructorsignmagnitude(sign, val)
       error("invalid byte array", 3)
    end
    
-   mag = stripleadingzeros(val)
+   mag = copyandstripleadingzeros(val)
    
    if not isvalidsignmagnitudecombination(sign, mag) then
       error("sign-magnitude mismatch", 3)
@@ -605,7 +632,7 @@ end
 
 --local
 function constructorbitsrng(bitlength, randomnumbergenerator)
-   local tempmagnitude = {}
+   local mag = {}
    local numberofwords, excessbytes
    
    if bitlength < 0 or bitlength % 1 ~= 0 then
@@ -620,14 +647,16 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    for i = 1, numberofwords do
       -- This weird multiplication-addition is necessary since the default
       -- math.random would not operate on all 32 bits
-      tempmagnitude[i] = make32bitinteger(floor(randomnumbergenerator() * 0x10000) * 0x10000 +
+      mag[i] = make32bitinteger(floor(randomnumbergenerator() * 0x10000) * 0x10000 +
                                           floor(randomnumbergenerator() * 0x10000))
    end
    
    excessbytes = 32 * numberofwords - bitlength
-   tempmagnitude[1] = bitand(tempmagnitude[1], 2 ^ (32 - excessbytes) - 1)
+   mag[1] = bitand(mag[1], 2 ^ (32 - excessbytes) - 1)
    
-   return createbiginteger(1, stripleadingzeros(tempmagnitude))
+   destructivestripleadingzeros(mag)
+   
+   return createbiginteger(1, mag)
 end
 
 --local
@@ -654,7 +683,7 @@ function constructorstringradix(str, radix)
    local mag
    local strlength = #str
    local sign, cursor, strsign, numberofdigits, digitsperintegerradix
-   local numberofbits, numberofwords, tempmagnitude
+   local numberofbits, numberofwords
    local firstgrouplength, superradix, group, groupvalue
    -- Some edits and changes occurred here
    if not isvalidradix(radix) then
@@ -693,9 +722,9 @@ function constructorstringradix(str, radix)
    end
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
-   tempmagnitude = {}
+   mag = {}
    for i = 1, numberofwords do
-      tempmagnitude[i] = 0
+      mag[i] = 0
    end
    
    -- a small deviation but here to prevent numerous calls to digitsperinteger
@@ -714,7 +743,7 @@ function constructorstringradix(str, radix)
    if not groupvalue then
       error("illegal digit", 3)
    end
-   tempmagnitude[numberofwords] = groupvalue
+   mag[numberofwords] = groupvalue
    
    -- Process remaining groups
    superradix = intradix[radix]
@@ -725,10 +754,10 @@ function constructorstringradix(str, radix)
       if not groupvalue then
          error("illegal digit", 3)
       end
-      destructivemultiplyandadd(tempmagnitude, superradix, groupvalue)
+      destructivemultiplyandadd(mag, superradix, groupvalue)
    end
    
-   mag = stripleadingzeros(tempmagnitude)
+   destructivestripleadingzeros(mag)
    if #mag >= maxmagnitudelength then
       error("biginteger would overflow supported range", 3)
    end
@@ -978,7 +1007,7 @@ function subtractmagnitudes(minuend, subtrahend)
       mag[longerlen - i] = make32bitinteger(difference)
    end
    
-   return stripleadingzeros(mag)
+   return destructivestripleadingzeros(mag)
 end
 
 -- Public Math Functions
