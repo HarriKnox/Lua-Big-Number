@@ -295,6 +295,7 @@ function copyandstripleadingzeros(val)
    local vallength = #val
    local difference = vallength
    local copy
+   local endpoint
    
    for i = 1, vallength do
       if val[i] ~= 0 then
@@ -307,8 +308,8 @@ function copyandstripleadingzeros(val)
    end
    
    copy = {}
-   
-   for i = 1, vallength - difference do
+   endpoint = max(vallengh - difference, difference)
+   for i = 1, endpoint do
       copy[i] = val[i + difference]
    end
    
@@ -317,8 +318,9 @@ end
 
 --local
 function destructivestripleadingzeros(mag)
-   local difference
    local maglen = #mag
+   local difference = maglen
+   local endpoint
    
    for i = 1, maglen do
       if mag[i] ~= 0 then
@@ -328,7 +330,8 @@ function destructivestripleadingzeros(mag)
    end
    
    if difference ~= 0 then
-      for i = 1, maglen - difference do
+      endpoint = max(maglen - difference, difference)
+      for i = 1, endpoint do
          mag[i], mag[i + difference] = mag[i + difference], nil
       end
    end
@@ -384,6 +387,8 @@ function destructivemultiplyandadd(mag, factor, addend)
       carry, mag[index] = splitlong(mag[index] + carry)
       index = index - 1
    end
+   
+   return mag
 end
 
 
