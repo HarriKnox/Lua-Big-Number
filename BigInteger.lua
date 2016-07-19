@@ -146,11 +146,11 @@ function isvalidmagnitude(mag)
 end
 
 --local
-function isvalidsign(sig)
-   return type(sig) == 'number' and
-          sig == -1 or
-          sig == 0 or
-          sig == 1
+function isvalidsign(sign)
+   return type(sign) == 'number' and
+          sign == -1 or
+          sign == 0 or
+          sign == 1
 end
 
 --local
@@ -165,7 +165,7 @@ end
 
 --local
 function isbiginteger(bigint)
-   return type(bigint) ~= 'table' and
+   return type(bigint) == 'table' and
           isvalidsign(bigint.sign) and
           isvalidmagnitude(bigint.magnitude) and
           isvalidsignmagnitudecombination(bigint.sign, bigint.magnitude)
@@ -570,10 +570,10 @@ function constructornumber(num)
 end
 
 --local
-function constructorsignmagnitude(sig, val)
-   local mag, signum
-   if not isvalidsign(sig) then
-      error("Invalid sign value", 3)
+function constructorsignmagnitude(sign, val)
+   local mag
+   if not isvalidsign(sign) then
+      error("Invalid sign value: " .. sign, 3)
    end
    
    if not isvalidbytearray(val) then
@@ -581,9 +581,8 @@ function constructorsignmagnitude(sig, val)
    end
    
    mag = stripleadingzeros(val)
-   signum = sig
    
-   if not isvalidsignmagnitudecombination(signum, mag) then
+   if not isvalidsignmagnitudecombination(sign, mag) then
       error("Sign-magnitude mismatch", 3)
    end
    
@@ -591,7 +590,7 @@ function constructorsignmagnitude(sig, val)
       error("BigInteger would overflow supported range", 3)
    end
    
-   return createbiginteger(signum, mag)
+   return createbiginteger(sign, mag)
 end
 
 --local
@@ -623,7 +622,7 @@ end
 
 --local
 function constructormagnitude(val)
-   local mag, signum
+   local sign, mag
    if #val == 0 then
       error("Zero length BigInteger", 3)
    end
@@ -631,13 +630,13 @@ function constructormagnitude(val)
       error("Invalid byte array", 3)
    end
    
-   signum, mag = getbytearraysignandmagnitude(val)
+   sign, mag = getbytearraysignandmagnitude(val)
    
    if #mag >= maxmagnitudelength then
       error("BigInteger would overflow supported range", 3)
    end
    
-   return createbiginteger(signum, mag)
+   return createbiginteger(sign, mag)
 end
 
 --local
@@ -940,7 +939,30 @@ end
 
 --local
 function subtractmagnitudes(minuend, subtrahend)
-   return addmagnitudes(minuend, subtrahend)
+   local mag
+   local borrow, difference
+   local longerlen
+   
+   mag = {}
+   borrow = 0
+   difference = 0
+   longerlen = #minuend
+   
+   for i = 0, longerlen - 1 do
+      difference = getintfromend(minuend, i) -
+                   getintfromend(subtrahend, i) -
+                   borrow
+      
+      if difference < 0 then
+         borrow = 1
+         --difference = -difference
+      else
+         borrow = 0
+      end
+      mag[longerlen - i] = make32bitinteger(difference)
+   end
+   
+   return stripleadingzeros(mag)
 end
 
 -- Public Math Functions
@@ -962,9 +984,9 @@ end
 
 --local
 function add(thisbigint, thatbigint)
-   local mag, signum
-   local thismag, thatmag
+   local sign, mag
    local thissign, thatsign
+   local thismag, thatmag
    local comparison
    
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
@@ -982,7 +1004,7 @@ function add(thisbigint, thatbigint)
    end
    
    if thissign == thatsign then
-      signum = thissign
+      sign = thissign
       mag = addmagnitudes(thismag, thatmag)
    else
       comparison = comparemagnitudes(thisbigint, thatbigint)
@@ -998,7 +1020,7 @@ function add(thisbigint, thatbigint)
       end
    end
    
-   return constructorsignmagnitude(mag, sign)
+   return constructorsignmagnitude(sign, mag)
 end
 
 
