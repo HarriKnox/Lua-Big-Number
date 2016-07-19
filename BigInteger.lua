@@ -410,7 +410,7 @@ function getsign(thing)
    elseif isvalidinteger(thing) then
       return getnumbersign(thing)
    end
-   error("Cannot obtain sign")
+   error("cannot obtain sign")
 end
 
 --local
@@ -424,7 +424,7 @@ function getmagnitude(thing)
    elseif isvalidinteger(thing) then
       return getnumbermagnitude(thing)
    end
-   error("Cannot obtain magnitude")
+   error("cannot obtain magnitude")
 end
 
 --local
@@ -438,7 +438,7 @@ function getsignandmagnitude(thing)
    elseif isvalidinteger(thing) then
       return getnumbersignandmagnitude(thing)
    end
-   error("Cannot obtain sign and magnitude")
+   error("cannot obtain sign and magnitude")
 end
 
 --local
@@ -551,11 +551,11 @@ end
 --local
 function createbiginteger(sign, mag)
    if not isvalidsign(sign) then
-      error("Sign not in {-1, 0, 1}", 4)
+      error("sign not in {-1, 0, 1}", 4)
    elseif not isvalidmagnitude(mag) then
-      error("Magnitude not valid", 4)
+      error("magnitude not valid", 4)
    elseif not isvalidsignmagnitudecombination(sign, mag) then
-      error("Sign-magnitude mismatch", 4)
+      error("sign-magnitude mismatch", 4)
    end
    return {sign = sign, magnitude = mag}
 end
@@ -563,7 +563,7 @@ end
 --local
 function constructornumber(num)
    if not isvalidinteger(num) then
-      error("Number not a valid integer", 3)
+      error("number not a valid integer", 3)
    end
    
    return createbiginteger(getnumbersignandmagnitude(num))
@@ -573,21 +573,21 @@ end
 function constructorsignmagnitude(sign, val)
    local mag
    if not isvalidsign(sign) then
-      error("Invalid sign value: " .. sign, 3)
+      error("invalid sign value: " .. sign, 3)
    end
    
    if not isvalidbytearray(val) then
-      error("Invalid byte array", 3)
+      error("invalid byte array", 3)
    end
    
    mag = stripleadingzeros(val)
    
    if not isvalidsignmagnitudecombination(sign, mag) then
-      error("Sign-magnitude mismatch", 3)
+      error("sign-magnitude mismatch", 3)
    end
    
    if #mag >= maxmagnitudelength then
-      error("BigInteger would overflow supported range", 3)
+      error("biginteger would overflow supported range", 3)
    end
    
    return createbiginteger(sign, mag)
@@ -599,7 +599,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    local numberofwords, excessbytes
    
    if bitlength < 0 or bitlength % 1 ~= 0 then
-      error("Bit length must be a non-negative integer", 3)
+      error("bit length must be a non-negative integer", 3)
    end
    
    if type(randomnumbergenerator()) ~= "number" then
@@ -624,16 +624,16 @@ end
 function constructormagnitude(val)
    local sign, mag
    if #val == 0 then
-      error("Zero length BigInteger", 3)
+      error("zero length BigInteger", 3)
    end
    if not isvalidbytearray(val) then
-      error("Invalid byte array", 3)
+      error("invalid byte array", 3)
    end
    
    sign, mag = getbytearraysignandmagnitude(val)
    
    if #mag >= maxmagnitudelength then
-      error("BigInteger would overflow supported range", 3)
+      error("biginteger would overflow supported range", 3)
    end
    
    return createbiginteger(sign, mag)
@@ -648,7 +648,7 @@ function constructorstringradix(str, radix)
    local firstgrouplength, superradix, group, groupvalue
    -- Some edits and changes occurred here
    if not isvalidradix(radix) then
-      error("Invalid radix: " .. radix, 3)
+      error("invalid radix: " .. radix, 3)
    end
    
    if not isvalidstringnumber(str) then
@@ -673,7 +673,7 @@ function constructorstringradix(str, radix)
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
    if numberofbits + 31 > 0xffffffff then
-      error("BigInteger would overflow supported range", 3)
+      error("biginteger would overflow supported range", 3)
    end
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
@@ -696,7 +696,7 @@ function constructorstringradix(str, radix)
    groupvalue = tonumber(group, radix)
    
    if not groupvalue then
-      error("Illegal digit", 3)
+      error("illegal digit", 3)
    end
    tempmagnitude[numberofwords] = groupvalue
    
@@ -707,14 +707,14 @@ function constructorstringradix(str, radix)
       cursor = cursor + digitsperintegerradix
       groupvalue = tonumber(group, radix)
       if not groupvalue then
-         error("Illegal digit", 3)
+         error("illegal digit", 3)
       end
       destructivemultiplyandadd(tempmagnitude, superradix, groupvalue)
    end
    
    mag = stripleadingzeros(tempmagnitude)
    if #mag >= maxmagnitudelength then
-      error("BigInteger would overflow supported range", 3)
+      error("biginteger would overflow supported range", 3)
    end
    
    return createbiginteger(sign, mag)
@@ -750,7 +750,7 @@ function biginteger(a, b)
       end
    end
    
-   error("Could not understand passed parameters: " ..
+   error("could not understand passed parameters: " ..
       typea .. " and " .. typeb, 2)
 end
 
@@ -815,7 +815,7 @@ function compare(thisbigint, thatbigint)
    end
    
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform comparison on "
+      error("attempt to perform comparison on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -833,7 +833,7 @@ end
 --local
 function equals(thisbigint, thatbigint)
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform equals on "
+      error("attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -845,7 +845,7 @@ end
 --local
 function bitwisenot(bigint)
    if not isoperablenumber(bigint) then
-      error("Number is not operable", 2)
+      error("number is not operable", 2)
    end
    
    return constructormagnitude(mapmagnitude(bigint, bitnot))
@@ -854,7 +854,7 @@ end
 --local
 function bitwiseand(thisbigint, thatbigint)
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform equals on "
+      error("attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -866,7 +866,7 @@ end
 --local
 function bitwiseandnot(thisbigint, thatbigint)
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform equals on "
+      error("attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -878,7 +878,7 @@ end
 --local
 function bitwiseor(thisbigint, thatbigint)
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform equals on "
+      error("attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -890,7 +890,7 @@ end
 --local
 function bitwisexor(thisbigint, thatbigint)
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform equals on "
+      error("attempt to perform equals on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -969,7 +969,7 @@ end
 --local
 function negate(bigint)
    if not isbiginteger(bigint) then
-      error("Number is not biginteger", 2)
+      error("number is not a biginteger", 2)
    end
    return constructorsignmagnitude(-bigint.sign, bigint.magnitude)
 end
@@ -977,7 +977,7 @@ end
 --local
 function absolutevalue(bigint)
    if not isbiginteger(bigint) then
-      error("Number is not biginteger", 2)
+      error("number is not a biginteger", 2)
    end
    return bigint.sign < 0 and negate(bigint) or bigint
 end
@@ -990,7 +990,7 @@ function add(thisbigint, thatbigint)
    local comparison
    
    if not isoperablenumber(thisbigint) or not isoperablenumber(thatbigint) then
-      error("Attempt to perform addition on "
+      error("attempt to perform addition on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -1027,7 +1027,7 @@ end
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
-      error("BigInteger library compatibility for ComputerCraft requires CC " ..
+      error("Knox's BigInteger library compatibility for ComputerCraft requires CC " ..
          "version 1.75 or later")
    end
    _ENV.biginteger = biginteger
