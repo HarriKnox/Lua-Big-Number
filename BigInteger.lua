@@ -101,6 +101,16 @@ intradix = {
    0x34e63b41, 0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x039aa400}
 
 
+--local
+characters = {
+   '1', '2', '3', '4', '5', '6', '7',
+   '8', '9', 'A', 'B', 'C', 'D', 'E',
+   'F', 'G', 'H', 'I', 'J', 'K', 'L',
+   'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+   'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+   [0] = '0'}
+
+
 -- Testing functions
 --local
 function isvalidinteger(int)
@@ -1069,6 +1079,67 @@ function subtract(thisbigint, thatbigint)
    
    return constructorsignmagnitude(sign, mag)
 end
+
+-- temporary functions to print the number in hexadecimal or binary
+--local
+function getintegerstringhexadecimal(number)
+   local str, index = {}, 1
+   
+   for i = 28, 0, -4 do
+      str[index], index = characters[bitand(bitrightshift(number, i), 0xf)], index + 1
+   end
+   
+   return table.concat(str)
+end
+
+--local
+function getintegerstringbinary(number)
+   local str, index = {}, 1
+   
+   for i = 31, 0, -1 do
+      str[index], index = characters[bitand(bitrightshift(number, i), 0x1)], index + 1
+   end
+   
+   return table.concat(str)
+end
+
+--local
+function magnitudetostring(bigint, dobinary)
+   local mag, maglen, str
+   if not isoperablenumber(bigint) then
+      error("number is not operable", 2)
+   end
+   
+   mag = getmagnitude(bigint)
+   maglen = #mag
+   
+   if dobinary then
+      if maglen == 0 then
+         return string.rep('0', 32)
+      end
+      
+      str = getintegerstringbinary(mag[1])
+   
+      for i = 2, maglen do
+         str = str .. '_' .. getintegerstringbinary(mag[i])
+      end
+      
+      
+   else
+      if maglen == 0 then
+         return string.rep('0', 8)
+      end
+   
+      str = getintegerstringhexadecimal(mag[1])
+   
+      for i = 2, maglen do
+         str = str .. '_' .. getintegerstringhexadecimal(mag[i])
+      end
+   end
+   
+   return str
+end
+
 
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
