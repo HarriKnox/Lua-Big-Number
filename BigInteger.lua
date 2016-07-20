@@ -336,6 +336,47 @@ end
 
 
 --local
+function signextendbytearraywithsourceanddestination(source, destination, newlength)
+   local length = #source
+   local signbytes = newlength - length
+   local signint = length > 0 and source[1] >= negativemask and 0xffffffff or 0
+   
+   if signbytes <= 0 then
+      if source ~= destination then
+         -- if no sign bytes are being added and the source and destination are
+         -- different, then copy the values from source to destination and
+         -- return. If the source and destination are the same table, then do
+         -- nothing and return.
+         for i = 1, length do
+            destination[i] = source[i]
+         end
+      end
+      return destination
+   end
+   
+   for i = newlength, signbytes + 1, -1 do
+      destination[i] = source[i - signbytes]
+   end
+   
+   for i = 1, signbytes do
+      destination[i] = signint
+   end
+   
+   return destination
+end
+
+--local
+function copyandsignextendbytearray(val, len)
+   return signextendbytearraywithsourceanddestination(val, {}, len)
+end
+
+--local
+function destructivesignextendbytearray(val, len)
+   return signextendbytearraywithsourceanddestination(val, val, len)
+end
+
+
+--local
 function stripleadingzeroswithsourceanddestination(source, destination)
    local length = #source
    local difference = length
