@@ -228,7 +228,7 @@ function isvalidoperablenumber(thing)
    if isvalidinteger(thing) or isvalidbytearray(thing) or isvalidbiginteger(thing) then
       return true
    end
-   return false, "value is not an operable number"
+   return false, "value is not an operable number but type " .. type(thing)
 end
 
 --local
@@ -384,33 +384,43 @@ function destructivestripleadingzeros(mag)
 end
 
 --local
-function destructiveaddonetobytearray(bytearray)
-   local addend = 1
-   local index = #bytearray
+function copyandnegatebytearray(bytearray)
+   local mag = {}
+   local balen = #bytearray
+   local index, addend
+   
+   for i = 1, balen do
+      mag[i] = bitnot(bytearray[i])
+   end
+   
+   index = balen
+   addend = 1
+   
+   while addend ~= 0 and index > 0 do
+      addend, mag[index] = splitlong(mag[index] + addend)
+      index = index - 1
+   end
+   
+   return destructivestripleadingzeros(mag)
+end
+
+--local
+function destructivenegatebytearray(bytearray)
+   local balen = #bytearray
+   
+   for i = 1, balen do
+      bytearray[i] = bitnot(bytearray[i])
+   end
+   
+   index = balen
+   addend = 1
    
    while addend ~= 0 and index > 0 do
       addend, bytearray[index] = splitlong(bytearray[index] + addend)
       index = index - 1
    end
    
-   if addend ~= 0 then
-      table.insert(bytearray, 1, addend)
-   end
-   
-   return bytearray
-end
-
---local
-function negatebytearray(bytearray)
-   local mag = {}
-   local balen = #bytearray
-   
-   for i = 1, balen do
-      mag[i] = bitnot(bytearray[i])
-   end
-   
-   destructiveaddonetobytearray(mag)
-   return destructivestripleadingzeros(mag)
+   return destructivestripleadingzeros(bytearray)
 end
 
 --local
@@ -464,7 +474,7 @@ end
 --local
 function getbytearraymagnitude(thing)
    if getbytearraysign(thing) == -1 then
-      return negatebytearray(thing)
+      return copyandnegatebytearray(thing)
    end
    return copyandstripleadingzeros(thing)
 end
@@ -473,7 +483,7 @@ end
 function getbytearraysignandmagnitude(thing)
    local sign = getbytearraysign(thing)
    if sign == -1 then
-      return sign, negatebytearray(thing)
+      return sign, copyandnegatebytearray(thing)
    end
    return sign, copyandstripleadingzeros(thing)
 end
@@ -510,7 +520,7 @@ end
 --local
 function getmagnitude(thing)
    if isvalidbiginteger(thing) then
-      return thing.magnitude
+      return copyarray(thing.magnitude)
       
    elseif isvalidbytearray(thing) then
       return getbytearraymagnitude(thing)
@@ -524,7 +534,7 @@ end
 --local
 function getsignandmagnitude(thing)
    if isvalidbiginteger(thing) then
-      return thing.sign, thing.magnitude
+      return thing.sign, copyarray(thing.magnitude)
       
    elseif isvalidbytearray(thing) then
       return getbytearraysignandmagnitude(thing)
@@ -533,6 +543,25 @@ function getsignandmagnitude(thing)
       return getnumbersignandmagnitude(thing)
    end
    error("cannot obtain sign and magnitude")
+end
+
+--local
+function getbytearray(thing)
+   local sign, mag = getsignandmagnitude(thing)
+   
+   if sign == -1 then
+      destructivenegatebytearray(mag)
+      
+      if mag[1] < negativemask then
+         table.insert(mag, 1, 0xffffffff)
+      end
+   elseif sign == 1 then
+      if mag[1] >= negativemask then
+         table.insert(mag, 1, 0)
+      end
+   end
+   
+   return mag
 end
 
 --local
@@ -731,7 +760,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
 end
 
 --local
-function constructormagnitude(val)
+function constructorbytearray(val)
    local sign, mag
    local ok, reason
    
@@ -865,7 +894,7 @@ function biginteger(a, b)
          return constructorbitsrng(a, b)
       end
    elseif typea == "byte-array" and typeb == "nil" then
-      return constructormagnitude(a)
+      return constructorbytearray(a)
    elseif typea == "string" then
       if typeb == "nil" then
          return constructorstringradix(a, 10)
@@ -973,7 +1002,7 @@ function bitwisenot(bigint)
       error(reason, 2)
    end
    
-   return constructormagnitude(mapmagnitude(bigint, bitnot))
+   return constructorbytearray(mapmagnitude(bigint, bitnot))
 end
 
 --local
@@ -983,7 +1012,7 @@ function bitwiseand(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructormagnitude(mergemagnitudes(thisbigint, thatbigint, bitand))
+   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitand))
 end
 
 --local
@@ -993,7 +1022,7 @@ function bitwiseandnot(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructormagnitude(mergemagnitudes(thisbigint, thatbigint, bitandnot))
+   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitandnot))
 end
 
 --local
@@ -1003,7 +1032,7 @@ function bitwiseor(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructormagnitude(mergemagnitudes(thisbigint, thatbigint, bitor))
+   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitor))
 end
 
 --local
@@ -1013,7 +1042,7 @@ function bitwisexor(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructormagnitude(mergemagnitudes(thisbigint, thatbigint, bitxor))
+   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitxor))
 end
 
 
@@ -1207,34 +1236,34 @@ function getintegerstringbinary(number)
 end
 
 --local
-function stringofbigintmagnitude(bigint, dobinary)
-   local mag, maglen, str
+function stringofbytearray(bigint, dobinary)
+   local bytearray, balen, str
    local ok, reason = isvalidoperablenumber(bigint)
    if not ok then
-      error("number is not operable", 2)
+      error(reason, 2)
    end
    
-   mag = getmagnitude(bigint)
-   maglen = #mag
+   bytearray = getbytearray(bigint)
+   balen = #bytearray
    
    if dobinary then
-      if maglen == 0 then
+      if balen == 0 then
          return string.rep('0', 32)
       end
       
       str = getintegerstringbinary(getintfromendwithsign(bigint, 0))
    
-      for i = 1, maglen - 1 do
+      for i = 1, balen - 1 do
          str = getintegerstringbinary(getintfromendwithsign(bigint, i)) .. '_' .. str
       end
    else
-      if maglen == 0 then
+      if balen == 0 then
          return string.rep('0', 8)
       end
       
       str = getintegerstringhexadecimal(getintfromendwithsign(bigint, 0))
    
-      for i = 1, maglen - 1 do
+      for i = 1, balen - 1 do
          str = getintegerstringhexadecimal(getintfromendwithsign(bigint, i)) .. '_' .. str
       end
    end
