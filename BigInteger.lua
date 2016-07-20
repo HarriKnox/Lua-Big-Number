@@ -641,37 +641,41 @@ function getintfromendwithsign(bigint, disp)
    return bitnot(magint)
 end
 
--- Magnitude Mappers
+-- Byte-Array Mappers
 --local
-function mapmagnitude(bigint, mapfunction)
-   local mag
-   local bimag
+function mapbytearray(bigint, mapfunction)
+   local bytearray
+   local bibytearray
    
-   bimag = getmagnitude(bigint)
-   mag = {}
-   for i = 1, #bimag do
-      mag[i] = mapfunction(bimag[i])
+   bibytearray = getbytearray(bigint)
+   bytearray = {}
+   
+   for i = 1, #bibytearray do
+      bytearray[i] = mapfunction(bibytearray[i])
    end
    
-   return mag
+   return bytearray
 end
 
 --local
-function mergemagnitudes(thisbigint, thatbigint, mergefunction)
-   local mag, thismag, thatmag
+function mergebytearrays(thisbigint, thatbigint, mergefunction)
+   local bytearray, thisbytearray, thatbytearray
    local thislen, thatlen, longerlen
    
-   thismag = getmagnitude(thisbigint)
-   thatmag = getmagnitude(thatbigint)
+   thisbytearray = getbytearray(thisbigint)
+   thatbytearray = getbytearray(thatbigint)
    
-   longerlen = max(#thismag, #thatmag)
+   longerlen = max(#thisbytearray, #thatbytearray)
    
-   mag = {}
+   destructivesignextendbytearray(thisbytearray, longerlen)
+   destructivesignextendbytearray(thatbytearray, longerlen)
+   
+   bytearray = {}
    for i = 0, longerlen - 1 do
-      mag[longerlen - i] = mergefunction(getintfromendwithsign(thisbigint, i),
-                                         getintfromendwithsign(thatbigint, i))
+      bytearray[longerlen - i] = mergefunction(getintfromend(thisbytearray, i),
+                                               getintfromend(thatbytearray, i))
    end
-   return mag
+   return bytearray
 end
 
 
@@ -1024,7 +1028,7 @@ function bitwisenot(bigint)
       error(reason, 2)
    end
    
-   return constructorbytearray(mapmagnitude(bigint, bitnot))
+   return constructorbytearray(mapbytearray(bigint, bitnot))
 end
 
 --local
@@ -1034,7 +1038,7 @@ function bitwiseand(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitand))
+   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitand))
 end
 
 --local
@@ -1044,7 +1048,7 @@ function bitwiseandnot(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitandnot))
+   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitandnot))
 end
 
 --local
@@ -1054,7 +1058,7 @@ function bitwiseor(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitor))
+   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitor))
 end
 
 --local
@@ -1064,7 +1068,7 @@ function bitwisexor(thisbigint, thatbigint)
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
-   return constructorbytearray(mergemagnitudes(thisbigint, thatbigint, bitxor))
+   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitxor))
 end
 
 
