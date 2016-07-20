@@ -405,7 +405,7 @@ function stripleadingzeroswithsourceanddestination(source, destination)
    endpoint = max(length - difference, difference)
    
    for i = 1, endpoint do
-      destination[i], source[i + difference] = source[i + difference], nil
+      destination[i], destination[i + difference] = source[i + difference], nil
    end
    
    return destination
@@ -606,40 +606,6 @@ function getintfromend(mag, disp)
    return mag[maglen - disp]
 end
 
---local
-function getintfromendwithsign(bigint, disp)
-   -- Get the 32 bit integer segment that is disp from the end,
-   -- disp = 0 will return the last segment
-   local magint, signint
-   local bimag, bisign, bilen
-   
-   bisign, bimag = getsignandmagnitude(bigint)
-   bilen = #bimag
-   signint = bisign == -1 and -1 or 0
-   
-   if disp >= bilen then
-      return signint
-   end
-   
-   if disp < 0 then
-      return 0
-   end
-   
-   magint = bimag[bilen - disp]
-   
-   if signint == 0 then
-      return magint
-   end
-   
-   if disp <= getfirstnonzerointfromend(bimag) then
-      if magint == 0 then
-         return 0
-      end
-      -- 2's compliment of magint since the return value must be non-negative
-      return bitnot(magint) + 1
-   end
-   return bitnot(magint)
-end
 
 -- Byte-Array Mappers
 --local
@@ -1277,20 +1243,20 @@ function stringofbytearray(bigint, dobinary)
          return string.rep('0', 32)
       end
       
-      str = getintegerstringbinary(getintfromendwithsign(bigint, 0))
+      str = getintegerstringbinary(getintfromend(bytearray, 0))
    
       for i = 1, balen - 1 do
-         str = getintegerstringbinary(getintfromendwithsign(bigint, i)) .. '_' .. str
+         str = getintegerstringbinary(getintfromend(bytearray, i)) .. '_' .. str
       end
    else
       if balen == 0 then
          return string.rep('0', 8)
       end
       
-      str = getintegerstringhexadecimal(getintfromendwithsign(bigint, 0))
+      str = getintegerstringhexadecimal(getintfromend(bytearray, 0))
    
       for i = 1, balen - 1 do
-         str = getintegerstringhexadecimal(getintfromendwithsign(bigint, i)) .. '_' .. str
+         str = getintegerstringhexadecimal(getintfromend(bytearray, i)) .. '_' .. str
       end
    end
    
