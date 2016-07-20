@@ -334,94 +334,75 @@ function copyarray(arr)
    return copy
 end
 
+
 --local
-function copyandstripleadingzeros(val)
-   local vallength = #val
-   local difference = vallength
-   local copy
+function stripleadingzeroswithsourceanddestination(source, destination)
+   local length = #source
+   local difference = length
    local endpoint
    
-   for i = 1, vallength do
-      if val[i] ~= 0 then
+   for i = 1, length do
+      if source[i] ~= 0 then
          difference = i - 1
          break
       end
    end
+   
    if difference == 0 then
-      return copyarray(val)
+      if source ~= destination then
+         -- if no zeros are being stripped and the source and destination are
+         -- different, then copy the values from source to destination and
+         -- return. If the source and destination are the same table, then do
+         -- nothing and return.
+         for i = 1, length do
+            destination[i] = source[i]
+         end
+      end
+      return destination
    end
    
-   copy = {}
-   endpoint = max(vallength - difference, difference)
+   endpoint = max(length - difference, difference)
+   
    for i = 1, endpoint do
-      copy[i] = val[i + difference]
+      destination[i], source[i + difference] = source[i + difference], nil
    end
    
-   return copy
+   return destination
 end
 
 --local
-function destructivestripleadingzeros(mag)
-   local maglen = #mag
-   local difference = maglen
-   local endpoint
+function copyandstripleadingzeros(val)
+   return stripleadingzeroswithsourceanddestination(val, {})
+end
+
+--local
+function destructivestripleadingzeros(val)
+   return stripleadingzeroswithsourceanddestination(val, val)
+end
+
+
+--local
+function negatebytearraywithsourceanddestination(source, destination)
+   local length = #source
+   local addend = 1
    
-   for i = 1, maglen do
-      if mag[i] ~= 0 then
-         difference = i - 1
-         break
-      end
+   for i = length, 1, -1 do
+      addend, destination[i] = splitlong(bitnot(source[i]) + addend)
    end
    
-   if difference ~= 0 then
-      endpoint = max(maglen - difference, difference)
-      for i = 1, endpoint do
-         mag[i], mag[i + difference] = mag[i + difference], nil
-      end
-   end
-   
-   return mag
+   return destructivestripleadingzeros(destination)
 end
 
 --local
 function copyandnegatebytearray(bytearray)
-   local mag = {}
-   local balen = #bytearray
-   local index, addend
-   
-   for i = 1, balen do
-      mag[i] = bitnot(bytearray[i])
-   end
-   
-   index = balen
-   addend = 1
-   
-   while addend ~= 0 and index > 0 do
-      addend, mag[index] = splitlong(mag[index] + addend)
-      index = index - 1
-   end
-   
-   return destructivestripleadingzeros(mag)
+   return negatebytearraywithsourceanddestination(bytearray, {})
 end
 
 --local
 function destructivenegatebytearray(bytearray)
-   local balen = #bytearray
-   
-   for i = 1, balen do
-      bytearray[i] = bitnot(bytearray[i])
-   end
-   
-   index = balen
-   addend = 1
-   
-   while addend ~= 0 and index > 0 do
-      addend, bytearray[index] = splitlong(bytearray[index] + addend)
-      index = index - 1
-   end
-   
-   return destructivestripleadingzeros(bytearray)
+   return negatebytearraywithsourceanddestination(bytearray, bytearray)
 end
+
 
 --local
 function destructivemultiplyandadd(mag, factor, addend)
