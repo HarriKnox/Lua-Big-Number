@@ -1118,36 +1118,28 @@ end
 -- Private Magnitude Functions
 --local
 function destructiveaddmagnitudes(thismag, thatmag)
-   local longermag, shortermag
-   local longerlen, shorterlen
+   local thislen, thatlen, longerlen
    local carry
    
-   longermag = thismag
-   shortermag = thatmag
+   thislen = #thismag
+   thatlen = #thatmag
    
-   longerlen = #longermag
-   shorterlen = #shortermag
-   
-   if longerlen < shorterlen then
-      longermag, shortermag = shortermag, longermag
-      longerlen, shorterlen = shorterlen, longerlen
-   end
-   
+   longerlen = max(thislen, thatlen)
    carry = 0
    
    for i = 0, longerlen - 1 do
-      carry, longermag[longerlen - i] = splitlong(getintfromend(longermag, i) +
-                                            getintfromend(shortermag, i) +
-                                            carry)
+      carry, thismag[longerlen - i] = splitlong(getintfromend(thismag, i) +
+                                                getintfromend(thatmag, i) +
+                                                carry)
    end
    
    if carry ~= 0 then
       -- If the carry amount exceeds the size of both magnitudes, then insert
       -- the value of the carry in front of everything.
-      table.insert(longermag, 1, carry)
+      table.insert(thismag, 1, carry)
    end
    
-   return longermag
+   return thismag
 end
 
 --local
@@ -1176,6 +1168,7 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    return destructivestripleadingzeros(minuend)
 end
 
+
 -- Public Math Functions
 --local
 function negate(bigint)
@@ -1187,6 +1180,17 @@ function negate(bigint)
 end
 
 --local
+function mutablenegate(bigint)
+   local ok, reason = isvalidbiginteger(bigint)
+   if not ok then
+      error(reason, 2)
+   end
+   bigint.sign = -bigint.sign
+   return bigint
+end
+
+
+--local
 function absolutevalue(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
@@ -1194,6 +1198,17 @@ function absolutevalue(bigint)
    end
    return bigint.sign < 0 and negate(bigint) or bigint
 end
+
+--local
+function mutableabsolutevalue(bigint)
+   local ok, reason = isvalidbiginteger(bigint)
+   if not ok then
+      error(reason, 2)
+   end
+   bigint.sign = bigint.sign < 0 and -bigint.sign or bigint.sign
+   return bigint
+end
+
 
 --local
 function add(thisbigint, thatbigint)
@@ -1237,6 +1252,54 @@ function add(thisbigint, thatbigint)
 end
 
 --local
+function mutableadd(thisbigint, thatval)
+   local thissign, thismag
+   local thatsign, thatmag
+   local ok, reason
+   
+   ok, reason = isvalidbiginteger(thisbigint)
+   if not ok then
+      error(reason, 2)
+   end
+   
+   if not isvalidoperablenumber(thatval) then
+      error("attempt to perform addition on biginteger and "
+         .. gettype(thatval), 2)
+   end
+   
+   thissign, thismag = thisbigint.sign, thisbigint.magnitude
+   thatsign, thatmag = getsignandmagnitude(thatval)
+   
+   if thissign == 0 then
+      if thatsign ~= 0 then
+         thisbigint.sign = thatsign
+         thisbigint.magnitude = thatmag
+      end
+      return
+   elseif thatsign == 0 then
+      return
+   end
+   
+   if thissign == thatsign then
+      thisbigint.magnitude = destructiveaddmagnitudes(thismag, thatmag)
+   else
+      comparison = comparemagnitudes(thismag, thatmag)
+      if comparison == 1 then
+         thisbigint.magnitude = destructivesubtractmagnitudes(thismag, thatmag)
+      elseif comparison == -1 then
+         thisbigint.sign = -thissign
+         thisbigint.magnitude = destructivesubtractmagnitudes(thatmag, thismag)
+      else
+         thisbigint.sign = 0
+         thisbigint.magnitude = {}
+      end
+   end
+   
+   return thisbigint
+end
+
+
+--local
 function subtract(thisbigint, thatbigint)
    local sign, mag
    local thissign, thatsign
@@ -1244,7 +1307,7 @@ function subtract(thisbigint, thatbigint)
    local comparison
    
    if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
-      error("attempt to perform addition on "
+      error("attempt to perform subtraction on "
          .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
    end
    
@@ -1276,6 +1339,57 @@ function subtract(thisbigint, thatbigint)
    
    return constructorsignmagnitude(sign, mag)
 end
+
+--local
+function mutablesubtract(thisbigint, thatval)
+   local thissign, thismag
+   local thatsign, thatmag
+   local ok, reason
+   
+   ok, reason = isvalidbiginteger(thisbigint)
+   if not ok then
+      error(reason, 2)
+   end
+   
+   if not isvalidoperablenumber(thatval) then
+      error("attempt to perform addition on biginteger and "
+         .. gettype(thatval), 2)
+   end
+   
+   thissign, thismag = thisbigint.sign, thisbigint.magnitude
+   thatsign, thatmag = getsignandmagnitude(thatval)
+   
+   if thissign == 0 then
+      if thatsign ~= 0 then
+         thisbigint.sign = -thatsign
+         thisbigint.magnitude = thatmag
+      end
+      return
+   elseif thatsign == 0 then
+      return
+   end
+   
+   if thissign ~= thatsign then
+      thisbigint.sign = thissign
+      thisbigint.magnitude = destructiveaddmagnitudes(thismag, thatmag)
+   else
+      comparison = comparemagnitudes(thismag, thatmag)
+      if comparison == 1 then
+         thisbigint.sign = thissign
+         thisbigint.magnitude = destructivesubtractmagnitudes(thismag, thatmag)
+      elseif comparison == -1 then
+         thisbigint.sign = thatsign
+         thisbigint.magnitude = destructivesubtractmagnitudes(thatmag, thismag)
+      else
+         thisbigint.sign = 0
+         thisbigint.magnitude = {}
+      end
+   end
+   
+   return thisbigint
+end
+
+
 
 -- temporary functions to print the number in hexadecimal or binary
 --local
