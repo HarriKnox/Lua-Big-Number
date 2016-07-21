@@ -136,8 +136,10 @@ end
 function isvalid32bitinteger(int)
    if type(int) ~= 'number' then
       return false, "value is not a number"
-   elseif int > 0xffffffff or int < 0 then
+   elseif int > 0xffffffff then
       return false, "number is outside 32 bits"
+   elseif int < 0 then
+      return false, "number is negative"
    elseif int % 1 ~= 0 then
       return false, "number is not an integer"
    end
@@ -164,15 +166,19 @@ end
 function isvalidmagnitude(mag)
    local ok, reason
    ok, reason = isvalidbytearray(mag)
+   
    if not ok then
       return false, "not a valid byte-array: " .. reason
    end
+   
    if #mag == 0 then
       return true
    end
+   
    if mag[1] == 0 then
       return false, "magnitude has leading zeros"
    end
+   
    return true
 end
 
@@ -192,7 +198,7 @@ function isvalidsignmagnitudecombination(sign, mag)
       -- logically equal to 0 (zero)
       return false, "zero sign with non-zero magnitude"
    elseif sign ~= 0 and #mag == 0 then
-   -- logically cannot equal 0 (zero)
+      -- logically cannot equal 0 (zero)
       return false, "non-zero sign with zero magnitude"
    end
    return true
@@ -228,6 +234,7 @@ function isvalidoperablenumber(thing)
    if isvalidinteger(thing) or isvalidbytearray(thing) or isvalidbiginteger(thing) then
       return true
    end
+   
    return false, "value is not an operable number but type " .. type(thing)
 end
 
@@ -250,6 +257,7 @@ function isvalidstringnumber(str)
    if stringmatch(str, '^[%-+]?[0-9A-Za-z]+$') then
       return true
    end
+   
    return false, "value is not a valid string-representation of a biginteger"
 end
 
@@ -577,7 +585,7 @@ end
 function getbytearray(thing)
    local sign, mag
    
-   if isvalidbytearray(thing) then
+   if isvalidbytearray(thing) and not isvalidbiginteger(thing) then
       return copyarray(thing)
    end
    
@@ -677,13 +685,11 @@ end
 --local
 function mapbytearray(bigint, mapfunction)
    local bytearray
-   local bibytearray
    
-   bibytearray = getbytearray(bigint)
-   bytearray = {}
+   bytearray = getbytearray(bigint)
    
-   for i = 1, #bibytearray do
-      bytearray[i] = mapfunction(bibytearray[i])
+   for i = 1, #bytearray do
+      bytearray[i] = mapfunction(bytearray[i])
    end
    
    return bytearray
@@ -691,7 +697,7 @@ end
 
 --local
 function mergebytearrays(thisbigint, thatbigint, mergefunction)
-   local bytearray, thisbytearray, thatbytearray
+   local thisbytearray, thatbytearray
    local thislen, thatlen, longerlen
    
    thisbytearray = getbytearray(thisbigint)
@@ -702,12 +708,12 @@ function mergebytearrays(thisbigint, thatbigint, mergefunction)
    destructivesignextendbytearray(thisbytearray, longerlen)
    destructivesignextendbytearray(thatbytearray, longerlen)
    
-   bytearray = {}
    for i = 0, longerlen - 1 do
-      bytearray[longerlen - i] = mergefunction(getintfromend(thisbytearray, i),
+      thisbytearray[longerlen - i] = mergefunction(getintfromend(thisbytearray, i),
                                                getintfromend(thatbytearray, i))
    end
-   return bytearray
+   
+   return thisbytearray
 end
 
 
@@ -1106,8 +1112,7 @@ end
 
 -- Private Magnitude Functions
 --local
-function addmagnitudes(thismag, thatmag)
-   local mag
+function destructiveaddmagnitudes(thismag, thatmag)
    local longermag, shortermag
    local longerlen, shorterlen
    local carry
@@ -1123,11 +1128,10 @@ function addmagnitudes(thismag, thatmag)
       longerlen, shorterlen = shorterlen, longerlen
    end
    
-   mag = {}
    carry = 0
    
    for i = 0, longerlen - 1 do
-      carry, mag[longerlen - i] = splitlong(getintfromend(longermag, i) +
+      carry, longermag[longerlen - i] = splitlong(getintfromend(longermag, i) +
                                             getintfromend(shortermag, i) +
                                             carry)
    end
@@ -1135,19 +1139,17 @@ function addmagnitudes(thismag, thatmag)
    if carry ~= 0 then
       -- If the carry amount exceeds the size of both magnitudes, then insert
       -- the value of the carry in front of everything.
-      table.insert(mag, 1, carry)
+      table.insert(longermag, 1, carry)
    end
    
-   return mag
+   return longermag
 end
 
 --local
-function subtractmagnitudes(minuend, subtrahend)
-   local mag
+function destructivesubtractmagnitudes(minuend, subtrahend)
    local borrow, difference
    local longerlen
    
-   mag = {}
    borrow = 0
    difference = 0
    longerlen = #minuend
@@ -1163,10 +1165,10 @@ function subtractmagnitudes(minuend, subtrahend)
       else
          borrow = 0
       end
-      mag[longerlen - i] = make32bitinteger(difference)
+      minuend[longerlen - i] = make32bitinteger(difference)
    end
    
-   return destructivestripleadingzeros(mag)
+   return destructivestripleadingzeros(minuend)
 end
 
 -- Public Math Functions
@@ -1211,15 +1213,15 @@ function add(thisbigint, thatbigint)
    
    if thissign == thatsign then
       sign = thissign
-      mag = addmagnitudes(thismag, thatmag)
+      mag = destructiveaddmagnitudes(thismag, thatmag)
    else
       comparison = comparemagnitudes(thismag, thatmag)
-      if comparison > 0 then
+      if comparison == 1 then
          sign = thissign
-         mag = subtractmagnitudes(thismag, thatmag)
-      elseif comparison < 0 then
+         mag = destructivesubtractmagnitudes(thismag, thatmag)
+      elseif comparison == -1 then
          sign = thatsign
-         mag = subtractmagnitudes(thatmag, thismag)
+         mag = destructivesubtractmagnitudes(thatmag, thismag)
       else
          sign = 0
          mag = {}
@@ -1252,15 +1254,15 @@ function subtract(thisbigint, thatbigint)
    
    if thissign ~= thatsign then
       sign = thissign
-      mag = addmagnitudes(thismag, thatmag)
+      mag = destructiveaddmagnitudes(thismag, thatmag)
    else
       comparison = comparemagnitudes(thismag, thatmag)
-      if comparison > 0 then
+      if comparison == 1 then
          sign = thissign
-         mag = subtractmagnitudes(thismag, thatmag)
-      elseif comparison < 0 then
+         mag = destructivesubtractmagnitudes(thismag, thatmag)
+      elseif comparison == -1 then
          sign = thatsign
-         mag = subtractmagnitudes(thatmag, thismag)
+         mag = destructivesubtractmagnitudes(thatmag, thismag)
       else
          sign = 0
          mag = {}
