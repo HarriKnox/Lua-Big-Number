@@ -402,10 +402,16 @@ function stripleadingzeroswithsourceanddestination(source, destination)
       return destination
    end
    
-   endpoint = max(length - difference, difference)
+   endpoint = length - difference
    
    for i = 1, endpoint do
-      destination[i], destination[i + difference] = source[i + difference], nil
+      destination[i] = source[i + difference]
+   end
+   
+   if destination == source then
+      for i = endpoint + 1, length do
+         destination[i] = nil
+      end
    end
    
    return destination
@@ -569,7 +575,13 @@ end
 
 --local
 function getbytearray(thing)
-   local sign, mag = getsignandmagnitude(thing)
+   local sign, mag
+   
+   if isvalidbytearray(thing) then
+      return copyarray(thing)
+   end
+   
+   sign, mag = getsignandmagnitude(thing)
    
    if sign == -1 then
       destructivenegatebytearray(mag)
@@ -584,6 +596,60 @@ function getbytearray(thing)
    end
    
    return mag
+end
+
+--local
+function getminimizedbytearray(thing)
+   local bytearray, balen
+   local sign, signint
+   local removals, endpoint
+   
+   sign = getsign(thing)
+   
+   if sign == 0 then
+      return {}
+   end
+   
+   bytearray = getbytearray(thing)
+   balen = #bytearray
+   
+   removals = balen - 1
+   signint = bytearray[1] >= negativemask and 0xffffffff or 0
+   
+   if bytearray[1] == signint then
+      for i = 1, balen - 1 do
+         if bytearray[i] == signint and bytearray[i + 1] ~= signint then
+            if signint == 0 then
+               if bytearray[i + 1] >= negativemask then
+                  removals = i - 1
+               else
+                  removals = i
+               end
+            else
+               if bytearray[i + 1] >= negativemask then
+                  removals = i
+               else
+                  removals = i - 1
+               end
+            end
+            break
+         end
+      end
+   else
+      removals = 0
+   end
+   
+   endpoint = balen - removals
+   
+   for i = 1, endpoint do
+      bytearray[i] = bytearray[i + removals]
+   end
+   
+   for i = endpoint + 1, balen do
+      bytearray[i] = nil
+   end
+   
+   return bytearray
 end
 
 --local
