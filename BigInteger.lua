@@ -153,6 +153,11 @@ function isvalidbytearray(val)
    if type(val) ~= 'table' then
       return false, "value is not an array"
    end
+   
+   if isvalidbiginteger(val) then
+      return false, "value is a biginteger, not a byte-array"
+   end
+   
    for i = 1, #val do
       ok, reason = isvalid32bitinteger(val[i])
       if not ok then
@@ -585,7 +590,7 @@ end
 function getbytearray(thing)
    local sign, mag
    
-   if isvalidbytearray(thing) and not isvalidbiginteger(thing) then
+   if isvalidbytearray(thing) then
       return copyarray(thing)
    end
    
