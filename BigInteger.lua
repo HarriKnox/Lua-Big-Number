@@ -337,15 +337,30 @@ end
 
 -- Byte Array Functions
 --local
-function copyarray(arr)
-   local copy = {}
-   
-   for i = 1, #arr do
-      copy[i] = arr[i]
+function copyarrayto(source, destination)
+   if source ~= destination then
+      for i = 1, #source do
+         destination[i] = source[i]
+      end
    end
    
-   return copy
+   return destination
 end
+
+--local
+function copyarray(arr)
+   return copyarrayto(arr, {})
+end
+
+--local
+function destructivecleararray(array)
+   for i = 1, #array do
+      array[i] = nil
+   end
+   
+   return array
+end
+
 
 
 --local
@@ -683,6 +698,60 @@ function getintfromend(mag, disp)
       return 0
    end
    return mag[maglen - disp]
+end
+
+
+--local
+function convertsignmagnitudetobytearraywithsourceanddestination(sign, source, destination)
+   if sign == -1 then
+      negatebytearraywithsourceanddestination(source, destination)
+      if getbytearraysign(destination) == 1 then
+         table.insert(destination, 1, 0xffffffff)
+      end
+   else
+      copyarrayto(source, destination)
+      if getbytearraysign(destination) == -1 then
+         table.insert(destination, 1, 0)
+      end
+   end
+   
+   return destination
+end
+
+--local
+function copyandconvertsignmagnitudetobytearray(sign, mag)
+   return convertsignmagnitudetobytearraywithsourceanddestination(sign, mag, {})
+end
+
+--local
+function destructiveconvertsignmagnitudetobytearray(sign, mag)
+   return convertsignmagnitudetobytearraywithsourceanddestination(sign, mag, mag)
+end
+
+
+--local
+function convertbytearraytosignmagnitudewithsourceanddestination(source, destination)
+   local sign = getbytearraysign(source)
+   if sign == 0 then
+      return 0, destructivecleararray(destination)
+   end
+   
+   if sign == -1 then
+      negatebytearraywithsourceanddestination(source, destination)
+      return -1, destination
+   end
+   
+   return 1, destructivestripleadingzeros(destination)
+end
+
+--local
+function copyandconvertbytearraytosignmagnitude(bytearr)
+   return convertbytearraytosignmagnitudewithsourceanddestination(bytearr, {})
+end
+
+--local
+function destructiveconvertbytearraytosignmagnitude(bytearr)
+   return convertbytearraytosignmagnitudewithsourceanddestination(bytearr, bytearr)
 end
 
 
