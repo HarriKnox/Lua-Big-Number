@@ -757,11 +757,7 @@ end
 
 -- Byte-Array Mappers
 --local
-function mapbytearray(bigint, mapfunction)
-   local bytearray
-   
-   bytearray = getbytearray(bigint)
-   
+function destructivemapbytearray(bytearray, mapfunction)
    for i = 1, #bytearray do
       bytearray[i] = mapfunction(bytearray[i])
    end
@@ -770,12 +766,8 @@ function mapbytearray(bigint, mapfunction)
 end
 
 --local
-function mergebytearrays(thisbigint, thatbigint, mergefunction)
-   local thisbytearray, thatbytearray
-   local thislen, thatlen, longerlen
-   
-   thisbytearray = getbytearray(thisbigint)
-   thatbytearray = getbytearray(thatbigint)
+function destructivemergebytearrays(thisbytearray, thatbytearray, mergefunction)
+   local longerlen
    
    longerlen = max(#thisbytearray, #thatbytearray)
    
@@ -784,7 +776,7 @@ function mergebytearrays(thisbigint, thatbigint, mergefunction)
    
    for i = 0, longerlen - 1 do
       thisbytearray[longerlen - i] = mergefunction(getintfromend(thisbytearray, i),
-                                               getintfromend(thatbytearray, i))
+                                                   getintfromend(thatbytearray, i))
    end
    
    return thisbytearray
@@ -1140,47 +1132,104 @@ function bitwisenot(bigint)
       error(reason, 2)
    end
    
-   return constructorbytearray(mapbytearray(bigint, bitnot))
+   return constructorbytearray(destructivemapbytearray(getbytearray(bigint), bitnot))
 end
+
+--local
+function mutablebitwisenot(bigint)
+   local sign, bytearray
+   local ok, reason = isvalidbiginteger(bigint)
+   if not ok then
+      error(reason, 2)
+   end
+   
+   destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
+   destructivemapbytearray(bigint.magnitude, bitnot)
+   
+   bigint.sign, bigint.magnitude = destructiveconvertbytearraytosignmagnitude(bigint.magnitude)
+   
+   return bigint
+end
+
+
+--local
+function binarybitwise(thisval, thatval, bitwisefunction)
+   if not isvalidoperablenumber(thisval) or not isvalidoperablenumber(thatval) then
+      error("attempt to perform bitwise operation on "
+         .. gettype(thisval) .. " and " .. gettype(thatval), 3)
+   end
+   
+   return constructorbytearray(destructivemergebytearrays(getbytearray(thisval),
+                                                          getbytearray(thatval),
+                                                          bitwisefunction))
+end
+
+--local
+function mutablebinarybitwise(thisbigint, thatval, bitwisefunction)
+   local sign, bytearray
+   local thatbytearray
+   local ok, reason = isvalidbiginteger(thisbigint)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   if not isvalidoperablenumber(thatval) then
+      error("attempt to perform bitwiseoperation on bigint and "
+         .. gettype(thatval), 3)
+   end
+   
+   thatbytearray = getbytearray(thatval)
+   
+   destructiveconvertsignmagnitudetobytearray(thisbigint.sign, thisbigint.magnitude)
+   destructivemergebytearrays(thisbigint.magnitude, thatbytearray, bitwisefunction)
+   
+   thisbigint.sign, thisbigint.magnitude = destructiveconvertbytearraytosignmagnitude(thisbigint.magnitude)
+   
+   return thisbigint
+end
+
 
 --local
 function bitwiseand(thisbigint, thatbigint)
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
-      error("attempt to perform equals on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
-   end
-   
-   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitand))
+   return binarybitwise(thisbigint, thatbigint, bitand)
 end
+
+--local
+function mutablebitwiseand(thisbigint, thatval)
+   return mutablebinarybitwise(thisbigint, thatval, bitand)
+end
+
 
 --local
 function bitwiseandnot(thisbigint, thatbigint)
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
-      error("attempt to perform equals on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
-   end
-   
-   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitandnot))
+   return binarybitwise(thisbigint, thatbigint, bitandnot)
 end
+
+--local
+function mutablebitwiseandnot(thisbigint, thatval)
+   return mutablebinarybitwise(thisbigint, thatval, bitandnot)
+end
+
 
 --local
 function bitwiseor(thisbigint, thatbigint)
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
-      error("attempt to perform equals on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
-   end
-   
-   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitor))
+   return binarybitwise(thisbigint, thatbigint, bitor)
 end
 
 --local
+function mutablebitwiseor(thisbigint, thatbigint)
+   return mutablebinarybitwise(thisbigint, thatval, bitor)
+end
+
+
+--local
 function bitwisexor(thisbigint, thatbigint)
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
-      error("attempt to perform equals on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
-   end
-   
-   return constructorbytearray(mergebytearrays(thisbigint, thatbigint, bitxor))
+   return binarybitwise(thisbigint, thatbigint, bitxor)
+end
+
+--local
+function mutablebitwisexor(thisbigint, thatbigint)
+   return mutablebinarybitwise(thisbigint, thatval, bitxor)
 end
 
 
@@ -1519,6 +1568,10 @@ function stringofbytearray(bigint, dobinary)
    return str
 end
 
+function reloadbiginteger()
+   _G.package.loaded.biginteger = nil
+   _G.biginteger = require('biginteger')
+end
 
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
