@@ -817,19 +817,7 @@ end
 -- Constructors
 --local
 function createbiginteger(sign, mag)
-   local ok, reason
-   
-   ok, reason = isvalidsign(sign)
-   if ok then
-      ok, reason = isvalidmagnitude(mag)
-      if ok then
-         ok, reason = isvalidsignmagnitudecombination(sign, mag)
-         if ok then
-            return {sign = sign, magnitude = mag}
-         end
-      end
-   end
-   error(reason, 4)
+   return {sign = sign, magnitude = mag}
 end
 
 --local
@@ -843,8 +831,7 @@ function constructorinteger(int)
 end
 
 --local
-function constructorsignmagnitude(sign, mag)
-   local magnitude
+function constructorsignmagnitudetrusted(sign, mag)
    local ok, reason
    
    ok, reason = isvalidsign(sign)
@@ -852,23 +839,34 @@ function constructorsignmagnitude(sign, mag)
       error(reason, 3)
    end
    
+   ok, reason = isvalidmagnitude(mag)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   ok, reason = isvalidsignmagnitudecombination(sign, mag)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   if #mag >= maxmagnitudelength then
+      error("biginteger would overflow supported range", 3)
+   end
+   
+   return createbiginteger(sign, mag)
+end
+
+--local
+function constructorsignmagnitude(sign, mag)
+   local magnitude
+   local ok, reason
+   
    ok, reason = isvalidbytearray(mag)
    if not ok then
       error(reason, 3)
    end
    
-   magnitude = copyandstripleadingzeros(mag)
-   
-   ok, reason = isvalidsignmagnitudecombination(sign, magnitude)
-   if not ok then
-      error(reason, 3)
-   end
-   
-   if #magnitude >= maxmagnitudelength then
-      error("biginteger would overflow supported range", 3)
-   end
-   
-   return createbiginteger(sign, magnitude)
+   return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
 end
 
 --local
@@ -901,7 +899,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
 end
 
 --local
-function constructorbytearray(array)
+function constructorbytearraytrusted(array)
    local sign, mag
    local ok, reason
    
@@ -910,13 +908,22 @@ function constructorbytearray(array)
       error(reason, 3)
    end
    
-   sign, mag = getbytearraysignandmagnitude(array)
+   sign = getbytearraysign(array)
    
-   if #mag >= maxmagnitudelength then
+   if sign == -1 then
+      destructivenegatebytearray(array)
+   end
+   
+   if #array >= maxmagnitudelength then
       error("biginteger would overflow supported range", 3)
    end
    
-   return createbiginteger(sign, mag)
+   return createbiginteger(sign, array)
+end
+
+--local
+function constructorbytearray(array)
+   return constructorbytearraytrusted(getbytearray(array))
 end
 
 --local
@@ -1147,7 +1154,7 @@ function bitwisenot(value)
       error(reason, 2)
    end
    
-   return constructorbytearray(destructivemapbytearray(getbytearray(value), bitnot))
+   return constructorbytearraytrusted(destructivemapbytearray(getbytearray(value), bitnot))
 end
 
 --local
@@ -1174,9 +1181,9 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction)
          .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 3)
    end
    
-   return constructorbytearray(destructivemergebytearrays(getbytearray(thisvalue),
-                                                          getbytearray(thatvalue),
-                                                          bitwisefunction))
+   return constructorbytearraytrusted(destructivemergebytearrays(getbytearray(thisvalue),
+                                                                 getbytearray(thatvalue),
+                                                                 bitwisefunction))
 end
 
 --local
@@ -1300,7 +1307,7 @@ function bitwiseleftshift(value, displacement)
       tableinsert(mag, 1, carry)
    end
    
-   return constructorsignmagnitude(sign, mag)
+   return constructorsignmagnitudetrusted(sign, mag)
 end
 
 
@@ -1367,7 +1374,7 @@ function negate(bigint)
       error(reason, 2)
    end
    
-   return constructorsignmagnitude(-bigint.sign, bigint.magnitude)
+   return constructorsignmagnitudetrusted(-bigint.sign, copyarray(bigint))
 end
 
 --local
@@ -1445,7 +1452,7 @@ function add(thisvalue, thatvalue)
       end
    end
    
-   return constructorsignmagnitude(sign, mag)
+   return constructorsignmagnitudetrusted(sign, mag)
 end
 
 --local
@@ -1533,7 +1540,7 @@ function subtract(thisvalue, thatvalue)
       end
    end
    
-   return constructorsignmagnitude(sign, mag)
+   return constructorsignmagnitudetrusted(sign, mag)
 end
 
 --local
