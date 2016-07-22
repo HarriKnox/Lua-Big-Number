@@ -63,7 +63,7 @@ min = min or math.min
 random = random or math.random
 
 --local
-maxinteger = math.maxinteger or 0x7ffffffffffff
+maxinteger = 0x7ffffffffffff -- 2 ^ 51 - 1; largest number bit32 can work with reliably
 --local
 maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
 --local
@@ -73,6 +73,8 @@ negativemask = 0x80000000
 stringsub = string.sub
 --local
 stringmatch = string.match
+--local
+tableinsert = table.insert
 
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
@@ -148,18 +150,18 @@ function isvalid32bitinteger(int)
 end
 
 --local
-function isvalidbytearray(val)
+function isvalidbytearray(array)
    local ok, reason
-   if type(val) ~= 'table' then
+   if type(array) ~= 'table' then
       return false, "value is not an array"
    end
    
-   if isvalidbiginteger(val) then
+   if isvalidbiginteger(array) then
       return false, "value is a biginteger, not a byte-array"
    end
    
-   for i = 1, #val do
-      ok, reason = isvalid32bitinteger(val[i])
+   for i = 1, #array do
+      ok, reason = isvalid32bitinteger(array[i])
       if not ok then
          return false, "element " .. i .. " not a 32 bit number: " .. reason
       end
@@ -235,12 +237,12 @@ function isvalidbiginteger(bigint)
 end
 
 --local
-function isvalidoperablenumber(thing)
-   if isvalidinteger(thing) or isvalidbytearray(thing) or isvalidbiginteger(thing) then
+function isvalidoperablevalue(value)
+   if isvalidinteger(value) or isvalidbytearray(value) or isvalidbiginteger(value) then
       return true
    end
    
-   return false, "value is not an operable number but type " .. type(thing)
+   return false, "value is not an operable number but type " .. type(value)
 end
 
 --local
@@ -348,8 +350,8 @@ function copyarrayto(source, destination)
 end
 
 --local
-function copyarray(arr)
-   return copyarrayto(arr, {})
+function copyarray(array)
+   return copyarrayto(array, {})
 end
 
 --local
@@ -364,7 +366,7 @@ end
 
 
 --local
-function signextendbytearraywithsourceanddestination(source, destination, newlength)
+function signextendbytearrayto(source, destination, newlength)
    local length = #source
    local signbytes = newlength - length
    local signint = length > 0 and source[1] >= negativemask and 0xffffffff or 0
@@ -394,18 +396,18 @@ function signextendbytearraywithsourceanddestination(source, destination, newlen
 end
 
 --local
-function copyandsignextendbytearray(val, len)
-   return signextendbytearraywithsourceanddestination(val, {}, len)
+function copyandsignextendbytearray(array, newlength)
+   return signextendbytearrayto(array, {}, newlength)
 end
 
 --local
-function destructivesignextendbytearray(val, len)
-   return signextendbytearraywithsourceanddestination(val, val, len)
+function destructivesignextendbytearray(array, newlength)
+   return signextendbytearrayto(array, array, newlength)
 end
 
 
 --local
-function stripleadingzeroswithsourceanddestination(source, destination)
+function stripleadingzerosto(source, destination)
    local length = #source
    local difference = length
    local endpoint
@@ -446,18 +448,18 @@ function stripleadingzeroswithsourceanddestination(source, destination)
 end
 
 --local
-function copyandstripleadingzeros(val)
-   return stripleadingzeroswithsourceanddestination(val, {})
+function copyandstripleadingzeros(array)
+   return stripleadingzerosto(array, {})
 end
 
 --local
-function destructivestripleadingzeros(val)
-   return stripleadingzeroswithsourceanddestination(val, val)
+function destructivestripleadingzeros(array)
+   return stripleadingzerosto(array, array)
 end
 
 
 --local
-function negatebytearraywithsourceanddestination(source, destination)
+function negatebytearrayto(source, destination)
    local length = #source
    local addend = 1
    
@@ -469,13 +471,13 @@ function negatebytearraywithsourceanddestination(source, destination)
 end
 
 --local
-function copyandnegatebytearray(bytearray)
-   return negatebytearraywithsourceanddestination(bytearray, {})
+function copyandnegatebytearray(array)
+   return negatebytearrayto(array, {})
 end
 
 --local
-function destructivenegatebytearray(bytearray)
-   return negatebytearraywithsourceanddestination(bytearray, bytearray)
+function destructivenegatebytearray(array)
+   return negatebytearrayto(array, array)
 end
 
 
@@ -486,16 +488,14 @@ function destructivemultiplyandadd(mag, factor, addend)
    local carry = 0
    local index = maglength
    
-   while index > 0 do
-      carry, mag[index] = integermultiplyandaddtolong(factor, mag[index], carry)
-      index = index - 1
+   for i = maglength, 1, -1 do
+      carry, mag[i] = integermultiplyandaddtolong(factor, mag[i], carry)
    end
    
    carry = addend
-   index = maglength
-   while index > 0 do
-      carry, mag[index] = splitlong(mag[index] + carry)
-      index = index - 1
+   
+   for i = maglength, 1, -1 do
+      carry, mag[i] = splitlong(mag[i] + carry)
    end
    
    return mag
@@ -512,15 +512,15 @@ function gettype(thing)
 end
 
 --local
-function getbytearraysign(thing)
-   if #thing == 0 then
+function getbytearraysign(array)
+   if #array == 0 then
       return 0
    end
-   if thing[1] >= negativemask then
+   if array[1] >= negativemask then
       return -1
    end
-   for i = 1, #thing do
-      if thing[i] ~= 0 then
+   for i = 1, #array do
+      if array[i] ~= 0 then
          return 1
       end
    end
@@ -528,98 +528,98 @@ function getbytearraysign(thing)
 end
 
 --local
-function getbytearraymagnitude(thing)
-   if getbytearraysign(thing) == -1 then
-      return copyandnegatebytearray(thing)
+function getbytearraymagnitude(array)
+   if getbytearraysign(array) == -1 then
+      return copyandnegatebytearray(array)
    end
-   return copyandstripleadingzeros(thing)
+   return copyandstripleadingzeros(array)
 end
 
 --local
-function getbytearraysignandmagnitude(thing)
-   local sign = getbytearraysign(thing)
+function getbytearraysignandmagnitude(array)
+   local sign = getbytearraysign(array)
    if sign == -1 then
-      return sign, copyandnegatebytearray(thing)
+      return sign, copyandnegatebytearray(array)
    end
-   return sign, copyandstripleadingzeros(thing)
+   return sign, copyandstripleadingzeros(array)
 end
 
 --local
-function getnumbersign(thing)
-   return (thing < 0 and -1) or (thing > 0 and 1) or 0
+function getnumbersign(int)
+   return (int < 0 and -1) or (int > 0 and 1) or 0
 end
 
 --local
-function getnumbermagnitude(thing)
-   return splitlongandstripleadingzeros(thing < 0 and -thing or thing)
+function getnumbermagnitude(int)
+   return splitlongandstripleadingzeros(int < 0 and -int or int)
 end
 
 --local
-function getnumbersignandmagnitude(thing)
-   return getnumbersign(thing), getnumbermagnitude(thing)
+function getnumbersignandmagnitude(int)
+   return getnumbersign(int), getnumbermagnitude(int)
 end
 
 --local
-function getsign(thing)
-   if isvalidbiginteger(thing) then
-      return thing.sign
+function getsign(value)
+   if isvalidbiginteger(value) then
+      return value.sign
       
-   elseif isvalidbytearray(thing) then
-      return getbytearraysign(thing)
+   elseif isvalidbytearray(value) then
+      return getbytearraysign(value)
       
-   elseif isvalidinteger(thing) then
-      return getnumbersign(thing)
+   elseif isvalidinteger(value) then
+      return getnumbersign(value)
    end
    error("cannot obtain sign")
 end
 
 --local
-function getmagnitude(thing)
-   if isvalidbiginteger(thing) then
-      return copyarray(thing.magnitude)
+function getmagnitude(value)
+   if isvalidbiginteger(value) then
+      return copyarray(value.magnitude)
       
-   elseif isvalidbytearray(thing) then
-      return getbytearraymagnitude(thing)
+   elseif isvalidbytearray(value) then
+      return getbytearraymagnitude(value)
       
-   elseif isvalidinteger(thing) then
-      return getnumbermagnitude(thing)
+   elseif isvalidinteger(value) then
+      return getnumbermagnitude(value)
    end
    error("cannot obtain magnitude")
 end
 
 --local
-function getsignandmagnitude(thing)
-   if isvalidbiginteger(thing) then
-      return thing.sign, copyarray(thing.magnitude)
+function getsignandmagnitude(value)
+   if isvalidbiginteger(value) then
+      return value.sign, copyarray(value.magnitude)
       
-   elseif isvalidbytearray(thing) then
-      return getbytearraysignandmagnitude(thing)
+   elseif isvalidbytearray(value) then
+      return getbytearraysignandmagnitude(value)
       
-   elseif isvalidinteger(thing) then
-      return getnumbersignandmagnitude(thing)
+   elseif isvalidinteger(value) then
+      return getnumbersignandmagnitude(value)
    end
    error("cannot obtain sign and magnitude")
 end
 
 --local
-function getbytearray(thing)
+function getbytearray(array)
    local sign, mag
    
-   if isvalidbytearray(thing) then
-      return copyarray(thing)
+   if isvalidbytearray(array) then
+      return copyarray(array)
    end
    
-   sign, mag = getsignandmagnitude(thing)
+   sign, mag = getsignandmagnitude(array)
    
    if sign == -1 then
       destructivenegatebytearray(mag)
       
       if mag[1] < negativemask then
-         table.insert(mag, 1, 0xffffffff)
+         tableinsert(mag, 1, 0xffffffff)
       end
    elseif sign == 1 then
       if mag[1] >= negativemask then
-         table.insert(mag, 1, 0)
+         tableinsert(mag, 1, 0)
       end
    end
    
@@ -627,18 +627,18 @@ function getbytearray(thing)
 end
 
 --local
-function getminimizedbytearray(thing)
+function getminimizedbytearray(array)
    local bytearray, balen
    local sign, signint
    local removals, endpoint
    
-   sign = getsign(thing)
+   sign = getsign(array)
    
    if sign == 0 then
       return {}
    end
    
-   bytearray = getbytearray(thing)
+   bytearray = getbytearray(array)
    balen = #bytearray
    
    removals = balen - 1
@@ -681,37 +681,27 @@ function getminimizedbytearray(thing)
 end
 
 --local
-function getfirstnonzerointfromend(mag)
-   local maglen = #mag
-   for i = 0, maglen - 1 do
-      if mag[maglen - i] ~= 0 then
-         return i
-      end
-   end
-end
-
---local
-function getintfromend(mag, disp)
-   local maglen = #mag
+function getbytefromend(array, displacement)
+   local arraylength = #array
    
-   if disp < 0 or disp >= maglen then
+   if displacement < 0 or displacement >= arraylength then
       return 0
    end
-   return mag[maglen - disp]
+   return array[arraylength - displacement]
 end
 
 
 --local
-function convertsignmagnitudetobytearraywithsourceanddestination(sign, source, destination)
+function convertsignmagnitudetobytearrayto(sign, source, destination)
    if sign == -1 then
-      negatebytearraywithsourceanddestination(source, destination)
+      negatebytearrayto(source, destination)
       if getbytearraysign(destination) == 1 then
-         table.insert(destination, 1, 0xffffffff)
+         tableinsert(destination, 1, 0xffffffff)
       end
    else
       copyarrayto(source, destination)
       if getbytearraysign(destination) == -1 then
-         table.insert(destination, 1, 0)
+         tableinsert(destination, 1, 0)
       end
    end
    
@@ -720,24 +710,24 @@ end
 
 --local
 function copyandconvertsignmagnitudetobytearray(sign, mag)
-   return convertsignmagnitudetobytearraywithsourceanddestination(sign, mag, {})
+   return convertsignmagnitudetobytearrayto(sign, mag, {})
 end
 
 --local
 function destructiveconvertsignmagnitudetobytearray(sign, mag)
-   return convertsignmagnitudetobytearraywithsourceanddestination(sign, mag, mag)
+   return convertsignmagnitudetobytearrayto(sign, mag, mag)
 end
 
 
 --local
-function convertbytearraytosignmagnitudewithsourceanddestination(source, destination)
+function convertbytearraytosignmagnitudeto(source, destination)
    local sign = getbytearraysign(source)
    if sign == 0 then
       return 0, destructivecleararray(destination)
    end
    
    if sign == -1 then
-      negatebytearraywithsourceanddestination(source, destination)
+      negatebytearrayto(source, destination)
       return -1, destination
    end
    
@@ -745,13 +735,13 @@ function convertbytearraytosignmagnitudewithsourceanddestination(source, destina
 end
 
 --local
-function copyandconvertbytearraytosignmagnitude(bytearr)
-   return convertbytearraytosignmagnitudewithsourceanddestination(bytearr, {})
+function copyandconvertbytearraytosignmagnitude(bytearray)
+   return convertbytearraytosignmagnitudeto(bytearray, {})
 end
 
 --local
-function destructiveconvertbytearraytosignmagnitude(bytearr)
-   return convertbytearraytosignmagnitudewithsourceanddestination(bytearr, bytearr)
+function destructiveconvertbytearraytosignmagnitude(bytearray)
+   return convertbytearraytosignmagnitudeto(bytearray, bytearray)
 end
 
 
@@ -767,16 +757,16 @@ end
 
 --local
 function destructivemergebytearrays(thisbytearray, thatbytearray, mergefunction)
-   local longerlen
+   local longerlength
    
-   longerlen = max(#thisbytearray, #thatbytearray)
+   longerlength = max(#thisbytearray, #thatbytearray)
    
-   destructivesignextendbytearray(thisbytearray, longerlen)
-   destructivesignextendbytearray(thatbytearray, longerlen)
+   destructivesignextendbytearray(thisbytearray, longerlength)
+   destructivesignextendbytearray(thatbytearray, longerlength)
    
-   for i = 0, longerlen - 1 do
-      thisbytearray[longerlen - i] = mergefunction(getintfromend(thisbytearray, i),
-                                                   getintfromend(thatbytearray, i))
+   for i = 0, longerlength - 1 do
+      thisbytearray[longerlen - i] = mergefunction(getbytefromend(thisbytearray, i),
+                                                   getbytefromend(thatbytearray, i))
    end
    
    return thisbytearray
@@ -785,7 +775,7 @@ end
 
 -- Other Helper Functions
 --local
-function getcharvalue(character)
+function getcharacternumericalvalue(character)
    local bytevalue = string.byte(character)
    
    if bytevalue >= 48 and bytevalue <= 57 then
@@ -822,18 +812,18 @@ function createbiginteger(sign, mag)
 end
 
 --local
-function constructorinteger(num)
-   local ok, reason = isvalidinteger(num)
+function constructorinteger(int)
+   local ok, reason = isvalidinteger(int)
    if not ok then
       error(reason, 3)
    end
    
-   return createbiginteger(getnumbersignandmagnitude(num))
+   return createbiginteger(getnumbersignandmagnitude(int))
 end
 
 --local
-function constructorsignmagnitude(sign, val)
-   local mag
+function constructorsignmagnitude(sign, mag)
+   local magnitude
    local ok, reason
    
    ok, reason = isvalidsign(sign)
@@ -841,23 +831,23 @@ function constructorsignmagnitude(sign, val)
       error(reason, 3)
    end
    
-   ok, reason = isvalidbytearray(val)
+   ok, reason = isvalidbytearray(mag)
    if not ok then
       error(reason, 3)
    end
    
-   mag = copyandstripleadingzeros(val)
+   magnitude = copyandstripleadingzeros(mag)
    
-   ok, reason = isvalidsignmagnitudecombination(sign, mag)
+   ok, reason = isvalidsignmagnitudecombination(sign, magnitude)
    if not ok then
       error(reason, 3)
    end
    
-   if #mag >= maxmagnitudelength then
+   if #magnitude >= maxmagnitudelength then
       error("biginteger would overflow supported range", 3)
    end
    
-   return createbiginteger(sign, mag)
+   return createbiginteger(sign, magnitude)
 end
 
 --local
@@ -890,16 +880,16 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
 end
 
 --local
-function constructorbytearray(val)
+function constructorbytearray(array)
    local sign, mag
    local ok, reason
    
-   ok, reason = isvalidbytearray(val)
+   ok, reason = isvalidbytearray(array)
    if not ok then
       error(reason, 3)
    end
    
-   sign, mag = getbytearraysignandmagnitude(val)
+   sign, mag = getbytearraysignandmagnitude(array)
    
    if #mag >= maxmagnitudelength then
       error("biginteger would overflow supported range", 3)
@@ -934,8 +924,8 @@ function constructorstringradix(str, radix)
    cursor = strsign and 2 or 1
    
    for i = cursor, strlength do
-      if getcharvalue(stringsub(str, i, i)) >= radix then
-         -- if a character is not a proper digit, getcharvalue will return 36,
+      if getcharacternumericalvalue(stringsub(str, i, i)) >= radix then
+         -- if a character is not a proper digit, getcharacternumericalvalue will return 36,
          -- which will always be >= radix
          error("illegal digit", 3)
       end
@@ -1005,6 +995,11 @@ end
 
 --local
 function clone(bigint)
+   local ok, reason = isvalidbiginteger(bigint)
+   if not ok then
+      error(reason, 2)
+   end
+   
    return constructorsignmangitude(bigint.sign, bigint.magnitude)
 end
 
@@ -1015,20 +1010,22 @@ function biginteger(a, b)
    local typea = gettype(a)
    local typeb = gettype(b)
    
-   if typea == "integer" then
-      if typeb == "nil" then
+   if typea == 'integer' then
+      if typeb == 'nil' then
          return constructorinteger(a)
-      elseif typeb == "byte-array" then
+      elseif typeb == 'byte-array' then
          return constructorsignmagnitude(a, b)
-      elseif typeb == "function" then
+      elseif typeb == 'function'then
          return constructorbitsrng(a, b)
       end
-   elseif typea == "byte-array" and typeb == "nil" then
+   elseif typea == 'biginteger' then
+      return clone(a)
+   elseif typea == 'byte-array' and typeb == 'nil' then
       return constructorbytearray(a)
-   elseif typea == "string" then
-      if typeb == "nil" then
+   elseif typea == 'string' then
+      if typeb == 'nil' then
          return constructorstringradix(a, 10)
-      elseif typeb == "integer" then
+      elseif typeb == 'integer' then
          return constructorstringradix(a, b)
       end
    end
@@ -1039,47 +1036,16 @@ end
 
 
 -- Comparison Functions
---[[local function equals(thisbigint, thatbigint)
-   local thismag, thatmag
-   
-   if rawequal(thisbigint, thatbigint) then
-      return true
-   end
-   
-   if not isvalidbiginteger(thatbigint) then
-      return false
-   end
-   
-   if thisbigint.sign ~= thatbigint.sign then
-      return false
-   end
-   
-   thismag = thisbigint.magnitude
-   thatmag = thatbigint.magnitude
-   
-   if #thismag ~= #thatmag then
-      return false
-   end
-   
-   for i = 1, #thismag do
-      if thismag[i] ~= thatmag[i] then
-         return false
-      end
-   end
-   return true
-end
---]]
-
 --local
 function comparemagnitudes(thismag, thatmag)
-   local thislen = #thismag
-   local thatlen = #thatmag
-   if thislen ~= thatlen then
+   local thislength = #thismag
+   local thatlength = #thatmag
+   if thislength ~= thatlength then
       -- If the magnitudes are different sizes, then they cannot be equal
-      return thislen > thatlen and 1 or -1
+      return thislength > thatlength and 1 or -1
    end
    
-   for i = 1, thislen do
+   for i = 1, thislength do
       if thismag[i] ~= thatmag[i] then
          return thismag[i] > thatmag[i] and 1 or -1
       end
@@ -1089,21 +1055,21 @@ function comparemagnitudes(thismag, thatmag)
 end
 
 --local
-function compare(thisbigint, thatbigint)
-   local thismag, thatmag
-   local thissign, thatsign
+function compare(thisvalue, thatvalue)
+   local thissign, thismag
+   local thatsign, thatmag
    
-   if rawequal(thisbigint, thatbigint) then
+   if rawequal(thisvalue, thatvalue) then
       return 0
    end
    
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
+   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform comparison on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 2)
    end
    
-   thissign, thismag = getsignandmagnitude(thisbigint)
-   thatsign, thatmag = getsignandmagnitude(thatbigint)
+   thissign, thismag = getsignandmagnitude(thisvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
    
    if thissign ~= thatsign then
       -- If the signs differ, then they cannot be equal
@@ -1115,7 +1081,8 @@ end
 
 --local
 function equals(thisbigint, thatbigint)
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
+   if not isvalidoperablevalue(thisbigint) or not isvalidoperablevalue(thatbigint) then
+      -- if I can't operate on it, then it's probably not equal to what I can operate on
       return false
    end
    
@@ -1153,13 +1120,13 @@ end
 
 -- Bitwise functions
 --local
-function bitwisenot(bigint)
-   local ok, reason = isvalidoperablenumber(bigint)
+function bitwisenot(value)
+   local ok, reason = isvalidoperablevalue(value)
    if not ok then
       error(reason, 2)
    end
    
-   return constructorbytearray(destructivemapbytearray(getbytearray(bigint), bitnot))
+   return constructorbytearray(destructivemapbytearray(getbytearray(value), bitnot))
 end
 
 --local
@@ -1180,19 +1147,19 @@ end
 
 
 --local
-function binarybitwise(thisval, thatval, bitwisefunction)
-   if not isvalidoperablenumber(thisval) or not isvalidoperablenumber(thatval) then
+function binarybitwise(thisvalue, thatvalue, bitwisefunction)
+   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform bitwise operation on "
-         .. gettype(thisval) .. " and " .. gettype(thatval), 3)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 3)
    end
    
-   return constructorbytearray(destructivemergebytearrays(getbytearray(thisval),
-                                                          getbytearray(thatval),
+   return constructorbytearray(destructivemergebytearrays(getbytearray(thisvalue),
+                                                          getbytearray(thatvalue),
                                                           bitwisefunction))
 end
 
 --local
-function mutablebinarybitwise(thisbigint, thatval, bitwisefunction)
+function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
    local sign, bytearray
    local thatbytearray
    local ok, reason = isvalidbiginteger(thisbigint)
@@ -1200,12 +1167,12 @@ function mutablebinarybitwise(thisbigint, thatval, bitwisefunction)
       error(reason, 3)
    end
    
-   if not isvalidoperablenumber(thatval) then
+   if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform bitwiseoperation on bigint and "
-         .. gettype(thatval), 3)
+         .. gettype(thatvalue), 3)
    end
    
-   thatbytearray = getbytearray(thatval)
+   thatbytearray = getbytearray(thatvalue)
    
    destructiveconvertsignmagnitudetobytearray(thisbigint.sign, thisbigint.magnitude)
    destructivemergebytearrays(thisbigint.magnitude, thatbytearray, bitwisefunction)
@@ -1217,71 +1184,71 @@ end
 
 
 --local
-function bitwiseand(thisbigint, thatbigint)
-   return binarybitwise(thisbigint, thatbigint, bitand)
+function bitwiseand(thisvalue, thatvalue)
+   return binarybitwise(thisvalue, thatvalue, bitand)
 end
 
 --local
-function mutablebitwiseand(thisbigint, thatval)
-   return mutablebinarybitwise(thisbigint, thatval, bitand)
-end
-
-
---local
-function bitwiseandnot(thisbigint, thatbigint)
-   return binarybitwise(thisbigint, thatbigint, bitandnot)
-end
-
---local
-function mutablebitwiseandnot(thisbigint, thatval)
-   return mutablebinarybitwise(thisbigint, thatval, bitandnot)
+function mutablebitwiseand(thisbigint, thatvalue)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitand)
 end
 
 
 --local
-function bitwiseor(thisbigint, thatbigint)
-   return binarybitwise(thisbigint, thatbigint, bitor)
+function bitwiseandnot(thisvalue, thatvalue)
+   return binarybitwise(thisvalue, thatvalue, bitandnot)
 end
 
 --local
-function mutablebitwiseor(thisbigint, thatbigint)
-   return mutablebinarybitwise(thisbigint, thatval, bitor)
+function mutablebitwiseandnot(thisbigint, thatvalue)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitandnot)
 end
 
 
 --local
-function bitwisexor(thisbigint, thatbigint)
-   return binarybitwise(thisbigint, thatbigint, bitxor)
+function bitwiseor(thisvalue, thatvalue)
+   return binarybitwise(thisvalue, thatvalue, bitor)
 end
 
 --local
-function mutablebitwisexor(thisbigint, thatbigint)
-   return mutablebinarybitwise(thisbigint, thatval, bitxor)
+function mutablebitwiseor(thisbigint, thatvalue)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitor)
+end
+
+
+--local
+function bitwisexor(thisvalue, thatbigint)
+   return binarybitwise(thisvalue, thatvalue, bitxor)
+end
+
+--local
+function mutablebitwisexor(thisbigint, thatvalue)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitxor)
 end
 
 
 -- Private Magnitude Functions
 --local
 function destructiveaddmagnitudes(thismag, thatmag)
-   local thislen, thatlen, longerlen
+   local thislength, thatlength, longerlength
    local carry
    
-   thislen = #thismag
-   thatlen = #thatmag
+   thislength = #thismag
+   thatlength = #thatmag
    
-   longerlen = max(thislen, thatlen)
+   longerlength = max(thislength, thatlengh)
    carry = 0
    
-   for i = 0, longerlen - 1 do
-      carry, thismag[longerlen - i] = splitlong(getintfromend(thismag, i) +
-                                                getintfromend(thatmag, i) +
-                                                carry)
+   for i = 0, longerlength - 1 do
+      carry, thismag[longerlength - i] = splitlong(getbytefromend(thismag, i) +
+                                                   getbytefromend(thatmag, i) +
+                                                   carry)
    end
    
    if carry ~= 0 then
       -- If the carry amount exceeds the size of both magnitudes, then insert
       -- the value of the carry in front of everything.
-      table.insert(thismag, 1, carry)
+      tableinsert(thismag, 1, carry)
    end
    
    return thismag
@@ -1297,8 +1264,8 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    longerlen = #minuend
    
    for i = 0, longerlen - 1 do
-      difference = getintfromend(minuend, i) -
-                   getintfromend(subtrahend, i) -
+      difference = getbytefromend(minuend, i) -
+                   getbytefromend(subtrahend, i) -
                    borrow
       
       if difference < 0 then
@@ -1318,19 +1285,24 @@ end
 --local
 function negate(bigint)
    local ok, reason = isvalidbiginteger(bigint)
+   
    if not ok then
       error(reason, 2)
    end
+   
    return constructorsignmagnitude(-bigint.sign, bigint.magnitude)
 end
 
 --local
 function mutablenegate(bigint)
    local ok, reason = isvalidbiginteger(bigint)
+   
    if not ok then
       error(reason, 2)
    end
+   
    bigint.sign = -bigint.sign
+   
    return bigint
 end
 
@@ -1338,42 +1310,46 @@ end
 --local
 function absolutevalue(bigint)
    local ok, reason = isvalidbiginteger(bigint)
+   
    if not ok then
       error(reason, 2)
    end
+   
    return bigint.sign < 0 and negate(bigint) or bigint
 end
 
 --local
 function mutableabsolutevalue(bigint)
    local ok, reason = isvalidbiginteger(bigint)
+   
    if not ok then
       error(reason, 2)
    end
-   bigint.sign = bigint.sign < 0 and -bigint.sign or bigint.sign
+   
+   bigint.sign = bigint.sign == 0 and 0 or 1
    return bigint
 end
 
 
 --local
-function add(thisbigint, thatbigint)
+function add(thisvalue, thatvalue)
    local sign, mag
-   local thissign, thatsign
-   local thismag, thatmag
+   local thissign, thismag
+   local thatsign, thatmag
    local comparison
    
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
+   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 2)
    end
    
-   thissign, thismag = getsignandmagnitude(thisbigint)
-   thatsign, thatmag = getsignandmagnitude(thatbigint)
+   thissign, thismag = getsignandmagnitude(thisvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
    
    if thissign == 0 then
-      return thatbigint
+      return thatvalue
    elseif thatsign == 0 then
-      return thisbigint
+      return thisvalue
    end
    
    if thissign == thatsign then
@@ -1397,7 +1373,7 @@ function add(thisbigint, thatbigint)
 end
 
 --local
-function mutableadd(thisbigint, thatval)
+function mutableadd(thisbigint, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    local ok, reason
@@ -1407,13 +1383,13 @@ function mutableadd(thisbigint, thatval)
       error(reason, 2)
    end
    
-   if not isvalidoperablenumber(thatval) then
+   if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on biginteger and "
-         .. gettype(thatval), 2)
+         .. gettype(thatvalue), 2)
    end
    
    thissign, thismag = thisbigint.sign, thisbigint.magnitude
-   thatsign, thatmag = getsignandmagnitude(thatval)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
    
    if thissign == 0 then
       if thatsign ~= 0 then
@@ -1445,24 +1421,24 @@ end
 
 
 --local
-function subtract(thisbigint, thatbigint)
+function subtract(thisvalue, thatvalue)
    local sign, mag
    local thissign, thatsign
    local thismag, thatmag
    local comparison
    
-   if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
+   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform subtraction on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 2)
    end
    
-   thissign, thismag = getsignandmagnitude(thisbigint)
-   thatsign, thatmag = getsignandmagnitude(thatbigint)
+   thissign, thismag = getsignandmagnitude(thisvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
    
    if thissign == 0 then
-      return negate(thatbigint)
+      return negate(thatvalue)
    elseif thatsign == 0 then
-      return thisbigint
+      return thisvalue
    end
    
    if thissign ~= thatsign then
@@ -1486,7 +1462,7 @@ function subtract(thisbigint, thatbigint)
 end
 
 --local
-function mutablesubtract(thisbigint, thatval)
+function mutablesubtract(thisbigint, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    local ok, reason
@@ -1496,13 +1472,13 @@ function mutablesubtract(thisbigint, thatval)
       error(reason, 2)
    end
    
-   if not isvalidoperablenumber(thatval) then
+   if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on biginteger and "
-         .. gettype(thatval), 2)
+         .. gettype(thatvalue), 2)
    end
    
    thissign, thismag = thisbigint.sign, thisbigint.magnitude
-   thatsign, thatmag = getsignandmagnitude(thatval)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
    
    if thissign == 0 then
       if thatsign ~= 0 then
@@ -1562,7 +1538,7 @@ end
 --local
 function stringofbytearray(bigint, dobinary)
    local bytearray, balen, str
-   local ok, reason = isvalidoperablenumber(bigint)
+   local ok, reason = isvalidoperablevalue(bigint)
    if not ok then
       error(reason, 2)
    end
@@ -1575,20 +1551,20 @@ function stringofbytearray(bigint, dobinary)
          return string.rep('0', 32)
       end
       
-      str = getintegerstringbinary(getintfromend(bytearray, 0))
+      str = getintegerstringbinary(getbytefromend(bytearray, 0))
    
       for i = 1, balen - 1 do
-         str = getintegerstringbinary(getintfromend(bytearray, i)) .. '_' .. str
+         str = getintegerstringbinary(getbytefromend(bytearray, i)) .. '_' .. str
       end
    else
       if balen == 0 then
          return string.rep('0', 8)
       end
       
-      str = getintegerstringhexadecimal(getintfromend(bytearray, 0))
+      str = getintegerstringhexadecimal(getbytefromend(bytearray, 0))
    
       for i = 1, balen - 1 do
-         str = getintegerstringhexadecimal(getintfromend(bytearray, i)) .. '_' .. str
+         str = getintegerstringhexadecimal(getbytefromend(bytearray, i)) .. '_' .. str
       end
    end
    
