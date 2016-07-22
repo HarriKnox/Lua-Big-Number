@@ -1116,8 +1116,7 @@ end
 --local
 function equals(thisbigint, thatbigint)
    if not isvalidoperablenumber(thisbigint) or not isvalidoperablenumber(thatbigint) then
-      error("attempt to perform equals on "
-         .. gettype(thisbigint) .. " and " .. gettype(thatbigint), 2)
+      return false
    end
    
    return compare(thisbigint, thatbigint) == 0
