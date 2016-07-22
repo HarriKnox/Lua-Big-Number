@@ -5,32 +5,51 @@ _ENV = bi
 --[[
 Since I would inevitably need to write this, I'll just write it now to get it
 taken care of right away. Here are some definitions:
-   1) valid 32 bit integer: a value of type 'number' that is non-negative, less
+   *  valid 32-bit integer: a value of type 'number' that is non-negative, less
       than 2 ^ 32, and an integer (no decimal)
-   2) byte-array: a sequence (table) of numbers that follows these rules
+      
+   *  byte: a 32-bit integer used in an array and has a sign (in two's
+      compliment form). Most languages define bytes as being 8-bit integers, not
+      32-bits. However, since 'byte' is the name of the elements in a byte-array
+      in the Java implementation, the name of the elements of the number-arrays
+      in this library is 'byte'.
+      
+   *  byte-array: a sequence (table) of numbers that follows these rules
       a) all numbers are valid 32 bit integers
       b) the array is one-indexed (indices start at 1 not 0)
       c) a zero-length array is logically equivalent to 0 (zero)
       d) if the first element is negative (in two's-compliment form) then the
-         byte-array is considered negative (leading zeros will prevent the first
-         non-zero element from being interpreted as negative)
+         byte-array will be considered negative (leading zeros will prevent the
+         first non-zero element from being interpreted as negative). Likewise,
+         if the first element is not negative the byte-array will not be
+         considered negative (leading sign bits [0xffffffff] will prevent the
+         byte-array from being interpreted as negative)
+         
       e) Note: For testing and iterating through byte-arrays the default length
          operator (#) is used. This means that the byte-array must have a
-         sequence of numbers for all indices between 1 and #array. If
-         #array == 0 then the byte-array is still valid: it has a zero-length
-         sequence. Since a byte-array is a table, it may have keys and values
-         that are not in the sequence (such as t.name = 'Bob'). For a sequence
-         to be valid there must be no holes
-         (that is for all 1 <= i <= #array t[i] ~= nil).
-   3) magnitude: inherently unsigned; a type of byte-array with exceptions:
+         sequence of numbers for all indices between 1 and #array (that is to
+         say for all 1 <= i <= #array, t[i] ~= nil). If #array == 0 then the
+         byte-array is still valid: it has a zero-length sequence.
+         
+      f) Note: Since a byte-array is a table, it may have keys and values that
+         are not in the sequence (such as t.name = 'Bob'). It is possible for
+         someone to pass in any table/prototype/object and it will be
+         interpreted as a byte-array. Because of this, the only tables that will
+         fail the byte-array test are those that pass the biginteger test: this
+         is so tables can be interpreted as bigintegers where they could have
+         been interpreted as bytearrays
+      
+   *  magnitude: inherently unsigned; a type of byte-array with exceptions:
       a) all numbers are treated as unsigned (ignores negatives in
          two's-compliment form)
       b) leading zeros are not allowed, and thus a magnitude of only zeros is
          not allowed
-   4) sign: Either -1, 0, or 1; determines whether the value is negative, zero,
+      
+   *  sign: Either -1, 0, or 1; determines whether the value is negative, zero,
       or positive, respectively. A sign of 0 cannot be assigned to a value that
       is not logically equivalent to 0 (zero)
-   5) biginteger: a table with (at minimum) two values (sign and magnitude) such
+      
+   *  biginteger: a table with (at minimum) two values (sign and magnitude) such
       that every integer is logically equivalent to a unique combination of sign
       and magnitude.
 --]]
@@ -512,6 +531,25 @@ function gettype(thing)
 end
 
 --local
+function getcharacternumericalvalue(character)
+   local bytevalue = string.byte(character)
+   
+   if bytevalue >= 48 and bytevalue <= 57 then
+      -- if character is a number, returns in [0, 9]
+      return bytevalue - 48
+   elseif bytevalue >= 65 and bytevalue <= 90 then
+      -- if character is uppercase Latin, returns in [10, 35]
+      return bytevalue - 55
+   elseif bytevalue >= 97 and bytevalue <= 122 then
+      -- if character is lowercase Latin, returns in [10, 35]
+      return bytevalue - 87
+   end
+   -- if character is not valid in base36, then return 36 to always fail test
+   return 36
+end
+
+
+--local
 function getbytearraysign(array)
    if #array == 0 then
       return 0
@@ -544,6 +582,7 @@ function getbytearraysignandmagnitude(array)
    return sign, copyandstripleadingzeros(array)
 end
 
+
 --local
 function getnumbersign(int)
    return (int < 0 and -1) or (int > 0 and 1) or 0
@@ -558,6 +597,7 @@ end
 function getnumbersignandmagnitude(int)
    return getnumbersign(int), getnumbermagnitude(int)
 end
+
 
 --local
 function getsign(value)
@@ -600,6 +640,7 @@ function getsignandmagnitude(value)
    end
    error("cannot obtain sign and magnitude")
 end
+
 
 --local
 function getbytearray(array)
@@ -770,26 +811,6 @@ function destructivemergebytearrays(thisbytearray, thatbytearray, mergefunction)
    end
    
    return thisbytearray
-end
-
-
--- Other Helper Functions
---local
-function getcharacternumericalvalue(character)
-   local bytevalue = string.byte(character)
-   
-   if bytevalue >= 48 and bytevalue <= 57 then
-      -- if character is a number, returns in [0, 9]
-      return bytevalue - 48
-   elseif bytevalue >= 65 and bytevalue <= 90 then
-      -- if character is uppercase Latin, returns in [10, 35]
-      return bytevalue - 55
-   elseif bytevalue >= 97 and bytevalue <= 122 then
-      -- if character is lowercase Latin, returns in [10, 35]
-      return bytevalue - 87
-   end
-   -- if character is not valid in base36, then return 36 to always fail test
-   return 36
 end
 
 
@@ -1160,7 +1181,6 @@ end
 
 --local
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
-   local sign, bytearray
    local thatbytearray
    local ok, reason = isvalidbiginteger(thisbigint)
    if not ok then
@@ -1224,6 +1244,63 @@ end
 --local
 function mutablebitwisexor(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitxor)
+end
+
+
+--local
+function bitwiseleftshift(value, displacement)
+   local numberofbytes, numberofbits
+   local sign, mag, maglength
+   local carry, shiftmultiplier
+   local ok, reason
+   
+   ok, reason = isvalidoperablevalue(value)
+   if not ok then
+      error(reason, 2)
+   end
+   
+   ok, reason = isvalidinteger(displacement)
+   if not ok then
+      error(reason, 2)
+   end
+   
+   if displacement < 0 then
+      -- precautionary error (will be removed soon)
+      error("negative displacement not supported yet", 2)
+   end
+   
+   if displacement == 0 then
+      return value
+   end
+   
+   sign, mag = getsignandmagnitude(value)
+   maglength = #mag
+   
+   if sign == 0 then
+      return constructorinteger(0)
+   end
+   
+   numberofbytes = bitrightshift(displacement, 5)
+   numberofbits = bitand(displacement, 0x1f)
+   
+   shiftmultiplier = bitleftshift(1, numberofbits)
+   carry = 0
+   
+   if numberofbits ~= 0 then
+      for i = maglength, 1, -1 do
+         carry, mag[i] = splitlong(mag[i] * shiftmultiplier + carry)
+      end
+   end
+   
+   for i = 1, numberofbytes do
+      mag[maglength + i] = 0
+   end
+   
+   if carry ~= 0 then
+      tableinsert(mag, 1, carry)
+   end
+   
+   return constructorsignmagnitude(sign, mag)
 end
 
 
@@ -1364,8 +1441,7 @@ function add(thisvalue, thatvalue)
          sign = thatsign
          mag = destructivesubtractmagnitudes(thatmag, thismag)
       else
-         sign = 0
-         mag = {}
+         return constructorinteger(0)
       end
    end
    
@@ -1453,8 +1529,7 @@ function subtract(thisvalue, thatvalue)
          sign = thatsign
          mag = destructivesubtractmagnitudes(thatmag, thismag)
       else
-         sign = 0
-         mag = {}
+         return constructorinteger(0)
       end
    end
    
@@ -1571,7 +1646,7 @@ function stringofbytearray(bigint, dobinary)
    return str
 end
 
-function reloadbiginteger()
+function reload()
    _G.package.loaded.biginteger = nil
    _G.biginteger = require('biginteger')
 end
