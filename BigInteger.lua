@@ -1122,6 +1122,34 @@ function equals(thisbigint, thatbigint)
    return compare(thisbigint, thatbigint) == 0
 end
 
+--local
+function minimum(...)
+   local list = {...}
+   local smallest = list[1]
+   
+   for i = 2, #list do
+      if compare(list[i], smallest) < 0 then
+         smallest = list[i]
+      end
+   end
+   
+   return smallest
+end
+
+--local
+function maximum(...)
+   local list = {...}
+   local largest = list[1]
+   
+   for i = 2, #list do
+      if compare(list[i], largest) > 0 then
+         largest = list[i]
+      end
+   end
+   
+   return list[1]
+end
+
 
 -- Bitwise functions
 --local
