@@ -1043,7 +1043,7 @@ function biginteger(a, b)
          return constructorinteger(a)
       elseif typeb == 'byte-array' then
          return constructorsignmagnitude(a, b)
-      elseif typeb == 'function'then
+      elseif typeb == 'function' then
          return constructorbitsrng(a, b)
       end
    elseif typea == 'biginteger' then
@@ -1255,37 +1255,16 @@ end
 
 
 --local
-function bitwiseleftshift(value, displacement)
-   local numberofbytes, numberofbits
-   local sign, mag, maglength
-   local carry, shiftmultiplier
-   local ok, reason
-   
-   ok, reason = isvalidoperablevalue(value)
-   if not ok then
-      error(reason, 2)
-   end
-   
-   ok, reason = isvalidinteger(displacement)
-   if not ok then
-      error(reason, 2)
-   end
-   
-   if displacement < 0 then
-      -- precautionary error (will be removed soon)
-      error("negative displacement not supported yet", 2)
-   end
+function destructiveleftshift(mag, displacement)
+   local maglength
+   local numberofbits, numberofbytes
+   local shiftmultiplier, carry
    
    if displacement == 0 then
-      return value
+      return mag
    end
    
-   sign, mag = getsignandmagnitude(value)
    maglength = #mag
-   
-   if sign == 0 then
-      return constructorinteger(0)
-   end
    
    numberofbytes = bitrightshift(displacement, 5)
    numberofbits = bitand(displacement, 0x1f)
@@ -1307,7 +1286,122 @@ function bitwiseleftshift(value, displacement)
       tableinsert(mag, 1, carry)
    end
    
+   return mag
+end
+
+--local
+function destructiverightshift(sign, mag, displacement)
+   local maglength
+   local numberofbits, numberofbytes
+   local numberofbitsadjusted
+   local shiftmultiplier, carry
+   
+   if displacement == 0 then
+      return sign, mag
+   end
+   
+   maglength = #mag
+   numberofbytes = bitrightshift(displacement, 5)
+   
+   if numberofbytes >= maglength then
+      -- when right-shifting more bits than there are in the array, the result
+      -- is -1 for negative values and 0 for non-negative values
+      destructivecleararray(mag)
+      
+      if sign == -1 then
+         mag[1] = 1
+      else
+         sign = 0
+      end
+      
+      return sign, mag
+   end
+   
+   numberofbits = bitand(displacement, 0x1f)
+   numberofbitsadjusted = 32 - numberofbits
+   shiftmultiplier = bitleftshift(1, numberofbitsadjusted)
+   carry = 0
+   
+   if numberofbits ~= 0 then
+      for i = 1, maglength do
+         mag[i], carry = splitlong(mag[i] * shiftmultiplier + carry)
+      end
+   end
+   
+   for i = 0, numberofbytes - 1 do
+      mag[maglength - i] = nil
+   end
+   
+   return sign, mag
+end
+
+--local
+function bitwiseshift(value, displacement)
+   local sign, mag
+   local ok, reason
+   
+   ok, reason = isvalidoperablevalue(value)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   ok, reason = isvalidinteger(displacement)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   sign, mag = getsignandmagnitude(value)
+   
+   if displacement < 0 then
+      sign, mag = destructiverightshift(sign, mag, -displacement)
+   else
+      mag = destructiveleftshift(mag, displacement)
+   end
+   
    return constructorsignmagnitudetrusted(sign, mag)
+end
+
+--local
+function mutablebitwiseshift(bigint, displacement)
+   local ok, reason = isvalidbiginteger(bigint)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   ok, reason = isvalidinteger(displacement)
+   if not ok then
+      error(reason, 3)
+   end
+   
+   if displacement < 0 then
+      bigint.sign, bigint.magnitude = destructiverightshift(bigint.sign, bigint.magnitude, -displacement)
+   else
+      bigint.magnitude = destructiveleftshift(bigint.magnitude, displacement)
+   end
+   
+   return bigint
+end
+
+
+--local
+function bitwiseleftshift(value, displacement)
+   return bitwiseshift(value, displacement)
+end
+
+--local
+function mutablebitwiseleftshift(bigint, displacement)
+   return mutablebitshift(bigint, displacement)
+end
+
+
+--local
+function bitwiserightshift(value, displacement)
+   return bitwiseshift(value, -displacement)
+end
+
+--local
+function mutablebitwiserightshift(bigint, displacement)
+   return mutablebitshift(bigint, -displacement)
 end
 
 
