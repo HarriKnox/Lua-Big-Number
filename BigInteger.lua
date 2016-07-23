@@ -1335,8 +1335,9 @@ function destructiverightshift(sign, mag, displacement)
    return sign, mag
 end
 
+
 --local
-function bitwiseshift(value, displacement)
+function bitwiseshift(value, displacement, right)
    local sign, mag
    local ok, reason
    
@@ -1350,10 +1351,15 @@ function bitwiseshift(value, displacement)
       error(reason, 3)
    end
    
+   if displacement < 0 then
+      displacement = -displacement
+      right = not right
+   end
+   
    sign, mag = getsignandmagnitude(value)
    
-   if displacement < 0 then
-      sign, mag = destructiverightshift(sign, mag, -displacement)
+   if right then
+      sign, mag = destructiverightshift(sign, mag, displacement)
    else
       mag = destructiveleftshift(mag, displacement)
    end
@@ -1362,7 +1368,7 @@ function bitwiseshift(value, displacement)
 end
 
 --local
-function mutablebitwiseshift(bigint, displacement)
+function mutablebitwiseshift(bigint, displacement, right)
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
       error(reason, 3)
@@ -1374,7 +1380,12 @@ function mutablebitwiseshift(bigint, displacement)
    end
    
    if displacement < 0 then
-      bigint.sign, bigint.magnitude = destructiverightshift(bigint.sign, bigint.magnitude, -displacement)
+      displacement = -displacement
+      right = not right
+   end
+   
+   if right then
+      bigint.sign, bigint.magnitude = destructiverightshift(bigint.sign, bigint.magnitude, displacement)
    else
       bigint.magnitude = destructiveleftshift(bigint.magnitude, displacement)
    end
@@ -1385,23 +1396,23 @@ end
 
 --local
 function bitwiseleftshift(value, displacement)
-   return bitwiseshift(value, displacement)
+   return bitwiseshift(value, displacement, false)
 end
 
 --local
 function mutablebitwiseleftshift(bigint, displacement)
-   return mutablebitshift(bigint, displacement)
+   return mutablebitshift(bigint, displacement, false)
 end
 
 
 --local
 function bitwiserightshift(value, displacement)
-   return bitwiseshift(value, -displacement)
+   return bitwiseshift(value, displacement, true)
 end
 
 --local
 function mutablebitwiserightshift(bigint, displacement)
-   return mutablebitshift(bigint, -displacement)
+   return mutablebitshift(bigint, displacement, true)
 end
 
 
