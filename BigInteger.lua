@@ -398,6 +398,43 @@ function clearandcopyintoarray(array, newvalues)
    return array
 end
 
+--local
+function splitarrayatbytefromend(mag, pivot)
+   -- Will split an array into two smaller arrays, upper and lower such that
+   --  * upper will contain all elements from 1 to #mag - pivot
+   --  * lower will contain all elements from (#mag - pivot + 1) to #mag
+   -- pivot indexes from end of magnitude (0 is last element)
+   -- will always return new arrays, even if pivot extends either end of the array
+   local maglength = #mag
+   local upper, lower
+   local upperlength
+   
+   if pivot <= 0 then
+      -- if the pivot extends to the right of the array (is negative pivot)
+      -- or includes the last element (zero pivot) for upper
+      return copyarray(mag), {}
+   end
+   
+   if pivot >= maglength then
+      -- if the pivot extends to the left of the array
+      -- pivot == #mag means upper is from 1 to 0, so empty array
+      return {}, copyarray(mag)
+   end
+   
+   upperlength = maglength - pivot
+   upper = {}
+   lower = {}
+   
+   for i = 1, pivot do
+      upper[i] = mag[i]
+   end
+   
+   for i = pivot + 1, maglength do
+      lower[i - pivot] = mag[i]
+   end
+   
+   return upper, lower
+end
 
 
 --local
