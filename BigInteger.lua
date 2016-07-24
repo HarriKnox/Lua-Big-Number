@@ -1290,7 +1290,7 @@ function destructiveleftshift(mag, displacement)
    
    if numberofbits ~= 0 then
       for i = maglength, 1, -1 do
-         carry, mag[i] = splitlong(mag[i] * shiftmultiplier + carry)
+         carry, mag[i] = integermultiplyandaddtosplitlong(mag[i], shiftmultiplier, carry)
       end
    end
    
@@ -1310,7 +1310,7 @@ function destructiverightshift(sign, mag, displacement)
    local maglength
    local numberofbits, numberofbytes
    local numberofbitsadjusted
-   local shiftmultiplier, carry
+   local shiftmultiplier, lowbits, carry, oldcarry
    
    if displacement == 0 then
       return sign, mag
@@ -1337,10 +1337,13 @@ function destructiverightshift(sign, mag, displacement)
    numberofbitsadjusted = 32 - numberofbits
    shiftmultiplier = bitleftshift(1, numberofbitsadjusted)
    carry = 0
+   oldcarry = 0
    
    if numberofbits ~= 0 then
       for i = 1, maglength do
-         mag[i], carry = splitlong(mag[i] * shiftmultiplier + carry)
+         lowbits, carry = integermultiplyandaddtosplitlong(mag[i], shiftmultiplier, 0)
+         mag[i] = lowbits + oldcarry
+         oldcarry = carry
       end
    end
    
@@ -1380,7 +1383,7 @@ function bitwiseshift(value, displacement, right)
       mag = destructiveleftshift(mag, displacement)
    end
    
-   return constructorsignmagnitudetrusted(sign, mag)
+   return constructorsignmagnitudetrusted(sign, destructivestripleadingzeros(mag))
 end
 
 --local
@@ -1405,6 +1408,8 @@ function mutablebitwiseshift(bigint, displacement, right)
    else
       bigint.magnitude = destructiveleftshift(bigint.magnitude, displacement)
    end
+   
+   destructivestripleadingzeros(bigint.magnitude)
    
    return bigint
 end
@@ -1441,7 +1446,7 @@ function destructiveaddmagnitudes(thismag, thatmag)
    thislength = #thismag
    thatlength = #thatmag
    
-   longerlength = max(thislength, thatlengh)
+   longerlength = max(thislength, thatlength)
    carry = 0
    
    for i = 0, longerlength - 1 do
@@ -1737,6 +1742,8 @@ function squarecolinplumb(mag)
          integermultiplyandaddtosplitlong(piece, piece, 0)
    end
    
+   destructiverightshift(1, result, 1)
+   
    for i = 1, maglength - 1 do
       for j = 0, i - 1 do
          index = resultlength - i - j
@@ -1744,18 +1751,12 @@ function squarecolinplumb(mag)
                                                                     getbytefromend(mag, i),
                                                                     0)
          
-         -- Double the product and store it in three 32-bit numbers
-         -- (extraint, producthigh, productlow)
-         carry, productlow = splitlong(productlow * 2)
-         extraint, producthigh = splitlong(producthigh * 2 + carry)
-         
-         -- Add productlow to the corresponding result byte and propogate the
+         -- Add productlow to the corresponding result byte and continue the
          -- carry up to extraint
          carry, result[index] = splitlong(result[index] + productlow)
-         carry, producthigh = splitlong(producthigh + carry)
-         extraint = extraint + carry
+         extraint, producthigh = splitlong(producthigh + carry)
          
-         -- Add producthigh to the next corresponding resylt byte and propogate
+         -- Add producthigh to the next corresponding result byte and continue
          -- the carry to extraint
          index = index - 1
          carry, result[index] = splitlong(result[index] + producthigh)
@@ -1763,7 +1764,7 @@ function squarecolinplumb(mag)
          --carry = extraint
          carry = extraint + carry
          
-         -- set carry to extraint and percolate through the result
+         -- set carry to extraint and propagate through the result
          while carry ~= 0 do
             index = index - 1
             carry, result[index] = splitlong(result[index] + carry)
@@ -1771,7 +1772,18 @@ function squarecolinplumb(mag)
       end
    end
    
+   destructiveleftshift(result, 1)
+   
+   if bitand(getbytefromend(mag, 0), 1) == 1 then
+      result[resultlength] = result[resultlength] + 1
+   end
+   
    return destructivestripleadingzeros(result)
+end
+
+--local
+function squaremagnitude(mag)
+   return squarecolinplumb(mag)
 end
 
 --local
@@ -1791,7 +1803,7 @@ function square(value)
       return value
    end
    
-   return constructorsignmagnitude(1, squarecolinplumb(mag))
+   return constructorsignmagnitude(1, squaremagnitude(mag))
 end
 
 
