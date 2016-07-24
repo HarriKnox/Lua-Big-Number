@@ -335,7 +335,7 @@ function splitlongandstripleadingzeros(number)
 end
 
 --local
-function integermultiplyandaddtolong(x, ab, c)
+function integermultiplyandaddtosplitlong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
@@ -374,8 +374,24 @@ function copyarray(array)
 end
 
 --local
-function destructivecleararray(array)
+function cleararray(array)
    for i = 1, #array do
+      array[i] = nil
+   end
+   
+   return array
+end
+
+--local
+function clearandcopyintoarray(array, newvalues)
+   local arraylength = #array
+   local newvalueslength = #newvalues
+   
+   for i = 1, newvalueslength do
+      array[i] = newvalues[i]
+   end
+   
+   for i = newvalueslength + 1, arraylength do
       array[i] = nil
    end
    
@@ -508,7 +524,7 @@ function destructivemultiplyandadd(mag, factor, addend)
    local index = maglength
    
    for i = maglength, 1, -1 do
-      carry, mag[i] = integermultiplyandaddtolong(factor, mag[i], carry)
+      carry, mag[i] = integermultiplyandaddtosplitlong(factor, mag[i], carry)
    end
    
    carry = addend
@@ -764,7 +780,7 @@ end
 function convertbytearraytosignmagnitudeto(source, destination)
    local sign = getbytearraysign(source)
    if sign == 0 then
-      return 0, destructivecleararray(destination)
+      return 0, cleararray(destination)
    end
    
    if sign == -1 then
@@ -1306,7 +1322,7 @@ function destructiverightshift(sign, mag, displacement)
    if numberofbytes >= maglength then
       -- when right-shifting more bits than there are in the array, the result
       -- is -1 for negative values and 0 for non-negative values
-      destructivecleararray(mag)
+      cleararray(mag)
       
       if sign == -1 then
          mag[1] = 1
@@ -1584,9 +1600,9 @@ function mutableadd(thisbigint, thatvalue)
          thisbigint.sign = thatsign
          thisbigint.magnitude = thatmag
       end
-      return
+      return thisbigint
    elseif thatsign == 0 then
-      return
+      return thisbigint
    end
    
    if thissign == thatsign then
@@ -1672,9 +1688,9 @@ function mutablesubtract(thisbigint, thatvalue)
          thisbigint.sign = -thatsign
          thisbigint.magnitude = thatmag
       end
-      return
+      return thisbigint
    elseif thatsign == 0 then
-      return
+      return thisbigint
    end
    
    if thissign ~= thatsign then
@@ -1695,6 +1711,87 @@ function mutablesubtract(thisbigint, thatvalue)
    end
    
    return thisbigint
+end
+
+
+--local
+function squarecolinplumb(mag)
+   local maglength
+   local result, resultlengh, index
+   local carry, piece
+   local producthigh, productlow, extraint
+   
+   maglength = #mag
+   resultlength = maglength * 2
+   
+   result = {}
+   for i = 1, resultlength do
+      result[i] = 0
+   end
+   
+   for i = 0, maglength - 1 do
+      -- Multiply all squares and put them to result
+      piece = getbytefromend(mag, i)
+      index = resultlength - i - i
+      result[index - 1], result[index] =
+         integermultiplyandaddtosplitlong(piece, piece, 0)
+   end
+   
+   for i = 1, maglength - 1 do
+      for j = 0, i - 1 do
+         index = resultlength - i - j
+         producthigh, productlow = integermultiplyandaddtosplitlong(getbytefromend(mag, j),
+                                                                    getbytefromend(mag, i),
+                                                                    0)
+         
+         -- Double the product and store it in three 32-bit numbers
+         -- (extraint, producthigh, productlow)
+         carry, productlow = splitlong(productlow * 2)
+         extraint, producthigh = splitlong(producthigh * 2 + carry)
+         
+         -- Add productlow to the corresponding result byte and propogate the
+         -- carry up to extraint
+         carry, result[index] = splitlong(result[index] + productlow)
+         carry, producthigh = splitlong(producthigh + carry)
+         extraint = extraint + carry
+         
+         -- Add producthigh to the next corresponding resylt byte and propogate
+         -- the carry to extraint
+         index = index - 1
+         carry, result[index] = splitlong(result[index] + producthigh)
+         --extraint = extraint + carry
+         --carry = extraint
+         carry = extraint + carry
+         
+         -- set carry to extraint and percolate through the result
+         while carry ~= 0 do
+            index = index - 1
+            carry, result[index] = splitlong(result[index] + carry)
+         end
+      end
+   end
+   
+   return destructivestripleadingzeros(result)
+end
+
+--local
+function square(value)
+   local sign, mag
+   local ok, reason
+   
+   
+   ok, reason = isvalidoperablevalue(value)
+   if not ok then
+      error(reason, 2)
+   end
+   
+   sign, mag = getsignandmagnitude(value)
+   
+   if sign == 0 then
+      return value
+   end
+   
+   return constructorsignmagnitude(1, squarecolinplumb(mag))
 end
 
 
