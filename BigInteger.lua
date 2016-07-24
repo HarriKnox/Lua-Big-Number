@@ -1306,14 +1306,14 @@ function destructiveleftshift(mag, displacement)
 end
 
 --local
-function destructiverightshift(sign, mag, displacement)
+function destructiverightshift(mag, displacement)
    local maglength
    local numberofbits, numberofbytes
    local numberofbitsadjusted
    local shiftmultiplier, lowbits, carry, oldcarry
    
    if displacement == 0 then
-      return sign, mag
+      return mag
    end
    
    maglength = #mag
@@ -1324,13 +1324,7 @@ function destructiverightshift(sign, mag, displacement)
       -- is -1 for negative values and 0 for non-negative values
       cleararray(mag)
       
-      if sign == -1 then
-         mag[1] = 1
-      else
-         sign = 0
-      end
-      
-      return sign, mag
+      return mag
    end
    
    numberofbits = bitand(displacement, 0x1f)
@@ -1351,7 +1345,7 @@ function destructiverightshift(sign, mag, displacement)
       mag[maglength - i] = nil
    end
    
-   return sign, mag
+   return mag
 end
 
 
@@ -1378,9 +1372,17 @@ function bitwiseshift(value, displacement, right)
    sign, mag = getsignandmagnitude(value)
    
    if right then
-      sign, mag = destructiverightshift(sign, mag, displacement)
+      destructiverightshift(mag, displacement)
+      
+      if #mag == 0 then
+         if sign == -1 then
+            mag[1] = 0xffffffff
+         else
+            sign = 0
+         end
+      end
    else
-      mag = destructiveleftshift(mag, displacement)
+      destructiveleftshift(mag, displacement)
    end
    
    return constructorsignmagnitudetrusted(sign, destructivestripleadingzeros(mag))
@@ -1404,7 +1406,15 @@ function mutablebitwiseshift(bigint, displacement, right)
    end
    
    if right then
-      bigint.sign, bigint.magnitude = destructiverightshift(bigint.sign, bigint.magnitude, displacement)
+      destructiverightshift(bigint.magnitude, displacement)
+      
+      if #bigint.magnitude == 0 then
+         if bigint.sign == -1 then
+            bigint.magnitude[1] = 0xffffffff
+         else
+            bigint.sign = 0
+         end
+      end
    else
       bigint.magnitude = destructiveleftshift(bigint.magnitude, displacement)
    end
@@ -1742,7 +1752,7 @@ function squarecolinplumb(mag)
          integermultiplyandaddtosplitlong(piece, piece, 0)
    end
    
-   destructiverightshift(1, result, 1)
+   destructiverightshift(result, 1)
    
    for i = 1, maglength - 1 do
       for j = 0, i - 1 do
