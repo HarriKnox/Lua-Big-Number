@@ -119,7 +119,6 @@ digitsperinteger = {
 
 -- Casts each number to "int digits" which contain the number of digits
 -- specified in digitsperinteger
--- intradix[radix] = radix * digitsperinteger[radix]
 --local
 intradix = {
    0x00000000, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
@@ -144,11 +143,11 @@ characters = {
 --local
 function isvalidinteger(int)
    if type(int) ~= 'number' then
-      return false, "value is not a number"
+      return false, "not a number"
    elseif int > maxinteger or int < -maxinteger then
-      return false, "number magnitude is outside the allowed range"
+      return false, "outside allowable range"
    elseif int % 1 ~= 0 then
-      return false, "number not an integer"
+      return false, "not an integer"
    end
    return true
 end
@@ -156,13 +155,13 @@ end
 --local
 function isvalid32bitinteger(int)
    if type(int) ~= 'number' then
-      return false, "value is not a number"
+      return false, "not a number"
    elseif int > 0xffffffff then
-      return false, "number is outside 32 bits"
+      return false, "outside 32 bits"
    elseif int < 0 then
-      return false, "number is negative"
+      return false, "negative"
    elseif int % 1 ~= 0 then
-      return false, "number is not an integer"
+      return false, "not an integer"
    end
    
    return true
@@ -172,17 +171,17 @@ end
 function isvalidbytearray(array)
    local ok, reason
    if type(array) ~= 'table' then
-      return false, "value is not an array"
+      return false, "not an array"
    end
    
    if isvalidbiginteger(array) then
-      return false, "value is a biginteger, not a byte-array"
+      return false, "a biginteger, will not be treated as a byte-array"
    end
    
    for i = 1, #array do
       ok, reason = isvalid32bitinteger(array[i])
       if not ok then
-         return false, "element " .. i .. " not a 32 bit number: " .. reason
+         return false, "element " .. i .. " not a valid 32-bit number: " .. reason
       end
    end
    return true
@@ -194,7 +193,7 @@ function isvalidmagnitude(mag)
    ok, reason = isvalidbytearray(mag)
    
    if not ok then
-      return false, "not a valid byte-array: " .. reason
+      return false, reason
    end
    
    if #mag == 0 then
@@ -202,7 +201,7 @@ function isvalidmagnitude(mag)
    end
    
    if mag[1] == 0 then
-      return false, "magnitude has leading zeros"
+      return false, "has leading zeros"
    end
    
    return true
@@ -211,9 +210,9 @@ end
 --local
 function isvalidsign(sign)
    if type(sign) ~= 'number' then
-      return false, "sign is not a number"
+      return false, "not a number"
    elseif sign ~= -1 and sign ~= 0 and sign ~= 1 then
-      return false, "sign is not in {-1, 0, 1}"
+      return false, "not in {-1, 0, 1}"
    end
    return true
 end
@@ -221,10 +220,11 @@ end
 --local
 function isvalidsignmagnitudecombination(sign, mag)
    if sign == 0 and #mag ~= 0 then
-      -- logically equal to 0 (zero)
-      return false, "zero sign with non-zero magnitude"
+      -- a value with that is neither positive nor negative
+      return false, "non-zero magnitude with zero sign"
    elseif sign ~= 0 and #mag == 0 then
-      -- logically cannot equal 0 (zero)
+      -- positive or negative zero (not allowed so there is one unique
+      -- representation of zero (0), and that is sign = 0, #mag = 0
       return false, "non-zero sign with zero magnitude"
    end
    return true
@@ -234,22 +234,22 @@ end
 function isvalidbiginteger(bigint)
    local ok, reason
    if type(bigint) ~= 'table' then
-      return false, "value is not an object"
+      return false, "not a table"
    end
    
    ok, reason = isvalidsign(bigint.sign)
    if not ok then
-      return false, "value's sign is not valid: " .. reason
+      return false, "bigint.sign not valid: " .. reason
    end
    
    ok, reason = isvalidmagnitude(bigint.magnitude)
    if not ok then
-      return false, "value's magnitude is not valid: " .. reason
+      return false, "bigint.magnitude not valid: " .. reason
    end
    
    ok, reason = isvalidsignmagnitudecombination(bigint.sign, bigint.magnitude)
    if not ok then
-      return false, "value has sign-magnitude mismatch: " .. reason
+      return false, "bigint sign-magnitude mismatch: " .. reason
    end
    
    return true
@@ -261,7 +261,7 @@ function isvalidoperablevalue(value)
       return true
    end
    
-   return false, "value is not an operable number but type " .. type(value)
+   return false, "it's a " .. type(value)
 end
 
 --local
@@ -270,9 +270,9 @@ function isvalidradix(radix)
    
    ok, reason = isvalidinteger(radix)
    if not ok then
-      return false, "value is not a valid radix: " .. reason
+      return false, reason
    elseif radix < 2 or radix > 36 then
-      return false, "radix is outside allowable range"
+      return false, "outside allowable range"
    end
    
    return true
@@ -284,7 +284,7 @@ function isvalidstringnumber(str)
       return true
    end
    
-   return false, "value is not a valid string-representation of a biginteger"
+   return false, "contains non-digit character"
 end
 
 
@@ -626,7 +626,9 @@ function getsign(value)
    elseif isvalidinteger(value) then
       return getnumbersign(value)
    end
-   error("cannot obtain sign")
+   
+   -- precautionary error that should not run unless I missed a check somewhere
+   error("cannot obtain sign of " .. gettype(value))
 end
 
 --local
@@ -640,7 +642,9 @@ function getmagnitude(value)
    elseif isvalidinteger(value) then
       return getnumbermagnitude(value)
    end
-   error("cannot obtain magnitude")
+   
+   -- precautionary error that should not run unless I missed a check somewhere
+   error("cannot obtain magnitude of " .. gettype(value))
 end
 
 --local
@@ -654,7 +658,9 @@ function getsignandmagnitude(value)
    elseif isvalidinteger(value) then
       return getnumbersignandmagnitude(value)
    end
-   error("cannot obtain sign and magnitude")
+   
+   -- precautionary error that should not run unless I missed a check somewhere
+   error("cannot obtain sign and magnitude of " .. gettype(value))
 end
 
 
@@ -840,7 +846,7 @@ end
 function constructorinteger(int)
    local ok, reason = isvalidinteger(int)
    if not ok then
-      error(reason, 3)
+      error("int not valid integer: " .. reason)
    end
    
    return createbiginteger(getnumbersignandmagnitude(int))
@@ -852,21 +858,21 @@ function constructorsignmagnitudetrusted(sign, mag)
    
    ok, reason = isvalidsign(sign)
    if not ok then
-      error(reason, 3)
+      error("sign not valid sign: " .. reason)
    end
    
    ok, reason = isvalidmagnitude(mag)
    if not ok then
-      error(reason, 3)
+      error("mag not valid magnitude: " .. reason)
    end
    
    ok, reason = isvalidsignmagnitudecombination(sign, mag)
    if not ok then
-      error(reason, 3)
+      error("sign-magnitude mismatch: " .. reason)
    end
    
    if #mag >= maxmagnitudelength then
-      error("biginteger would overflow supported range", 3)
+      error("biginteger would overflow supported range")
    end
    
    return createbiginteger(sign, mag)
@@ -879,7 +885,7 @@ function constructorsignmagnitude(sign, mag)
    
    ok, reason = isvalidbytearray(mag)
    if not ok then
-      error(reason, 3)
+      error("mag not valid magnitude: " .. reason)
    end
    
    return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
@@ -891,11 +897,11 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    local numberofwords, excessbytes
    
    if bitlength < 0 or bitlength % 1 ~= 0 then
-      error("bit length must be a non-negative integer", 3)
+      error("bit length not valid: must be a non-negative integer")
    end
    
    if type(randomnumbergenerator()) ~= "number" then
-      error("RNG function must return a number in the range [0, 1)", 3)
+      error("RNG function not valid: must return a number in the range [0, 1)")
    end
    
    numberofwords = floor((bitlength + 31) / 32)
@@ -921,7 +927,7 @@ function constructorbytearraytrusted(array)
    
    ok, reason = isvalidbytearray(array)
    if not ok then
-      error(reason, 3)
+      error("array not valid byte-array: " .. reason)
    end
    
    sign = getbytearraysign(array)
@@ -931,7 +937,7 @@ function constructorbytearraytrusted(array)
    end
    
    if #array >= maxmagnitudelength then
-      error("biginteger would overflow supported range", 3)
+      error("biginteger would overflow supported range")
    end
    
    return createbiginteger(sign, array)
@@ -954,12 +960,12 @@ function constructorstringradix(str, radix)
    -- Some edits and changes occurred here
    ok, reason = isvalidradix(radix)
    if not ok then
-      error(reason, 3)
+      error("radix not valid radix: " .. reason)
    end
    
    ok, reason = isvalidstringnumber(str)
    if not ok then
-      error(reason, 3)
+      error("str not valid: " .. reason)
    end
    
    strsign = stringmatch(str, '[-+]')
@@ -971,7 +977,7 @@ function constructorstringradix(str, radix)
       if getcharacternumericalvalue(stringsub(str, i, i)) >= radix then
          -- if a character is not a proper digit, getcharacternumericalvalue will return 36,
          -- which will always be >= radix
-         error("illegal digit", 3)
+         error("illegal digit: " .. stringsub(str, i, i))
       end
    end
    
@@ -988,7 +994,7 @@ function constructorstringradix(str, radix)
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
    if numberofbits + 31 > 0xffffffff then
-      error("biginteger would overflow supported range", 3)
+      error("biginteger would overflow supported range")
    end
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
@@ -1013,7 +1019,7 @@ function constructorstringradix(str, radix)
    if not groupvalue then
       -- precautionary test, even though it shouldn't be needed. perhaps I'll
       -- remove this later since the check for illegal characters was done already
-      error("illegal digit", 3)
+      error("illegal digit: " .. group)
    end
    mag[numberofwords] = groupvalue
    
@@ -1024,14 +1030,14 @@ function constructorstringradix(str, radix)
       cursor = cursor + digitsperintegerradix
       groupvalue = tonumber(group, radix)
       if not groupvalue then
-         error("illegal digit", 3)
+         error("illegal digit: " .. group)
       end
       destructivemultiplyandadd(mag, superradix, groupvalue)
    end
    
    destructivestripleadingzeros(mag)
    if #mag >= maxmagnitudelength then
-      error("biginteger would overflow supported range", 3)
+      error("biginteger would overflow supported range")
    end
    
    return createbiginteger(sign, mag)
@@ -1041,7 +1047,7 @@ end
 function clone(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
-      error(reason, 2)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    return constructorsignmangitude(bigint.sign, bigint.magnitude)
@@ -1075,7 +1081,7 @@ function biginteger(a, b)
    end
    
    error("could not understand passed parameters: " ..
-      typea .. " and " .. typeb, 2)
+      typea .. " and " .. typeb)
 end
 
 
@@ -1109,7 +1115,7 @@ function compare(thisvalue, thatvalue)
    
    if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform comparison on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 2)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
    end
    
    thissign, thismag = getsignandmagnitude(thisvalue)
@@ -1167,7 +1173,7 @@ end
 function bitwisenot(value)
    local ok, reason = isvalidoperablevalue(value)
    if not ok then
-      error(reason, 2)
+      error("value not operable: " .. reason)
    end
    
    return constructorbytearraytrusted(destructivemapbytearray(getbytearray(value), bitnot))
@@ -1178,7 +1184,7 @@ function mutablebitwisenot(bigint)
    local sign, bytearray
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
-      error(reason, 2)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
@@ -1194,7 +1200,7 @@ end
 function binarybitwise(thisvalue, thatvalue, bitwisefunction)
    if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform bitwise operation on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 3)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
    end
    
    return constructorbytearraytrusted(destructivemergebytearrays(getbytearray(thisvalue),
@@ -1207,12 +1213,12 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
    local thatbytearray
    local ok, reason = isvalidbiginteger(thisbigint)
    if not ok then
-      error(reason, 3)
+      error("thisbigint not valid biginteger: " .. reason)
    end
    
    if not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform bitwiseoperation on bigint and "
-         .. gettype(thatvalue), 3)
+      error("attempt to perform bitwiseoperation on biginteger and "
+         .. gettype(thatvalue))
    end
    
    thatbytearray = getbytearray(thatvalue)
@@ -1356,12 +1362,12 @@ function bitwiseshift(value, displacement, right)
    
    ok, reason = isvalidoperablevalue(value)
    if not ok then
-      error(reason, 3)
+      error("value not operable: " .. reason)
    end
    
    ok, reason = isvalidinteger(displacement)
    if not ok then
-      error(reason, 3)
+      error("displacement not valid integer: " .. reason)
    end
    
    if displacement < 0 then
@@ -1392,12 +1398,12 @@ end
 function mutablebitwiseshift(bigint, displacement, right)
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
-      error(reason, 3)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    ok, reason = isvalidinteger(displacement)
    if not ok then
-      error(reason, 3)
+      error("displacement not valid integer: " .. reason)
    end
    
    if displacement < 0 then
@@ -1507,7 +1513,7 @@ function negate(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
    if not ok then
-      error(reason, 2)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    return constructorsignmagnitudetrusted(-bigint.sign, copyarray(bigint))
@@ -1518,7 +1524,7 @@ function mutablenegate(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
    if not ok then
-      error(reason, 2)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    bigint.sign = -bigint.sign
@@ -1532,7 +1538,7 @@ function absolutevalue(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
    if not ok then
-      error(reason, 2)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    return bigint.sign < 0 and negate(bigint) or bigint
@@ -1543,7 +1549,7 @@ function mutableabsolutevalue(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
    if not ok then
-      error(reason, 2)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    bigint.sign = bigint.sign == 0 and 0 or 1
@@ -1560,7 +1566,7 @@ function add(thisvalue, thatvalue)
    
    if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 2)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
    end
    
    thissign, thismag = getsignandmagnitude(thisvalue)
@@ -1599,12 +1605,12 @@ function mutableadd(thisbigint, thatvalue)
    
    ok, reason = isvalidbiginteger(thisbigint)
    if not ok then
-      error(reason, 2)
+      error("thisbigint not valid biginteger: " .. reason)
    end
    
    if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on biginteger and "
-         .. gettype(thatvalue), 2)
+         .. gettype(thatvalue))
    end
    
    thissign, thismag = thisbigint.sign, thisbigint.magnitude
@@ -1648,7 +1654,7 @@ function subtract(thisvalue, thatvalue)
    
    if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
       error("attempt to perform subtraction on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue), 2)
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
    end
    
    thissign, thismag = getsignandmagnitude(thisvalue)
@@ -1687,12 +1693,12 @@ function mutablesubtract(thisbigint, thatvalue)
    
    ok, reason = isvalidbiginteger(thisbigint)
    if not ok then
-      error(reason, 2)
+      error("thisbigint not valid biginteger: " .. reason)
    end
    
    if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on biginteger and "
-         .. gettype(thatvalue), 2)
+         .. gettype(thatvalue))
    end
    
    thissign, thismag = thisbigint.sign, thisbigint.magnitude
@@ -1804,7 +1810,7 @@ function square(value)
    
    ok, reason = isvalidoperablevalue(value)
    if not ok then
-      error(reason, 2)
+      error("value not operable: " .. reason)
    end
    
    sign, mag = getsignandmagnitude(value)
@@ -1845,8 +1851,9 @@ end
 function stringofbytearray(bigint, dobinary)
    local bytearray, balen, str
    local ok, reason = isvalidoperablevalue(bigint)
+   
    if not ok then
-      error(reason, 2)
+      error("bigint not operable: " .. reason)
    end
    
    bytearray = getbytearray(bigint)
@@ -1885,8 +1892,7 @@ end
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
-      error("Knox's BigInteger library compatibility for ComputerCraft requires CC " ..
-         "version 1.75 or later")
+      error("Knox's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
    end
    _ENV.biginteger = biginteger
    return
