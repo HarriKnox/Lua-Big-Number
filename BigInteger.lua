@@ -143,7 +143,7 @@ characters = {
 --local
 function isvalidinteger(int)
    if type(int) ~= 'number' then
-      return false, "not a number"
+      return false, "not a number: it's a " .. type(int)
    elseif int > maxinteger or int < -maxinteger then
       return false, "outside allowable range"
    elseif int % 1 ~= 0 then
@@ -155,7 +155,7 @@ end
 --local
 function isvalid32bitinteger(int)
    if type(int) ~= 'number' then
-      return false, "not a number"
+      return false, "not a number: it's a " .. type(int)
    elseif int > 0xffffffff then
       return false, "outside 32 bits"
    elseif int < 0 then
@@ -171,11 +171,11 @@ end
 function isvalidbytearray(array)
    local ok, reason
    if type(array) ~= 'table' then
-      return false, "not an array"
+      return false, "not an array (table): it's a " .. type(array)
    end
    
    if isvalidbiginteger(array) then
-      return false, "a biginteger, will not be treated as a byte-array"
+      return false, "it's a biginteger and will not be treated as a byte-array"
    end
    
    for i = 1, #array do
@@ -210,7 +210,7 @@ end
 --local
 function isvalidsign(sign)
    if type(sign) ~= 'number' then
-      return false, "not a number"
+      return false, "not a number: it's a " .. type(sign)
    elseif sign ~= -1 and sign ~= 0 and sign ~= 1 then
       return false, "not in {-1, 0, 1}"
    end
@@ -234,7 +234,7 @@ end
 function isvalidbiginteger(bigint)
    local ok, reason
    if type(bigint) ~= 'table' then
-      return false, "not a table"
+      return false, "not a table: it's a " .. type(bigint)
    end
    
    ok, reason = isvalidsign(bigint.sign)
