@@ -69,13 +69,17 @@ local max = max or math.max
 local min = min or math.min
 local random = random or math.random
 
+local stringsub = string.sub
+local stringmatch = string.match
+local tableinsert = table.insert
+
+-- Constants
 local maxinteger = 0x7ffffffffffff -- 2 ^ 51 - 1; largest number bit32 can work with reliably
 local maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
 local negativemask = 0x80000000
 
-local stringsub = string.sub
-local stringmatch = string.match
-local tableinsert = table.insert
+-- Threshold values
+local karatsubasquarethreshold = 128
 
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
@@ -1285,6 +1289,14 @@ function destructiverightshift(mag, displacement)
    return mag
 end
 
+function copyandleftshift(mag, displacement)
+   return destructiveleftshift(copyarray(mag), displacement)
+end
+
+function copyandrightshift(mag, displacement)
+   return destructiverightshift(copyarray(mag), displacement)
+end
+
 
 function bitwiseshift(value, displacement, right)
    local sign, mag
@@ -1711,7 +1723,52 @@ function squarecolinplumb(mag)
    return destructivestripleadingzeros(result)
 end
 
+function squarekaratsuba(mag)
+   local halfway
+   local upper, lower
+   local uppersquared, lowersquared
+   local temp1, temp2
+   
+   halfway = floor((#mag + 1) / 2)
+   
+   upper, lower = splitarrayatbytefromend(mag, halfway)
+   uppersquared = squaremagnitude(upper)
+   lowersquared = squaremagnitude(lower)
+   
+   temp1 = copyarray(uppersquared)
+   
+   -- xhs.add(xls)
+   destructiveaddmagnitudes(uppersquared, lowersquared)
+   
+   -- xl.add(xh).square().subtract(...)
+   destructiveaddmagnitudes(lower, upper)
+   temp2 = squaremagnitude(lower)
+   destructivesubtractmagnitudes(temp2, uppersquared)
+   
+   -- xhs.shiftLeft(half*32).add(...).shiftLeft(half*32).add(xls)
+   destructiveleftshift(temp1, halfway * 32)
+   destructiveaddmagnitudes(temp1, temp2)
+   destructiveleftshift(temp1, halfway * 32)
+   destructiveaddmagnitudes(temp1, lowersquared)
+   
+   --[[
+        xhs .shiftLeft(half*32)
+            .add(
+                xl  .add(xh)
+                    .square()
+                    .subtract(
+                        xhs.add(xls)))
+            .shiftLeft(half*32)
+            .add(xls);
+            --]]
+   
+   return temp1
+end
+
 function squaremagnitude(mag)
+   if #mag >=s karatsubasquarethreshold then
+      return squarekaratsuba(mag)
+   end
    return squarecolinplumb(mag)
 end
 
