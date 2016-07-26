@@ -5,16 +5,16 @@ _ENV = bi
 --[[
 Since I would inevitably need to write this, I'll just write it now to get it
 taken care of right away. Here are some definitions:
-   *  valid 32-bit integer: a value of type 'number' that is non-negative, less
+    * valid 32-bit integer: a value of type 'number' that is non-negative, less
       than 2 ^ 32, and an integer (no decimal)
       
-   *  byte: a 32-bit integer used in an array and has a sign (in two's
+    * byte: a 32-bit integer used in an array and has a sign (in two's
       compliment form). Most languages define bytes as being 8-bit integers, not
       32-bits. However, since 'byte' is the name of the elements in a byte-array
       in the Java implementation, the name of the elements of the number-arrays
       in this library is 'byte'.
       
-   *  byte-array: a sequence (table) of numbers that follows these rules
+    * byte-array: a sequence (table) of numbers that follows these rules
       a) all numbers are valid 32 bit integers
       b) the array is one-indexed (indices start at 1 not 0)
       c) a zero-length array is logically equivalent to 0 (zero)
@@ -39,17 +39,17 @@ taken care of right away. Here are some definitions:
          is so tables can be interpreted as bigintegers where they could have
          been interpreted as bytearrays
       
-   *  magnitude: inherently unsigned; a type of byte-array with exceptions:
+    * magnitude: inherently unsigned; a type of byte-array with exceptions:
       a) all numbers are treated as unsigned (ignores negatives in
          two's-compliment form)
       b) leading zeros are not allowed, and thus a magnitude of only zeros is
          not allowed
       
-   *  sign: Either -1, 0, or 1; determines whether the value is negative, zero,
+    * sign: Either -1, 0, or 1; determines whether the value is negative, zero,
       or positive, respectively. A sign of 0 cannot be assigned to a value that
       is not logically equivalent to 0 (zero)
       
-   *  biginteger: a table with (at minimum) two values (sign and magnitude) such
+    * biginteger: a table with (at minimum) two values (sign and magnitude) such
       that every integer is logically equivalent to a unique combination of sign
       and magnitude.
 --]]
@@ -358,6 +358,7 @@ function clearandcopyintoarray(array, newvalues)
    return array
 end
 
+
 function splitarrayatbytefromend(mag, pivot)
    -- Will split an array into two smaller arrays, upper and lower such that
    --  * upper will contain all elements from 1 to #mag - pivot
@@ -393,6 +394,36 @@ function splitarrayatbytefromend(mag, pivot)
    end
    
    return upper, lower
+end
+
+function gettoomcookslices(mag, fullsize)
+   -- fullsize is used when multiplying two magnitudes of different sizes
+   local lowersize, middlesize, uppersize, size, maglength, offset
+   local lowerslice, middleslice, upperslice
+   
+   maglength = #mag
+   size = floor((fullsize + 2) / 3)
+   lowersize = min(size, maglength)
+   middlesize = min(size, maglength - lowersize)
+   uppersize = min(size, maglength - lowersize - middlesize)
+   
+   lowerslice = {}
+   middleslice = {}
+   upperslice = {}
+   
+   for i = 0, lowersize - 1 do
+      lowerslice[lowersize - i] = mag[maglength - i]
+   end
+   
+   for i = 0, middlesize - 1 do
+      middleslice[middlesize - i] = mag[maglength - lowersize - i]
+   end
+   
+   for i = 0, uppersize - 1 do
+      upperslice[uppersize - i] = mag[maglength - lowersize - middlesize - i]
+   end
+   
+   return upperslice, middleslice, lowerslice
 end
 
 
@@ -1766,7 +1797,7 @@ function squarekaratsuba(mag)
 end
 
 function squaremagnitude(mag)
-   if #mag >=s karatsubasquarethreshold then
+   if #mag >= karatsubasquarethreshold then
       return squarekaratsuba(mag)
    end
    return squarecolinplumb(mag)
@@ -1775,7 +1806,6 @@ end
 function square(value)
    local sign, mag
    local ok, reason
-   
    
    ok, reason = isvalidoperablevalue(value)
    if not ok then
