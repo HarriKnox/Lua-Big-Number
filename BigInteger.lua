@@ -358,6 +358,12 @@ function clearandcopyintoarray(array, newvalues)
    return array
 end
 
+function swaparrays(thisarray, thatarray)
+   for i = 1, max(#thisarray, #thatarray) do
+      thisarray[i], thatarray[i] = thatarray[i], thisarray[i]
+   end
+end
+
 
 function splitarrayatbytefromend(mag, pivot)
    -- Will split an array into two smaller arrays, upper and lower such that
@@ -522,7 +528,9 @@ function negatebytearrayto(source, destination)
       addend, destination[i] = splitlong(bitnot(source[i]) + addend)
    end
    
-   return destructivestripleadingzeros(destination)
+   destructivestripleadingzeros(destination)
+   
+   return destination
 end
 
 function copyandnegatebytearray(array)
@@ -1168,7 +1176,7 @@ function mutablebitwisenot(bigint)
    destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
    destructivemapbytearray(bigint.magnitude, bitnot)
    
-   bigint.sign, bigint.magnitude = destructiveconvertbytearraytosignmagnitude(bigint.magnitude)
+   bigint.sign, _ = destructiveconvertbytearraytosignmagnitude(bigint.magnitude)
    
    return bigint
 end
@@ -1202,7 +1210,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
    destructiveconvertsignmagnitudetobytearray(thisbigint.sign, thisbigint.magnitude)
    destructivemergebytearrays(thisbigint.magnitude, thatbytearray, bitwisefunction)
    
-   thisbigint.sign, thisbigint.magnitude = destructiveconvertbytearraytosignmagnitude(thisbigint.magnitude)
+   thisbigint.sign, _ = destructiveconvertbytearraytosignmagnitude(thisbigint.magnitude)
    
    return thisbigint
 end
@@ -1394,7 +1402,7 @@ function mutablebitwiseshift(bigint, displacement, right)
          end
       end
    else
-      bigint.magnitude = destructiveleftshift(bigint.magnitude, displacement)
+      destructiveleftshift(bigint.magnitude, displacement)
    end
    
    destructivestripleadingzeros(bigint.magnitude)
@@ -1469,7 +1477,9 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
       minuend[longerlen - i] = make32bitinteger(difference)
    end
    
-   return destructivestripleadingzeros(minuend)
+   destructivestripleadingzeros(minuend)
+   
+   return minuend
 end
 
 
@@ -1559,7 +1569,6 @@ function add(thisvalue, thatvalue)
 end
 
 function mutableadd(thisbigint, thatvalue)
-   local thissign, thismag
    local thatsign, thatmag
    local ok, reason
    
@@ -1573,31 +1582,31 @@ function mutableadd(thisbigint, thatvalue)
          .. gettype(thatvalue))
    end
    
-   thissign, thismag = thisbigint.sign, thisbigint.magnitude
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
-   if thissign == 0 then
+   if thisbigint.sign == 0 then
       if thatsign ~= 0 then
          thisbigint.sign = thatsign
-         thisbigint.magnitude = thatmag
+         clearandcopyintoarray(thisbigint.magnitude, thatmag)
       end
       return thisbigint
    elseif thatsign == 0 then
       return thisbigint
    end
    
-   if thissign == thatsign then
-      thisbigint.magnitude = destructiveaddmagnitudes(thismag, thatmag)
+   if thisbigint.sign == thatsign then
+      destructiveaddmagnitudes(thisbigint.magnitude, thatmag)
    else
-      comparison = comparemagnitudes(thismag, thatmag)
+      comparison = comparemagnitudes(thisbigint.magnitude, thatmag)
       if comparison == 1 then
-         thisbigint.magnitude = destructivesubtractmagnitudes(thismag, thatmag)
+         destructivesubtractmagnitudes(thisbigint.magnitude, thatmag)
       elseif comparison == -1 then
-         thisbigint.sign = -thissign
-         thisbigint.magnitude = destructivesubtractmagnitudes(thatmag, thismag)
+         thisbigint.sign = -thisbigint.sign
+         swaparrays(thisbigint.magnitude, thatmag)
+         destructivesubtractmagnitudes(thisbigint.magnitude, thatmag)
       else
          thisbigint.sign = 0
-         thisbigint.magnitude = {}
+         cleararray(thisbigint.magnitude)
       end
    end
    
@@ -1645,7 +1654,6 @@ function subtract(thisvalue, thatvalue)
 end
 
 function mutablesubtract(thisbigint, thatvalue)
-   local thissign, thismag
    local thatsign, thatmag
    local ok, reason
    
@@ -1659,33 +1667,31 @@ function mutablesubtract(thisbigint, thatvalue)
          .. gettype(thatvalue))
    end
    
-   thissign, thismag = thisbigint.sign, thisbigint.magnitude
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
-   if thissign == 0 then
+   if thisbigint.sign == 0 then
       if thatsign ~= 0 then
          thisbigint.sign = -thatsign
-         thisbigint.magnitude = thatmag
+         clearandcopyintoarray(thisbigint.magnitude, thatmag)
       end
       return thisbigint
    elseif thatsign == 0 then
       return thisbigint
    end
    
-   if thissign ~= thatsign then
-      thisbigint.sign = thissign
-      thisbigint.magnitude = destructiveaddmagnitudes(thismag, thatmag)
+   if thisbigint.sign ~= thatsign then
+      destructiveaddmagnitudes(thisbigint.magnitude, thatmag)
    else
-      comparison = comparemagnitudes(thismag, thatmag)
+      comparison = comparemagnitudes(thisbigint.magnitude, thatmag)
       if comparison == 1 then
-         thisbigint.sign = thissign
-         thisbigint.magnitude = destructivesubtractmagnitudes(thismag, thatmag)
+         destructivesubtractmagnitudes(thisbigint.magnitude, thatmag)
       elseif comparison == -1 then
          thisbigint.sign = thatsign
-         thisbigint.magnitude = destructivesubtractmagnitudes(thatmag, thismag)
+         swaparrays(thisbigint.magnitude, thatmag)
+         destructivesubtractmagnitudes(thisbigint.magnitude, thatmag)
       else
          thisbigint.sign = 0
-         thisbigint.magnitude = {}
+         cleararray(thisbigint.magnitude)
       end
    end
    
@@ -1751,7 +1757,9 @@ function squarecolinplumb(mag)
       result[resultlength] = result[resultlength] + 1
    end
    
-   return destructivestripleadingzeros(result)
+   destructivestripleadingzeros(result)
+   
+   return result
 end
 
 function squarekaratsuba(mag)
