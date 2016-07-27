@@ -80,6 +80,7 @@ local negativemask = 0x80000000
 
 -- Threshold values
 local karatsubasquarethreshold = 128
+local toomcooksquarethreshold = 216
 
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
@@ -114,10 +115,10 @@ local intradix = {
 
 local characters = {
    '1', '2', '3', '4', '5', '6', '7',
-   '8', '9', 'A', 'B', 'C', 'D', 'E',
-   'F', 'G', 'H', 'I', 'J', 'K', 'L',
-   'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-   'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+   '8', '9', 'a', 'b', 'c', 'd', 'e',
+   'f', 'g', 'h', 'i', 'j', 'k', 'l',
+   'm', 'n', 'o', 'p', 'q', 'r', 's',
+   't', 'u', 'v', 'w', 'x', 'y', 'z',
    [0] = '0'}
 
 
@@ -429,7 +430,7 @@ function gettoomcookslices(mag, fullsize)
       upperslice[uppersize - i] = mag[maglength - lowersize - middlesize - i]
    end
    
-   return upperslice, middleslice, lowerslice
+   return upperslice, middleslice, lowerslice, size * 32
 end
 
 
@@ -1167,7 +1168,7 @@ function bitwisenot(value)
 end
 
 function mutablebitwisenot(bigint)
-   local sign, bytearray
+   local sign, bytearray, _
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
       error("bigint not valid biginteger: " .. reason)
@@ -1194,7 +1195,7 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction)
 end
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
-   local thatbytearray
+   local thatbytearray, _
    local ok, reason = isvalidbiginteger(thisbigint)
    if not ok then
       error("thisbigint not valid biginteger: " .. reason)
@@ -1804,8 +1805,117 @@ function squarekaratsuba(mag)
    return temp1
 end
 
+function destructiveexactdividebythree(mag)
+   local maglength
+   local borrow, x, w, _, productlow
+   
+   maglength = #mag
+   
+   borrow = 0
+   
+   for i = 0, maglength - 1 do
+      x = mag[maglength - i]
+      w = x - borrow
+      
+      if x < borrow then
+         borrow = 1
+      else
+         borrow = 0
+      end
+      
+      _, productlow = integermultiplyandaddtosplitlong(w, 0xaaaaaaab, 0)
+      mag[maglength - i] = productlow
+      
+      if productlow >= 0xaaaaaaab then
+         borrow = borrow + 2
+      elseif productlow >= 0x55555556 then
+         borrow = borrow + 1
+      end
+   end
+   
+   destructivestripleadingzeros(mag)
+   
+   return mag
+end
+
+function squaretoomcook(mag)
+   local a2, a1, a0, ss
+   local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1
+   
+   a2, a1, a0, ss = gettoomcookslices(mag, #mag)
+   
+   
+   -- v0 = a0.square();
+   v0 = squaremagnitude(a0)
+   
+   -- da1 = a2.add(a0);
+   da1 = destructiveaddmagnitudes(copyarray(a2), a0)
+   
+   -- vm1 = da1.subtract(a1).square(); square produces copy
+   vm1 = squaremagnitude(destructivesubtractmagnitudes(copyarray(da1), a1))
+   
+   -- da1 = da1.add(a1); mutable, last instance of a1
+   destructiveaddmagnitudes(da1, a1)
+   
+   -- v1 = da1.square(); square makes copy
+   v1 = squaremagnitude(da1)
+   
+   -- vinf = a2.square(); square makes copy
+   vinf = squaremagnitude(a2)
+   
+   -- v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(); last instance of da1, mutate; square makes copy
+   destructiveaddmagnitudes(da1, a2)
+   destructiveleftshift(da1, 1)
+   destructivesubtractmagnitudes(da1, a0)
+   v2 = squaremagnitude(da1)
+      
+   
+   
+   -- t2 = v2.subtract(vm1).exactDivideBy3(); last instance of v2, so t2 = v2
+   destructivesubtractmagnitudes(v2, vm1)
+   destructiveexactdividebythree(v2)
+   t2 = v2
+   
+   -- tm1 = v1.subtract(vm1).shiftRight(1);
+   tm1 = destructivesubtractmagnitudes(copyarray(v1), vm1)
+   destructiverightshift(tm1, 1)
+   
+   -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
+   destructivesubtractmagnitudes(v1, v0)
+   t1 = v1
+   
+   -- t2 = t2.subtract(t1).shiftRight(1); mutable
+   destructivesubtractmagnitudes(t2, t1)
+   destructiverightshift(t2, 1)
+   
+   -- t1 = t1.subtract(tm1).subtract(vinf); mutable
+   destructivesubtractmagnitudes(t1, tm1)
+   destructivesubtractmagnitudes(t1, vinf)
+   
+   -- t2 = t2.subtract(vinf.shiftLeft(1)); mutable
+   destructivesubtractmagnitudes(t2, copyandleftshift(vinf, 1))
+   
+   -- tm1 = tm1.subtract(t2); mutable
+   destructivesubtractmagnitudes(tm1, t2)
+   
+   
+   --return vinf.shiftLeft(ss).add(t2).shiftLeft(ss).add(t1).shiftLeft(ss).add(tm1).shiftLeft(ss).add(v0);
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, t2)
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, t1)
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, tm1)
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, v0)
+   
+   return vinf
+end
+
 function squaremagnitude(mag)
-   if #mag >= karatsubasquarethreshold then
+   if #mag >= toomcooksquarethreshold then
+      return squaretoomcook(mag)
+   elseif #mag >= karatsubasquarethreshold then
       return squarekaratsuba(mag)
    end
    return squarecolinplumb(mag)
