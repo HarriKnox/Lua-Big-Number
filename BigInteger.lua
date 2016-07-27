@@ -1939,6 +1939,25 @@ function square(value)
    return constructorsignmagnitude(1, squaremagnitude(mag))
 end
 
+function mutablesquare(bigint)
+   local mag
+   local ok, reason = isvalidbiginteger(bigint)
+   if not ok then
+      error(reason)
+   end
+   
+   if bigint.sign == 0 then
+      return bigint
+   end
+   
+   mag = squaremagnitude(bigint.magnitude)
+   
+   clearandcopyintoarray(bigint.magnitude, mag)
+   bigint.sign = 1
+   
+   return bigint
+end
+
 
 
 -- temporary functions to print the number in hexadecimal or binary
