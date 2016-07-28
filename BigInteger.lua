@@ -772,6 +772,7 @@ function getbytefromend(array, displacement)
    if displacement < 0 or displacement >= arraylength then
       return 0
    end
+   
    return array[arraylength - displacement]
 end
 
@@ -1453,8 +1454,8 @@ function destructiveaddmagnitudes(thismag, thatmag)
    carry = 0
    
    for i = 0, longerlength - 1 do
-      carry, thismag[longerlength - i] = splitlong(getbytefromend(thismag, i) +
-                                                   getbytefromend(thatmag, i) +
+      carry, thismag[longerlength - i] = splitlong((thismag[thislength - i] or 0) +
+                                                   (thatmag[thatlength - i] or 0) +
                                                    carry)
    end
    
@@ -1793,44 +1794,25 @@ end
 function squarekaratsuba(mag)
    local halfway, shiftup
    local upper, lower
-   local uppersquared, lowersquared
-   local temp1, temp2
+   local uppersquared, lowersquared, innersquared
+   local result
    
    halfway = floor((#mag + 1) / 2)
    shiftup = halfway * 32
    
    upper, lower = splitarrayatbytefromend(mag, halfway)
+   
    uppersquared = squaremagnitude(upper)
    lowersquared = squaremagnitude(lower)
+   innersquared = destructiveaddmagnitudes(multiplymagnitudes(upper, lower),
+                                           multiplymagnitudes(lower, upper))
    
-   temp1 = copyarray(uppersquared)
-   
-   -- xhs.add(xls)
+   destructiveleftshift(uppersquared, shiftup)
+   destructiveaddmagnitudes(uppersquared, innersquared)
+   destructiveleftshift(uppersquared, shiftup)
    destructiveaddmagnitudes(uppersquared, lowersquared)
    
-   -- xl.add(xh).square().subtract(...)
-   destructiveaddmagnitudes(lower, upper)
-   temp2 = squaremagnitude(lower)
-   destructivesubtractmagnitudes(temp2, uppersquared)
-   
-   -- xhs.shiftLeft(half*32).add(...).shiftLeft(half*32).add(xls)
-   destructiveleftshift(temp1, shiftup)
-   destructiveaddmagnitudes(temp1, temp2)
-   destructiveleftshift(temp1, shiftup)
-   destructiveaddmagnitudes(temp1, lowersquared)
-   
-   --[[
-        xhs .shiftLeft(half*32)
-            .add(
-                xl  .add(xh)
-                    .square()
-                    .subtract(
-                        xhs.add(xls)))
-            .shiftLeft(half*32)
-            .add(xls);
-            --]]
-   
-   return temp1
+   return uppersquared
 end
 
 function destructiveexactdividebythree(mag)
@@ -2051,9 +2033,9 @@ function multiplykaratsuba(thismag, thatmag)
                                      multiplymagnitudes(thislower, thatupper))
    
    destructiveleftshift(uppers, shiftup)
-   destructiveadd(uppers, inners)
+   destructiveaddmagnitudes(uppers, inners)
    destructiveleftshift(uppers, shiftup)
-   destructiveadd(uppers, lowers)
+   destructiveaddmagnitudes(uppers, lowers)
    
    return uppers
 end
