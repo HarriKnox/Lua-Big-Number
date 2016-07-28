@@ -1791,12 +1791,13 @@ function squarecolinplumb(mag)
 end
 
 function squarekaratsuba(mag)
-   local halfway
+   local halfway, shiftup
    local upper, lower
    local uppersquared, lowersquared
    local temp1, temp2
    
    halfway = floor((#mag + 1) / 2)
+   shiftup = halfway * 32
    
    upper, lower = splitarrayatbytefromend(mag, halfway)
    uppersquared = squaremagnitude(upper)
@@ -1813,9 +1814,9 @@ function squarekaratsuba(mag)
    destructivesubtractmagnitudes(temp2, uppersquared)
    
    -- xhs.shiftLeft(half*32).add(...).shiftLeft(half*32).add(xls)
-   destructiveleftshift(temp1, halfway * 32)
+   destructiveleftshift(temp1, shiftup)
    destructiveaddmagnitudes(temp1, temp2)
-   destructiveleftshift(temp1, halfway * 32)
+   destructiveleftshift(temp1, shiftup)
    destructiveaddmagnitudes(temp1, lowersquared)
    
    --[[
@@ -2031,6 +2032,32 @@ function multiplycolinplumb(thismag, thatmag)
    return result
 end
 
+function multiplykaratsuba(thismag, thatmag)
+   local halfway, shiftup
+   local thisupper, thislower
+   local thatupper, thatlower
+   local uppers, lowers, inners
+   local result
+   
+   halfway = floor((max(#thismag, #thatmag) + 1) / 2)
+   shiftup = halfway * 32
+   
+   thisupper, thislower = splitarrayatbytefromend(thismag, halfway)
+   thatupper, thatlower = splitarrayatbytefromend(thatmag, halfway)
+   
+   uppers = multiplymagnitudes(thisupper, thatupper)
+   lowers = multiplymagnitudes(thislower, thatlower)
+   inners = destructiveaddmagnitudes(multiplymagnitudes(thisupper, thatlower),
+                                     multiplymagnitudes(thislower, thatupper))
+   
+   destructiveleftshift(uppers, shiftup)
+   destructiveadd(uppers, inners)
+   destructiveleftshift(uppers, shiftup)
+   destructiveadd(uppers, lowers)
+   
+   return uppers
+end
+
 function multiplymagnitudes(thismag, thatmag)
    return multiplycolinplumb(thismag, thatmag)
 end
@@ -2041,7 +2068,7 @@ function multiply(thisvalue, thatvalue)
    local thatsign, thatmag
    
    if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform subtraction on "
+      error("attempt to perform multiplication on "
          .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
    end
    
@@ -2062,12 +2089,53 @@ function multiply(thisvalue, thatvalue)
    
    if equalmagnitudes(thismag, thatmag) then
       -- If magnitudes are equal, regardless of sign, the magnitude is squared
-      mag = square(thisvalue, thatvalue)
+      -- so use optimizations in the squaring code
+      mag = squaremagnitude(thatmag)
    else
       mag = multiplymagnitudes(thismag, thatmag)
    end
    
    return constructorsignmagnitude(sign, mag)
+end
+
+function mutablemultiply(thisbigint, thatvalue)
+   local mag
+   local thatsign, thatmag
+   local ok, reason = isvalidbiginteger(thisbigint)
+   if not ok then
+      error(reason)
+   end
+   
+   if not isvalidoperablevalue(thatvalue) then
+      error("attempt to perform multiplication on biginteger and "
+         .. gettype(thatvalue))
+   end
+   
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   
+   if thisbigint.sign == 0 then
+      return thisbigint
+   elseif thatsign == 0 then
+      thisbigint.sign = 0
+      cleararray(thisbigint.magnitude)
+      return thisbigint
+   end
+   
+   if thisbigint.sign ~= thatsign then
+      thisbigint.sign = -1
+   else
+      thisbigint.sign = 1
+   end
+   
+   if equalmagnitudes(thisbigint.magnitude, thatmag) then
+      mag = squaremagnitude(thisbigint.magnitude)
+   else
+      mag = multiplymagnitudes(thisbigint.magnitude, thatmag)
+   end
+   
+   clearandcopyintoarray(thisbigint.magnitude, mag)
+   
+   return thisbigint
 end
 
 
