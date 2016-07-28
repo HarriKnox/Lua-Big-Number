@@ -365,6 +365,16 @@ function swaparrays(thisarray, thatarray)
    end
 end
 
+function allocatearray(length)
+   local array = {}
+   
+   for i = 1, length do
+      array[i] = 0
+   end
+   
+   return array
+end
+
 
 function splitarrayatbytefromend(mag, pivot)
    -- Will split an array into two smaller arrays, upper and lower such that
@@ -994,10 +1004,7 @@ function constructorstringradix(str, radix)
    end
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
-   mag = {}
-   for i = 1, numberofwords do
-      mag[i] = 0
-   end
+   mag = allocatearray(numberofwords)
    
    -- a small deviation but here to prevent numerous calls to digitsperinteger
    digitsperintegerradix = digitsperinteger[radix]
@@ -1119,6 +1126,10 @@ function compare(thisvalue, thatvalue)
    end
    
    return comparemagnitudes(thismag, thatmag)
+end
+
+function equalmagnitudes(thismag, thatmag)
+   return comparemagnitudes(thismag, thatmag) == 0
 end
 
 function equals(thisbigint, thatbigint)
@@ -1525,7 +1536,10 @@ function mutableabsolutevalue(bigint)
       error("bigint not valid biginteger: " .. reason)
    end
    
-   bigint.sign = bigint.sign == 0 and 0 or 1
+   if bigint.sign == -1 then
+      bigint.sign = 1
+   end
+   
    return bigint
 end
 
@@ -1564,6 +1578,10 @@ function add(thisvalue, thatvalue)
       else
          return constructorinteger(0)
       end
+   end
+   
+   if #mag == 0 then
+      sign = 0
    end
    
    return constructorsignmagnitudetrusted(sign, mag)
@@ -1611,6 +1629,10 @@ function mutableadd(thisbigint, thatvalue)
       end
    end
    
+   if #thisbigint.magnitude == 0 then
+      thisbigint.sign = 0
+   end
+   
    return thisbigint
 end
 
@@ -1644,11 +1666,15 @@ function subtract(thisvalue, thatvalue)
          sign = thissign
          mag = destructivesubtractmagnitudes(thismag, thatmag)
       elseif comparison == -1 then
-         sign = thatsign
+         sign = -thissign
          mag = destructivesubtractmagnitudes(thatmag, thismag)
       else
          return constructorinteger(0)
       end
+   end
+   
+   if #mag == 0 then
+      sign = 0
    end
    
    return constructorsignmagnitudetrusted(sign, mag)
@@ -1687,13 +1713,17 @@ function mutablesubtract(thisbigint, thatvalue)
       if comparison == 1 then
          destructivesubtractmagnitudes(thisbigint.magnitude, thatmag)
       elseif comparison == -1 then
-         thisbigint.sign = thatsign
+         thisbigint.sign = -thisbigint.sign
          swaparrays(thisbigint.magnitude, thatmag)
          destructivesubtractmagnitudes(thisbigint.magnitude, thatmag)
       else
          thisbigint.sign = 0
          cleararray(thisbigint.magnitude)
       end
+   end
+   
+   if #thisbigint.magnitude == 0 then
+      thisbigint.sign = 0
    end
    
    return thisbigint
@@ -1709,10 +1739,7 @@ function squarecolinplumb(mag)
    maglength = #mag
    resultlength = maglength * 2
    
-   result = {}
-   for i = 1, resultlength do
-      result[i] = 0
-   end
+   result = allocatearray(resultlength)
    
    for i = 0, maglength - 1 do
       -- Multiply all squares and put them to result
@@ -1959,6 +1986,91 @@ function mutablesquare(bigint)
 end
 
 
+function multiplycolinplumb(thismag, thatmag)
+   local thislength, thatlength
+   local resultlength, result
+   local producthigh, productlow, carry
+   local index
+   
+   thislength = #thismag
+   thatlength = #thatmag
+   resultlength = thislength + thatlength
+   
+   result = allocatearray(resultlength)
+   
+   for i = 0, thislength - 1 do
+      for j = 0, thatlength - 1 do
+         index = resultlength - i - j
+         producthigh, productlow = integermultiplyandaddtosplitlong(getbytefromend(thismag, i),
+                                                                    getbytefromend(thatmag, j),
+                                                                    0)
+         
+         -- Add productlow to the corresponding result byte and continue the
+         -- carry up to extraint
+         carry, result[index] = splitlong(result[index] + productlow)
+         extraint, producthigh = splitlong(producthigh + carry)
+         
+         -- Add producthigh to the next corresponding result byte and continue
+         -- the carry to extraint
+         index = index - 1
+         carry, result[index] = splitlong(result[index] + producthigh)
+         --extraint = extraint + carry
+         --carry = extraint
+         carry = extraint + carry
+         
+         -- set carry to extraint and propagate through the result
+         while carry ~= 0 do
+            index = index - 1
+            carry, result[index] = splitlong(result[index] + carry)
+         end
+      end
+   end
+   
+   destructivestripleadingzeros(result)
+   
+   return result
+end
+
+function multiplymagnitudes(thismag, thatmag)
+   return multiplycolinplumb(thismag, thatmag)
+end
+
+function multiply(thisvalue, thatvalue)
+   local sign, mag
+   local thissign, thismag
+   local thatsign, thatmag
+   
+   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
+      error("attempt to perform subtraction on "
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
+   end
+   
+   thissign, thismag = getsignandmagnitude(thisvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   
+   if thissign == 0 then
+      return thisvalue
+   elseif thatsign == 0 then
+      return thatvalue
+   end
+   
+   if thissign ~= thatsign then
+      sign = -1
+   else
+      sign = 1
+   end
+   
+   if equalmagnitudes(thismag, thatmag) then
+      -- If magnitudes are equal, regardless of sign, the magnitude is squared
+      mag = square(thisvalue, thatvalue)
+   else
+      mag = multiplymagnitudes(thismag, thatmag)
+   end
+   
+   return constructorsignmagnitude(sign, mag)
+end
+
+
 
 -- temporary functions to print the number in hexadecimal or binary
 function getintegerstringhexadecimal(number)
@@ -2027,7 +2139,7 @@ if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
       error("Knox's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
    end
-   _ENV.biginteger = biginteger
+   --_ENV.biginteger = biginteger
    return
 end
 
