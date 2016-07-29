@@ -82,6 +82,9 @@ local negativemask = 0x80000000
 local karatsubasquarethreshold = 128
 local toomcooksquarethreshold = 216
 
+local karatsubamultiplythreshold = 80
+local toomcookmultiplythreshold = 240
+
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
 local bitsperdigit = {
@@ -2125,7 +2128,24 @@ function multiplytoomcook(thismag, thatmag)
 end
 
 function multiplymagnitudes(thismag, thatmag)
-   return multiplycolinplumb(thismag, thatmag)
+   if min(#thismag, #thatmag) < karatsubamultiplythreshold then
+      -- if either are less than the Karatsuba threshold then do
+      -- Colin Plumb multiplication
+      -- Note: multiplying a large number (suppose it has 8'675'309-bytes) by a
+      -- small number (say at most 79-bytes) will use this method of muliplying
+      return multiplycolinplumb(thismag, thatmag)
+   elseif max(#thismag, #thatmag) > toomcookmultiplythreshold then
+      -- if either are greater than the Toom Cook threshold then do
+      -- Toom Cook multiplication
+      -- Note: multiplying a large number (suppose it has 8'675'309-bytes) by a
+      -- small number (say at least 80-bytes) will use this method of muliplying
+      return multiplytoomcook(thismag, thatmag)
+   end
+   -- otherwise, do the Karatsuba multiplication
+   -- done when both lengths are
+   --  * greater than the Karatsuba threshold
+   --  * less than the Toom Cook threshold
+   return multiplykaratsuba(thismag, thatmag)
 end
 
 function multiply(thisvalue, thatvalue)
