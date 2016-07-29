@@ -2040,6 +2040,90 @@ function multiplykaratsuba(thismag, thatmag)
    return uppers
 end
 
+function multiplytoomcook(thismag, thatmag)
+   local a2, a1, a0, b2, b1, b0, ss
+   local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1
+   
+   local longerlength = max(#thismag, #thatmag)
+   
+   a2, a1, a0, ss = gettoomcookslices(thismag, longerlength)
+   b2, b1, b0, _  = gettoomcookslices(thatmag, longerlength)
+   
+   -- v0 = a0.multiply(b0);
+   v0 = multiplymagnitudes(a0, b0)
+   
+   -- da1 = a2.add(a0);
+   da1 = destructiveaddmagnitudes(copyarray(a2), a0)
+   
+   -- db1 = b2.add(b0);
+   db1 = destructiveaddmagnitudes(copyarray(b2), b0)
+   
+   -- vm1 = da1.subtract(a1).multiply(db1.subtract(b1));
+   vm1 = multiplymagnitudes(destructivesubtractmagnitudes(copyarray(da1), a1),
+                            destructivesubtractmagnitudes(copyarray(db1), b1))
+   
+   -- da1 = da1.add(a1);
+   destructiveaddmagnitudes(da1, a1)
+   
+   -- db1 = db1.add(b1);
+   destructiveaddmagnitudes(db1, b1)
+   
+   -- v1 = da1.multiply(db1);
+   v1 = multiplymagnitudes(da1, db1)
+   
+   -- v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
+   --     db1.add(b2).shiftLeft(1).subtract(b0)); last instances of da1 and db1, so mutate
+   destructiveaddmagnitudes(da1, a2)
+   destructiveleftshift(da1, 1)
+   destructivesubtractmagnitudes(da1, a0)
+   destructiveaddmagnitudes(db1, b2)
+   destructiveleftshift(db1, 1)
+   destructivesubtractmagnitudes(db1, b0)
+   v2 = multiplymagnitudes(da1, db1)
+   
+   -- vinf = a2.multiply(b2);
+   vinf = multiplymagnitudes(a2, b2)
+   
+   -- t2 = v2.subtract(vm1).exactDivideBy3(); last instance of v2, so t2 = v2
+   destructivesubtractmagnitudes(v2, vm1)
+   destructiveexactdividebythree(v2)
+   t2 = v2
+   
+   -- tm1 = v1.subtract(vm1).shiftRight(1);
+   tm1 = destructivesubtractmagnitudes(copyarray(v1), vm1)
+   destructiverightshift(tm1, 1)
+   
+   -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
+   destructivesubtractmagnitudes(v1, v0)
+   t1 = v1
+   
+   -- t2 = t2.subtract(t1).shiftRight(1);
+   destructivesubtractmagnitudes(t2, t1)
+   destructiverightshift(t2, 1)
+   
+   -- t1 = t1.subtract(tm1).subtract(vinf);
+   destructivesubtractmagnitudes(t1, tm1)
+   destructivesubtractmagnitudes(t1, vinf)
+   
+   -- t2 = t2.subtract(vinf.shiftLeft(1));
+   destructivesubtractmagnitudes(t2, copyandleftshift(vinf, 1))
+   
+   -- tm1 = tm1.subtract(t2);
+   destructivesubtractmagnitudes(tm1, t2)
+   
+   -- return vinf.shiftLeft(ss).add(t2).shiftLeft(ss).add(t1).shiftLeft(ss).add(tm1).shiftLeft(ss).add(v0);
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, t2)
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, t1)
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, tm1)
+   destructiveleftshift(vinf, ss)
+   destructiveaddmagnitudes(vinf, v0)
+   
+   return vinf
+end
+
 function multiplymagnitudes(thismag, thatmag)
    return multiplycolinplumb(thismag, thatmag)
 end
