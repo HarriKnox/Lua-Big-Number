@@ -1471,6 +1471,10 @@ function destructiveaddmagnitudes(thismag, thatmag)
    return thismag
 end
 
+function copyandaddmagnitudes(thismag, thatmag)
+   return destructiveaddmagnitudes(copyarray(thismag), thatmag)
+end
+
 function destructivesubtractmagnitudes(minuend, subtrahend)
    local borrow, difference
    local longerlen
@@ -1496,6 +1500,10 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    destructivestripleadingzeros(minuend)
    
    return minuend
+end
+
+function copyandaddmagnitudes(minuend, subtrahend)
+   return destructivesubtractmagnitudes(copyarray(minuend), subtrahend)
 end
 
 
@@ -1862,10 +1870,10 @@ function squaretoomcook(mag)
    v0 = squaremagnitude(a0)
    
    -- da1 = a2.add(a0);
-   da1 = destructiveaddmagnitudes(copyarray(a2), a0)
+   da1 = copyandaddmagnitudes(a2, a0)
    
    -- vm1 = da1.subtract(a1).square(); square produces copy
-   vm1 = squaremagnitude(destructivesubtractmagnitudes(copyarray(da1), a1))
+   vm1 = squaremagnitude(copyandsubtractmagnitudes(da1, a1))
    
    -- da1 = da1.add(a1); mutable, last instance of a1
    destructiveaddmagnitudes(da1, a1)
@@ -1890,7 +1898,7 @@ function squaretoomcook(mag)
    t2 = v2
    
    -- tm1 = v1.subtract(vm1).shiftRight(1);
-   tm1 = destructivesubtractmagnitudes(copyarray(v1), vm1)
+   tm1 = copyandsubtractmagnitudes(v1, vm1)
    destructiverightshift(tm1, 1)
    
    -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
@@ -2056,14 +2064,14 @@ function multiplytoomcook(thismag, thatmag)
    v0 = multiplymagnitudes(a0, b0)
    
    -- da1 = a2.add(a0);
-   da1 = destructiveaddmagnitudes(copyarray(a2), a0)
+   da1 = copyandaddmagnitudes(a2, a0)
    
    -- db1 = b2.add(b0);
-   db1 = destructiveaddmagnitudes(copyarray(b2), b0)
+   db1 = copyandaddmagnitudes(b2, b0)
    
    -- vm1 = da1.subtract(a1).multiply(db1.subtract(b1));
-   vm1 = multiplymagnitudes(destructivesubtractmagnitudes(copyarray(da1), a1),
-                            destructivesubtractmagnitudes(copyarray(db1), b1))
+   vm1 = multiplymagnitudes(copyandsubtractmagnitudes(da1, a1),
+                            copyandsubtractmagnitudes(db1, b1))
    
    -- da1 = da1.add(a1);
    destructiveaddmagnitudes(da1, a1)
@@ -2093,7 +2101,7 @@ function multiplytoomcook(thismag, thatmag)
    t2 = v2
    
    -- tm1 = v1.subtract(vm1).shiftRight(1);
-   tm1 = destructivesubtractmagnitudes(copyarray(v1), vm1)
+   tm1 = copyandsubtractmagnitudes(v1, vm1)
    destructiverightshift(tm1, 1)
    
    -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
