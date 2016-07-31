@@ -1217,7 +1217,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
    end
    
    if not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform bitwiseoperation on biginteger and "
+      error("attempt to perform bitwise operation on biginteger and "
          .. gettype(thatvalue))
    end
    
@@ -2048,7 +2048,7 @@ function mutablesquare(bigint)
    local mag
    local ok, reason = isvalidbiginteger(bigint)
    if not ok then
-      error(reason)
+      error("bigint not valid biginteger: " .. reason)
    end
    
    if bigint.sign == 0 then
@@ -2281,7 +2281,7 @@ function mutablemultiply(thisbigint, thatvalue)
    local thatsign, thatmag
    local ok, reason = isvalidbiginteger(thisbigint)
    if not ok then
-      error(reason)
+      error("thisbigint not valid bitinteger: " .. reason)
    end
    
    if not isvalidoperablevalue(thatvalue) then
