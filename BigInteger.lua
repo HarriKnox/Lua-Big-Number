@@ -67,6 +67,7 @@ local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 local floor = floor or math.floor
 local max = max or math.max
 local min = min or math.min
+local abs = abs or math.abs
 local random = random or math.random
 
 local stringsub = string.sub
@@ -149,6 +150,13 @@ function isvalid32bitinteger(int)
    end
    
    return true
+end
+
+function isvalidabsolute32bitinteger(int)
+   if type(int) ~= 'number' then
+      return false, "not a number: it's a " .. type(int)
+   end
+   return isvalid32bitinteger(abs(int))
 end
 
 function isvalidbytearray(array)
@@ -1353,6 +1361,23 @@ function copyandrightshift(mag, displacement)
 end
 
 
+function destructivebitwiseshift(mag, displacement, right)
+   if displacement < 0 then
+      displacement = -displacement
+      right = not right
+   end
+   
+   if right then
+      destructiverightshift(mag, displacement)
+   else
+      destructiveleftshift(mag, displacement)
+   end
+   
+   destructivestripleadingzeros(mag)
+   
+   return mag
+end
+
 function bitwiseshift(value, displacement, right)
    local sign, mag
    local ok, reason
@@ -1362,33 +1387,23 @@ function bitwiseshift(value, displacement, right)
       error("value not operable: " .. reason)
    end
    
-   ok, reason = isvalidinteger(displacement)
+   ok, reason = isvalidabsolute32bitinteger(displacement)
    if not ok then
-      error("displacement not valid integer: " .. reason)
-   end
-   
-   if displacement < 0 then
-      displacement = -displacement
-      right = not right
+      error("displacement not valid 32-bit integer: " .. reason)
    end
    
    sign, mag = getsignandmagnitude(value)
+   destructivebitwiseshift(mag, displacement, right)
    
-   if right then
-      destructiverightshift(mag, displacement)
-      
-      if #mag == 0 then
-         if sign == -1 then
-            mag[1] = 0xffffffff
-         else
-            sign = 0
-         end
+   if #mag == 0 then
+      if sign == -1 then
+         mag[1] = 0xffffffff
+      else
+         sign = 0
       end
-   else
-      destructiveleftshift(mag, displacement)
    end
    
-   return constructorsignmagnitudetrusted(sign, destructivestripleadingzeros(mag))
+   return constructorsignmagnitudetrusted(sign, mag)
 end
 
 function mutablebitwiseshift(bigint, displacement, right)
@@ -1397,31 +1412,20 @@ function mutablebitwiseshift(bigint, displacement, right)
       error("bigint not valid biginteger: " .. reason)
    end
    
-   ok, reason = isvalidinteger(displacement)
+   ok, reason = isvalidabsolute32bitinteger(displacement)
    if not ok then
-      error("displacement not valid integer: " .. reason)
+      error("displacement not valid 32-bit integer: " .. reason)
    end
    
-   if displacement < 0 then
-      displacement = -displacement
-      right = not right
-   end
+   destructivebitwiseshift(bigint.magnitude, displacement, right)
    
-   if right then
-      destructiverightshift(bigint.magnitude, displacement)
-      
-      if #bigint.magnitude == 0 then
-         if bigint.sign == -1 then
-            bigint.magnitude[1] = 0xffffffff
-         else
-            bigint.sign = 0
-         end
+   if #bigint.magnitude == 0 then
+      if bigint.sign == -1 then
+         bigint.magnitude[1] = 0xffffffff
+      else
+         bigint.sign = 0
       end
-   else
-      destructiveleftshift(bigint.magnitude, displacement)
    end
-   
-   destructivestripleadingzeros(bigint.magnitude)
    
    return bigint
 end
