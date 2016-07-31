@@ -1445,6 +1445,50 @@ function mutablebitwiserightshift(bigint, displacement)
 end
 
 
+function bitwiseatbyte(value, bitfromend, bitwisefunction)
+   local ok, reason
+   local bytearray, length
+   local byte, bit
+   
+   ok, reason = isvalidoperablevalue(value)
+   
+   if not ok then
+      error(reason)
+   end
+   
+   ok, reason = isvalid32bitinteger(bitfromend)
+   
+   if not ok then
+      error(reason)
+   end
+   
+   bytearray = getbytearray(value)
+   
+   byte = bitrightshift(bitfromend + 1, 5)
+   bit = bitand(bitfromend, 0x1f)
+   
+   length = max(#bytearray, byte + 1)
+   
+   destructivesignextendbytearray(bytearray, length)
+   bytearray[length - byte] = bitwisefunction(bytearray[length - byte], bitleftshift(1, bit))
+   
+   return constructorbytearraytrusted(bytearray)
+end
+
+
+function clearbit(value, bitfromend)
+   return bitwiseatbyte(value, bitfromend, bitandnot)
+end
+
+function setbit(value, bitfromend)
+   return bitwiseatbyte(value, bitfromend, bitor)
+end
+
+function flipbit(value, bitfromend)
+   return bitwiseatbyte(value, bitfromend, bitxor)
+end
+
+
 -- Private Magnitude Functions
 function destructiveaddmagnitudes(thismag, thatmag)
    local thislength, thatlength, longerlength
