@@ -1445,24 +1445,8 @@ function mutablebitwiserightshift(bigint, displacement)
 end
 
 
-function bitwiseatbit(value, bitfromend, bitwisefunction)
-   local ok, reason
-   local bytearray, length
-   local byte, bit
-   
-   ok, reason = isvalidoperablevalue(value)
-   
-   if not ok then
-      error(reason)
-   end
-   
-   ok, reason = isvalid32bitinteger(bitfromend)
-   
-   if not ok then
-      error(reason)
-   end
-   
-   bytearray = getbytearray(value)
+function destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
+   local byte, bit, length
    
    byte = bitrightshift(bitfromend + 1, 5)
    bit = bitand(bitfromend, 0x1f)
@@ -1472,7 +1456,51 @@ function bitwiseatbit(value, bitfromend, bitwisefunction)
    destructivesignextendbytearray(bytearray, length)
    bytearray[length - byte] = bitwisefunction(bytearray[length - byte], bitleftshift(1, bit))
    
+   return bytearray
+end
+
+function bitwiseatbit(value, bitfromend, bitwisefunction)
+   local ok, reason
+   local bytearray
+   
+   ok, reason = isvalidoperablevalue(value)
+   
+   if not ok then
+      error("value not operable: " .. reason)
+   end
+   
+   ok, reason = isvalid32bitinteger(bitfromend)
+   
+   if not ok then
+      error("bitfromend not valid 32-bit integer: " .. reason)
+   end
+   
+   bytearray = getbytearray(value)
+   destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
+   
    return constructorbytearraytrusted(bytearray)
+end
+
+function mutablebitwiseatbit(bigint, bitfromend, bitwisefunction)
+   local ok, reason
+   
+   ok, reason = isvalidbiginteger(bigint)
+   
+   if not ok then
+      error("bigint not valid biginteger: " .. reason)
+   end
+   
+   ok, reason = isvalid32bitinteger(bitfromend)
+   
+   if not ok then
+      error("bitfromend not valid 32-bit integer: " .. reason)
+   end
+   
+   destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
+   destructivebitwiseatbit(bigint.magnitude, bitfromend, bitwisefunction)
+   destructiveconvertbytearraytosignmagnitude(bigint.magnitude)
+   
+   return bigint
 end
 
 
@@ -1480,12 +1508,24 @@ function clearbit(value, bitfromend)
    return bitwiseatbit(value, bitfromend, bitandnot)
 end
 
+function mutableclearbit(bigint, bitfromend)
+   return mutablebitwiseatbit(bigint, bitfromend, bitandnot)
+end
+
 function setbit(value, bitfromend)
    return bitwiseatbit(value, bitfromend, bitor)
 end
 
+function mutablesetbit(bigint, bitfromend)
+   return mutablebitwiseatbit(bigint, bitfromend, bitor)
+end
+
 function flipbit(value, bitfromend)
    return bitwiseatbit(value, bitfromend, bitxor)
+end
+
+function mutableflipbit(bigint, bitfromend)
+   return mutablebitwiseatbit(bigint, bitfromend, bitxor)
 end
 
 
