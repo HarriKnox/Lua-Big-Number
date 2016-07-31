@@ -190,6 +190,10 @@ function isvalidmagnitude(mag)
       return true
    end
    
+   if #mag >= maxmagnitudelength then
+      return false, "too large (would overflow)"
+   end
+   
    if mag[1] == 0 then
       return false, "has leading zeros"
    end
@@ -894,10 +898,6 @@ function constructorsignmagnitudetrusted(sign, mag)
       error("sign-magnitude mismatch: " .. reason)
    end
    
-   if #mag >= maxmagnitudelength then
-      error("biginteger would overflow supported range")
-   end
-   
    return createbiginteger(sign, mag)
 end
 
@@ -956,11 +956,7 @@ function constructorbytearraytrusted(array)
       destructivenegatebytearray(array)
    end
    
-   if #array >= maxmagnitudelength then
-      error("biginteger would overflow supported range")
-   end
-   
-   return createbiginteger(sign, array)
+   return constructorsignmagnitude(sign, array)
 end
 
 function constructorbytearray(array)
@@ -1051,11 +1047,8 @@ function constructorstringradix(str, radix)
    end
    
    destructivestripleadingzeros(mag)
-   if #mag >= maxmagnitudelength then
-      error("biginteger would overflow supported range")
-   end
    
-   return createbiginteger(sign, mag)
+   return constructorsignmagnitude(sign, mag)
 end
 
 function clone(bigint)
