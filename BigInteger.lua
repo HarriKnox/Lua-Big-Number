@@ -76,7 +76,6 @@ local tableinsert = table.insert
 
 -- Constants
 local maxinteger = 0x7ffffffffffff -- 2 ^ 51 - 1; largest number bit32 can work with reliably
-local maxmagnitudelength = 0x4000000 -- Integer.MAX_VALUE / Integer.SIZE  + 1 = 1 << 26
 local negativemask = 0x80000000
 
 -- Threshold values
@@ -190,8 +189,8 @@ function isvalidmagnitude(mag)
       return true
    end
    
-   if #mag >= maxmagnitudelength then
-      return false, "too large (would overflow)"
+   if #mag >= maxinteger then
+      return false, "too large (overflow)"
    end
    
    if mag[1] == 0 then
@@ -335,6 +334,9 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    return highword, lowword
 end
 
+function splitlongtobytesandbits(number)
+   return floor(number / 32), make32bitinteger(number, 0x1f)
+end
 
 -- Byte Array Functions
 function copyarrayto(source, destination)
@@ -1280,8 +1282,7 @@ function destructiveleftshift(mag, displacement)
    
    maglength = #mag
    
-   numberofbytes = bitrightshift(displacement, 5)
-   numberofbits = bitand(displacement, 0x1f)
+   numberofbytes, numberofbits = splitlongtobytesandbits(displacement)
    
    shiftmultiplier = bitleftshift(1, numberofbits)
    carry = 0
@@ -1314,7 +1315,7 @@ function destructiverightshift(mag, displacement)
    end
    
    maglength = #mag
-   numberofbytes = bitrightshift(displacement, 5)
+   numberofbytes, numberofbits = splitlongtobytesandbits(displacement)
    
    if numberofbytes >= maglength then
       -- when right-shifting more bits than there are in the array, the result
@@ -1324,7 +1325,6 @@ function destructiverightshift(mag, displacement)
       return mag
    end
    
-   numberofbits = bitand(displacement, 0x1f)
    numberofbitsadjusted = 32 - numberofbits
    shiftmultiplier = bitleftshift(1, numberofbitsadjusted)
    carry = 0
@@ -1445,8 +1445,7 @@ end
 function destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
    local byte, bit, length
    
-   byte = bitrightshift(bitfromend + 1, 5)
-   bit = bitand(bitfromend, 0x1f)
+   byte, bit = splitlongtobytesandbits(bitfromend, 0x1f)
    
    length = max(#bytearray, byte + 1)
    
@@ -1466,10 +1465,14 @@ function bitwiseatbit(value, bitfromend, bitwisefunction)
       error("value not operable: " .. reason)
    end
    
-   ok, reason = isvalid32bitinteger(bitfromend)
+   ok, reason = isvalidinteger(bitfromend)
    
    if not ok then
-      error("bitfromend not valid 32-bit integer: " .. reason)
+      error("bitfromend not valid integer: " .. reason)
+   end
+   
+   if bitfromend < 0 then
+      error("bitfromend not valid: negative")
    end
    
    bytearray = getbytearray(value)
@@ -1487,10 +1490,14 @@ function mutablebitwiseatbit(bigint, bitfromend, bitwisefunction)
       error("bigint not valid biginteger: " .. reason)
    end
    
-   ok, reason = isvalid32bitinteger(bitfromend)
+   ok, reason = isvalidinteger(bitfromend)
    
    if not ok then
       error("bitfromend not valid 32-bit integer: " .. reason)
+   end
+   
+   if bitfromend < 0 then
+      error("bitfromend not valid: negative")
    end
    
    destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
