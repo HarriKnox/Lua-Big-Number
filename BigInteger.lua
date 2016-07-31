@@ -1,4 +1,4 @@
-local bi = {} -- Sandbox for testing purposes. That's why all the 'local's are commented out.
+local bi = {} -- Sandbox for testing purposes.
 setmetatable(bi, {__index = _G})
 _ENV = bi
 
@@ -1445,7 +1445,7 @@ function mutablebitwiserightshift(bigint, displacement)
 end
 
 
-function bitwiseatbyte(value, bitfromend, bitwisefunction)
+function bitwiseatbit(value, bitfromend, bitwisefunction)
    local ok, reason
    local bytearray, length
    local byte, bit
@@ -1477,15 +1477,15 @@ end
 
 
 function clearbit(value, bitfromend)
-   return bitwiseatbyte(value, bitfromend, bitandnot)
+   return bitwiseatbit(value, bitfromend, bitandnot)
 end
 
 function setbit(value, bitfromend)
-   return bitwiseatbyte(value, bitfromend, bitor)
+   return bitwiseatbit(value, bitfromend, bitor)
 end
 
 function flipbit(value, bitfromend)
-   return bitwiseatbyte(value, bitfromend, bitxor)
+   return bitwiseatbit(value, bitfromend, bitxor)
 end
 
 
