@@ -1445,7 +1445,7 @@ end
 function destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
    local byte, bit, length
    
-   byte, bit = splitlongtobytesandbits(bitfromend, 0x1f)
+   byte, bit = splitlongtobytesandbits(bitfromend)
    
    length = max(#bytearray, byte + 1)
    
@@ -1532,6 +1532,38 @@ function mutableflipbit(bigint, bitfromend)
    return mutablebitwiseatbit(bigint, bitfromend, bitxor)
 end
 
+
+function testbit(value, bitfromend)
+   local ok, reason
+   local bytearray, length
+   local byte, bit
+   
+   ok, reason = isvalidoperablevalue(value)
+   
+   if not ok then
+      error("value not operable: " .. reason)
+   end
+   
+   ok, reason = isvalidinteger(bitfromend)
+   
+   if not ok then
+      error("bitfromend not integer: " .. reason)
+   end
+   
+   if bitfromend < 0 then
+      error("bitfromend not valid: negative")
+   end
+   
+   byte, bit = splitlongtobytesandbits(bitfromend)
+   bytearray = getbytearray(value)
+   length = #bytearray
+   
+   if byte >= length then
+      return getbytearraysign(bytearray) == -1
+   end
+   
+   return bitand(bytearray[length - byte], bitleftshift(1, bit)) ~= 0
+end
 
 -- Private Magnitude Functions
 function destructiveaddmagnitudes(thismag, thatmag)
