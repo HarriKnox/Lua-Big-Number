@@ -128,7 +128,7 @@ local characters = {
 -- Testing functions
 function isvalidinteger(int)
    if type(int) ~= 'number' then
-      return false, "not a number: it's a " .. type(int)
+      return false, "it's a " .. type(int)
    elseif int > maxinteger or int < -maxinteger then
       return false, "outside allowable range"
    elseif int % 1 ~= 0 then
@@ -139,7 +139,7 @@ end
 
 function isvalid32bitinteger(int)
    if type(int) ~= 'number' then
-      return false, "not a number: it's a " .. type(int)
+      return false, "it's a " .. type(int)
    elseif int > 0xffffffff then
       return false, "outside 32 bits"
    elseif int < 0 then
@@ -153,7 +153,7 @@ end
 
 function isvalidabsolute32bitinteger(int)
    if type(int) ~= 'number' then
-      return false, "not a number: it's a " .. type(int)
+      return false, "it's a " .. type(int)
    end
    return isvalid32bitinteger(abs(int))
 end
@@ -793,6 +793,33 @@ function getbytefromend(array, displacement)
    return array[arraylength - displacement]
 end
 
+function gethighestandlowestbits(array)
+   -- Will return the distances from the least significant bit of the highest
+   -- and lowest set bits of the array. A return value of 0 is the least
+   -- significant bit. Will return -1, -1 if the array is equivalent to 0.
+   local arraylength = #array
+   local lowest, highest
+   local number, mask, index
+   
+   lowest = -1
+   highest = -1
+   
+   for byte = 0, arraylength - 1 do
+      for bit = 0, 31 do
+         number = array[arraylength - byte]
+         mask = bitleftshift(1, bit)
+         index = byte * 32 + bit
+         if bitand(number, mask) ~= 0 then
+            if lowest == -1 then
+               lowest = index
+            end
+            highest = index
+         end
+      end
+   end
+   
+   return highest, lowest
+end
 
 function convertsignmagnitudetobytearrayto(sign, source, destination)
    if sign == -1 then
@@ -1622,7 +1649,7 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    return minuend
 end
 
-function copyandaddmagnitudes(minuend, subtrahend)
+function copyandsubtractmagnitudes(minuend, subtrahend)
    return destructivesubtractmagnitudes(copyarray(minuend), subtrahend)
 end
 
@@ -2352,6 +2379,102 @@ function mutablemultiply(thisbigint, thatvalue)
    return thisbigint
 end
 
+
+function pow(value, exponent)
+   local ok, reason
+   local sign, mag
+   local highest, lowest
+   local parttosquare, result
+   local highexponent, _
+   
+   ok, reason = isvalidoperablevalue(value)
+   
+   if not ok then
+      error("value not operable: " .. reason)
+   end
+   
+   ok, reason = isvalid32bitinteger(exponent)
+   
+   if not ok then
+      error("exponent not valid: " .. reason)
+   end
+   
+   
+   -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
+   if exponent == 0 then
+      -- x^0 := 1 for any real x (defines 0^0 := 1)
+      return constructornumber(1)
+   end
+   
+   if exponent == 1 then
+      -- x^1 := x for any real x
+      return value
+   end
+   
+   sign, mag = getsignandmagnitude(value)
+   
+   if sign == 0 then
+      -- 0^n == 0 for n is an integer and n > 0
+      -- Note, 0^0 := 1, but if exponent == 0, it will return in the block above
+      return 0
+   end
+   
+   highest, lowest = gethighestandlowestbits(mag)
+   
+   if highest == 0 then
+      -- if highest == 0 then lowest == 0 and value == 1
+      -- value is 1, and 1^e := 1
+      return value
+   end
+   
+   --[[ Still in testing
+   if highest == lowest then
+      -- Otherwise the value is a power of 2 and can be easily exponentiated by
+      -- left-shifting. 
+      
+      shifts = lowest * (exponent - 1)
+      ok, reason = isvalidinteger(shifts)
+      
+      if not ok then
+         error("value too large to be exponentiated")
+      end
+      
+      destructiveleftshift(mag, shifts)
+      
+      if bitand(exponent, 1) == 0 then
+         -- exponent is even
+         sign = 1
+      end
+      
+      return constructorsignmagnitude(sign, mag)
+   end
+   --]]
+   
+   parttosquare = mag
+   result = {1}
+   highexponent, _ = gethighestandlowestbits({exponent})
+   
+   for bitfromend = 0, highexponent - 1 do
+      if bitand(exponent, bitleftshift(1, bitfromend)) ~= 0 then
+         result = multiplymagnitudes(result, parttosquare)
+      end
+      
+      parttosquare = squaremagnitude(parttosquare)
+   end
+   
+   -- executes when bitfromend == highexponent
+   result = multiplymagnitudes(result, parttosquare)
+   
+   if sign == -1 and bitand(exponent, 1) == 0 then
+      -- negative number and an even sign is the only instance of sign-changing
+      -- if sign == 1 then x^e > 0 always
+      -- if sign == -1 then x^e > 0 if exponent is even
+      -- otherwise x^e < 0 if exponent is odd
+      sign = 1
+   end
+   
+   return constructorsignmagnitude(sign, result)
+end
 
 
 -- temporary functions to print the number in hexadecimal or binary
