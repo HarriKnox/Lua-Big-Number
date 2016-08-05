@@ -2380,44 +2380,10 @@ function mutablemultiply(thisbigint, thatvalue)
 end
 
 
-function pow(value, exponent)
-   local ok, reason
-   local sign, mag
+function raisemagnitude(mag, exponent)
    local highest, lowest
-   local parttosquare, result
    local highexponent, _
-   
-   ok, reason = isvalidoperablevalue(value)
-   
-   if not ok then
-      error("value not operable: " .. reason)
-   end
-   
-   ok, reason = isvalid32bitinteger(exponent)
-   
-   if not ok then
-      error("exponent not valid: " .. reason)
-   end
-   
-   
-   -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
-   if exponent == 0 then
-      -- x^0 := 1 for any real x (defines 0^0 := 1)
-      return constructornumber(1)
-   end
-   
-   if exponent == 1 then
-      -- x^1 := x for any real x
-      return value
-   end
-   
-   sign, mag = getsignandmagnitude(value)
-   
-   if sign == 0 then
-      -- 0^n == 0 for n is an integer and n > 0
-      -- Note, 0^0 := 1, but if exponent == 0, it will return in the block above
-      return 0
-   end
+   local result, parttosquare
    
    highest, lowest = gethighestandlowestbits(mag)
    
@@ -2465,6 +2431,50 @@ function pow(value, exponent)
    -- executes when bitfromend == highexponent
    result = multiplymagnitudes(result, parttosquare)
    
+   return result
+end
+
+function pow(value, exponent)
+   local ok, reason
+   local sign, mag
+   local highest, lowest
+   local parttosquare, result
+   local highexponent, _
+   
+   ok, reason = isvalidoperablevalue(value)
+   
+   if not ok then
+      error("value not operable: " .. reason)
+   end
+   
+   ok, reason = isvalid32bitinteger(exponent)
+   
+   if not ok then
+      error("exponent not valid: " .. reason)
+   end
+   
+   
+   -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
+   if exponent == 0 then
+      -- x^0 := 1 for any real x (defines 0^0 := 1)
+      return constructornumber(1)
+   end
+   
+   if exponent == 1 then
+      -- x^1 := x for any real x
+      return value
+   end
+   
+   sign, mag = getsignandmagnitude(value)
+   
+   if sign == 0 then
+      -- 0^n == 0 for n is an integer and n > 0
+      -- Note, 0^0 := 1, but if exponent == 0, it will return in the block above
+      return 0
+   end
+   
+   result = raisemagnitude(mag, exponent)
+   
    if sign == -1 and bitand(exponent, 1) == 0 then
       -- negative number and an even sign is the only instance of sign-changing
       -- if sign == 1 then x^e > 0 always
@@ -2474,6 +2484,61 @@ function pow(value, exponent)
    end
    
    return constructorsignmagnitude(sign, result)
+end
+
+function mutablepow(bigint, exponent)
+   local ok, reason
+   local sign, mag
+   local highest, lowest
+   local parttosquare, result
+   local highexponent, _
+   
+   ok, reason = isvalidbiginteger(bigint)
+   
+   if not ok then
+      error("bigint not valid biginteger: " .. reason)
+   end
+   
+   ok, reason = isvalid32bitinteger(exponent)
+   
+   if not ok then
+      error("exponent not valid: " .. reason)
+   end
+   
+   
+   -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
+   if exponent == 0 then
+      -- x^0 := 1 for any real x (defines 0^0 := 1)
+      sign = 1
+      cleararray(bigint.magnitude)
+      bigint.magnitude[1] = 1
+      return bigint
+   end
+   
+   if exponent == 1 then
+      -- x^1 := x for any real x
+      return bigint
+   end
+   
+   if bigint.sign == 0 then
+      -- 0^n == 0 for n is an integer and n > 0
+      -- Note, 0^0 := 1, but if exponent == 0, it will return in the block above
+      return bigint
+   end
+   
+   result = raisemagnitude(bigint.magnitude, exponent)
+   
+   if bigint.sign == -1 and bitand(exponent, 1) == 0 then
+      -- negative number and an even sign is the only instance of sign-changing
+      -- if sign == 1 then x^e > 0 always
+      -- if sign == -1 then x^e > 0 if exponent is even
+      -- otherwise x^e < 0 if exponent is odd
+      bigint.sign = 1
+   end
+   
+   clearandcopyintoarray(bigint.magnitude, result)
+   
+   return bigint
 end
 
 
