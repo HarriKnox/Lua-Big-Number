@@ -2438,8 +2438,7 @@ function pow(value, exponent)
    local ok, reason
    local sign, mag
    local highest, lowest
-   local parttosquare, result
-   local highexponent, _
+   local result
    
    ok, reason = isvalidoperablevalue(value)
    
@@ -2488,10 +2487,8 @@ end
 
 function mutablepow(bigint, exponent)
    local ok, reason
-   local sign, mag
    local highest, lowest
    local parttosquare, result
-   local highexponent, _
    
    ok, reason = isvalidbiginteger(bigint)
    
@@ -2530,8 +2527,8 @@ function mutablepow(bigint, exponent)
    
    if bigint.sign == -1 and bitand(exponent, 1) == 0 then
       -- negative number and an even sign is the only instance of sign-changing
-      -- if sign == 1 then x^e > 0 always
-      -- if sign == -1 then x^e > 0 if exponent is even
+      -- if x > 0 then x^e > 0 always
+      -- if x < 0 then x^e > 0 if exponent is even
       -- otherwise x^e < 0 if exponent is odd
       bigint.sign = 1
    end
