@@ -75,7 +75,8 @@ local stringmatch = string.match
 local tableinsert = table.insert
 
 -- Constants
-local maxinteger = 0x7ffffffffffff -- 2 ^ 51 - 1; largest number bit32 can work with reliably
+local maxinteger = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably
+local maxmagnitudelength = 0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per byte
 local negativemask = 0x80000000
 
 -- Threshold values
@@ -84,6 +85,9 @@ local toomcooksquarethreshold = 216
 
 local karatsubamultiplythreshold = 80
 local toomcookmultiplythreshold = 240
+
+local burnikelzieglerthreshold = 80
+local burnikelziegleroffset = 40
 
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
@@ -189,7 +193,7 @@ function isvalidmagnitude(mag)
       return true
    end
    
-   if #mag >= maxinteger then
+   if #mag >= maxmagnitudelength then
       return false, "too large (overflow)"
    end
    
@@ -793,6 +797,7 @@ function getbytefromend(array, displacement)
    return array[arraylength - displacement]
 end
 
+
 function gethighestandlowestbits(array)
    -- Will return the distances from the least significant bit of the highest
    -- and lowest set bits of the array. A return value of 0 is the least
@@ -820,6 +825,40 @@ function gethighestandlowestbits(array)
    
    return highest, lowest
 end
+
+function getleadingzeros(int)
+   -- Returns the number of leading zeros in the two's-complement representation
+   -- of the 32-bit integer.
+   -- Uses Hacker's Delight method used by Java Integer
+   local n = 1
+   
+   if int == 0 then
+      return 32
+   end
+   
+   if bitrightshift(int, 16) == 0 then
+      n = n + 16
+      int = bitleftshift(int, 16)
+   end
+   
+   if bitrightshift(int, 24) == 0 then
+      n = n + 8
+      int = bitleftshift(int, 8)
+   end
+   
+   if bitrightshift(int, 28) == 0 then
+      n = n + 4
+      int = bitleftshift(int, 4)
+   end
+   
+   if bitrightshift(int, 30) == 0 then
+      n = n + 2
+      int = bitleftshift(int, 2)
+   end
+   
+   return n - bitrightshift(int, 31)
+end
+
 
 function convertsignmagnitudetobytearrayto(sign, source, destination)
    if sign == -1 then
@@ -2528,14 +2567,74 @@ function mutablepow(bigint, exponent)
    if bigint.sign == -1 and bitand(exponent, 1) == 0 then
       -- negative number and an even sign is the only instance of sign-changing
       -- if x > 0 then x^e > 0 always
-      -- if x < 0 then x^e > 0 if exponent is even
-      -- otherwise x^e < 0 if exponent is odd
+      -- otherwise, if exponent is odd then x^e < 0
+      -- otherwise x^e > 0 (exponent is even)
       bigint.sign = 1
    end
    
    clearandcopyintoarray(bigint.magnitude, result)
    
    return bigint
+end
+
+
+function divideknuth(dividend, divisor)
+   
+end
+
+function dividemagnitudes(dividend, divisor)
+   -- Will divide the two numbers and return the quotient and remainder
+   local comparison
+   local quotient, remainder
+   local dividendlength, divisorlength
+   
+   comparison = comparemagnitudes(dividend, divisor)
+   
+   if comparison == 0 then
+      -- numbers are equal, so x / x = 1, 0
+      return {1}, {}
+   elseif comparison < 0 then
+      -- dividend < divisor, so x / y = 0, x
+      return {}, dividend
+   end
+   
+   -- dividend > divisor, so x / y = q, r
+   dividendlength = #dividend
+   divisorlength = #divisor
+   
+   if dividendlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
+      --return divideburnikelziegler(dividend, divisor)
+   end
+   
+   return divideknuth(dividend, divisor)
+end
+
+function divide(thisvalue, thatvalue)
+   local thissign, thismag
+   local thatsign, thatmag
+   local sign, quotient, remainder
+   
+   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
+      error("attempt to perform division on "
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
+   end
+   
+   thissign, thismag = getsignandmagnitude(thisvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   
+   if thatsign == 0 then
+      error("division by zero")
+   elseif thissign == 0 then
+      return thisvalue
+   end
+   
+   if thissign ~= thatsign then
+      sign = -1
+   else
+      sign = 1
+   end
+   
+   quotient, remainder = dividemagnitudes(thismag, thatmag)
 end
 
 
