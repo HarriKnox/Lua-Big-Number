@@ -2578,8 +2578,21 @@ function mutablepow(bigint, exponent)
 end
 
 
-function divideknuth(dividend, divisor)
+function destructivedivideknuth(dividend, divisor)
+   local shift, div
+   local quotient, remainder
+   local divisorlength, quotientlength
    
+   divisorlength = #divisor
+   
+   shift = getleadingzeros(divisor[1])
+   div = copyandleftshift(divisor, shift) -- if shift == 0 then it just returns
+   
+   remainder = copyandleftshift(dividend, shift)
+   tableinsert(remainder, 1, 0)
+   
+   quotientlength = #remainder - divisorlength + 1
+   quotient = allocatearray(quotientlength)
 end
 
 function dividemagnitudes(dividend, divisor)
@@ -2606,7 +2619,7 @@ function dividemagnitudes(dividend, divisor)
       --return divideburnikelziegler(dividend, divisor)
    end
    
-   return divideknuth(dividend, divisor)
+   return destructivedivideknuth(dividend, divisor)
 end
 
 function divide(thisvalue, thatvalue)
