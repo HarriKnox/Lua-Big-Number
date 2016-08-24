@@ -2586,7 +2586,7 @@ function destructivedivideknuth(dividend, divisor)
    divisorlength = #divisor
    
    shift = getleadingzeros(divisor[1])
-   div = copyandleftshift(divisor, shift) -- if shift == 0 then it just returns
+   div = copyandleftshift(divisor, shift) -- if shift == 0 then it returns just the copy
    
    remainder = copyandleftshift(dividend, shift)
    tableinsert(remainder, 1, 0)
@@ -2601,19 +2601,34 @@ function dividemagnitudes(dividend, divisor)
    local quotient, remainder
    local dividendlength, divisorlength
    
+   dividendlength = #dividend
+   divisorlength = #divisor
+   
+   if divisorlength == 0 then
+      error("division by zero")
+   elseif dividendlength == 0 then
+      -- 0 / x = 0
+      return dividend
+   end
+   
    comparison = comparemagnitudes(dividend, divisor)
    
    if comparison == 0 then
-      -- numbers are equal, so x / x = 1, 0
+      -- numbers are equal: x / x = 1, so returns 1, 0
       return {1}, {}
    elseif comparison < 0 then
-      -- dividend < divisor, so x / y = 0, x
+      -- dividend < divisor: x / y = 0.abc..., so returns 0, x
       return {}, dividend
    end
-   
    -- dividend > divisor, so x / y = q, r
-   dividendlength = #dividend
-   divisorlength = #divisor
+   
+   if dividendlength == 1 then
+      -- dividend > divisor > 0, so dividendlengh >= divisorlength > 0
+      -- if dividendlength == 1, then divisorlength == 1 as well
+      return {math.floor(dividend[1] / divisor[1])}, {dividend[1] % divisor[1]}
+   elseif divisorlength == 1 then
+      --return destructivedivideoneword(dividend, divisor)
+   end
    
    if dividendlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
       --return divideburnikelziegler(dividend, divisor)
@@ -2635,19 +2650,8 @@ function divide(thisvalue, thatvalue)
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
-   if thatsign == 0 then
-      error("division by zero")
-   elseif thissign == 0 then
-      return thisvalue
-   end
-   
-   if thissign ~= thatsign then
-      sign = -1
-   else
-      sign = 1
-   end
-   
    quotient, remainder = dividemagnitudes(thismag, thatmag)
+   sign = thissign * thatsign
 end
 
 
