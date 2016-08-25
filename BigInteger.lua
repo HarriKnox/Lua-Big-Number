@@ -2592,10 +2592,11 @@ function destructivedivideknuth(dividend, divisor)
    div = copyandleftshift(divisor, shift) -- if shift == 0 then it returns just the copy
    
    remainder = copyandleftshift(dividend, shift)
-   tableinsert(remainder, 1, 0)
    
    quotientlength = #remainder - divisorlength + 1
    quotient = allocatearray(quotientlength)
+   
+   tableinsert(remainder, 1, 0)
    
    divhigh = div[1]
    divlow = div[2]
@@ -2608,7 +2609,8 @@ function destructivedivideknuth(dividend, divisor)
       nh = remainder[i]
       nh2 = bitxor(nh, negativemask)
       nm = remainder[i + 1]
-      
+      print("================")
+      --printhex(nm)
       if nh == divhigh then
          qhat = 0xffffffff
          qrem = make32bitinteger(nh + nm)
@@ -2625,13 +2627,17 @@ function destructivedivideknuth(dividend, divisor)
                qrem = (int) (tmp >>> 32);
             }
          --]]
-         qhat = make32bitnumber(long32bitleftshift(nh) / divhigh)
+         qhat = make32bitinteger(long32bitleftshift(nh) / divhigh)
          qrem = nm
          
          if nm >= negativemask then
+            -- accounts for rounding done in division
             qhat = qhat + 1
             qrem = qrem - negativemask
          end
+         
+         printhex(qhat)
+         printhex(qrem)
       end
    end
 end
@@ -2715,6 +2721,10 @@ function getintegerstringbinary(number)
    end
    
    return table.concat(str)
+end
+
+function printhex(number)
+   print(getintegerstringhexadecimal(number))
 end
 
 function stringofbytearray(bigint, dobinary)
