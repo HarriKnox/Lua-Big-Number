@@ -2582,6 +2582,9 @@ function destructivedivideknuth(dividend, divisor)
    local shift, div
    local quotient, remainder
    local divisorlength, quotientlength
+   local divhigh, divlow
+   local qhat, qrem, nh, nh2, nm, nl, rs, temp
+   local skipcorrection, estproduct, borrow
    
    divisorlength = #divisor
    
@@ -2593,6 +2596,44 @@ function destructivedivideknuth(dividend, divisor)
    
    quotientlength = #remainder - divisorlength + 1
    quotient = allocatearray(quotientlength)
+   
+   divhigh = div[1]
+   divlow = div[2]
+   
+   for i = 1, quotientlength - 1 do
+      qhat = 0
+      qrem = 0
+      skipcorrection = false
+      
+      nh = remainder[i]
+      nh2 = bitxor(nh, negativemask)
+      nm = remainder[i + 1]
+      
+      if nh == divhigh then
+         qhat = 0xffffffff
+         qrem = make32bitinteger(nh + nm)
+         skipcorrection = bitxor(qrem, negativemask) < nh2
+      else
+         --[[
+            long nChunk = (((long)nh) << 32) | (nm & LONG_MASK);
+            if (nChunk >= 0) {
+               qhat = (int) (nChunk / dhLong);
+               qrem = (int) (nChunk - (qhat * dhLong));
+            } else {
+               long tmp = divWord(nChunk, dh);
+               qhat = (int) (tmp & LONG_MASK);
+               qrem = (int) (tmp >>> 32);
+            }
+         --]]
+         qhat = make32bitnumber(long32bitleftshift(nh) / divhigh)
+         qrem = nm
+         
+         if nm >= negativemask then
+            qhat = qhat + 1
+            qrem = qrem - negativemask
+         end
+      end
+   end
 end
 
 function dividemagnitudes(dividend, divisor)
