@@ -2583,8 +2583,8 @@ function destructivedivideknuth(dividend, divisor)
    local quotient, remainder
    local divisorlength, quotientlength
    local divhigh, divlow
-   local qhat, qrem, nh, nh2, nm, nl, rs, temp
-   local skipcorrection, estproduct, borrow
+   local qhat, qrem, nh, nh2, nm, nl, rs, temp, _
+   local skipcorrection, estproducthigh, estproductlow, borrow
    
    divisorlength = #divisor
    
@@ -2602,6 +2602,7 @@ function destructivedivideknuth(dividend, divisor)
    divlow = div[2]
    
    for i = 1, quotientlength - 1 do
+      print("================")
       qhat = 0
       qrem = 0
       skipcorrection = false
@@ -2609,8 +2610,7 @@ function destructivedivideknuth(dividend, divisor)
       nh = remainder[i]
       nh2 = bitxor(nh, negativemask)
       nm = remainder[i + 1]
-      print("================")
-      --printhex(nm)
+      
       if nh == divhigh then
          qhat = 0xffffffff
          qrem = make32bitinteger(nh + nm)
@@ -2627,18 +2627,46 @@ function destructivedivideknuth(dividend, divisor)
                qrem = (int) (tmp >>> 32);
             }
          --]]
-         qhat = make32bitinteger(long32bitleftshift(nh) / divhigh)
-         qrem = nm
-         
-         if nm >= negativemask then
-            -- accounts for rounding done in division
-            qhat = qhat + 1
-            qrem = qrem - negativemask
-         end
-         
-         printhex(qhat)
-         printhex(qrem)
+         qhat = make32bitinteger(floor((nh * 0x100000000 + nm) / divhigh))
+         _, temp = integermultiplyandaddtosplitlong(qhat, divhigh, 0)
+         qrem = nm - temp
       end
+      
+      --[=[if qhat ~= 0 then
+         --[[
+            if (!skipCorrection) { // Correct qhat
+               long nl = rem.value[j+2+rem.offset] & LONG_MASK;
+               long rs = ((qrem & LONG_MASK) << 32) | nl;
+               long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+
+               if (unsignedLongCompare(estProduct, rs)) {
+                  qhat--;
+                  qrem = (int)((qrem & LONG_MASK) + dhLong);
+                  if ((qrem & LONG_MASK) >=  dhLong) {
+                     estProduct -= (dl & LONG_MASK);
+                     rs = ((qrem & LONG_MASK) << 32) | nl;
+                     if (unsignedLongCompare(estProduct, rs))
+                        qhat--;
+                  }
+               }
+            }
+         --]]
+         
+         if not skipcorrection then
+            nl = remainder[i + 2]
+            estproducthigh, estproductlow = integermultiplyandaddtosplitlong(divlow, qhat, 0)
+            
+            printhex(divlow)
+            printhex(qhat)
+            printhex(estproducthigh)
+            printhex(estproductlow)
+            
+            if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
+               qhat = qhat - 1
+               qrem = qrem + divhigh
+            end
+         end
+      end--]=]
    end
 end
 
@@ -2725,6 +2753,10 @@ end
 
 function printhex(number)
    print(getintegerstringhexadecimal(number))
+end
+
+function printarray(arr)
+   print(stringofbytearray(arr))
 end
 
 function stringofbytearray(bigint, dobinary)
