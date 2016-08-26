@@ -2629,10 +2629,10 @@ function destructivedivideknuth(dividend, divisor)
          --]]
          qhat = make32bitinteger(floor((nh * 0x100000000 + nm) / divhigh))
          _, temp = integermultiplyandaddtosplitlong(qhat, divhigh, 0)
-         qrem = nm - temp
+         qrem = make32bitinteger(nm - temp)
       end
       
-      --[=[if qhat ~= 0 then
+      if qhat ~= 0 then
          --[[
             if (!skipCorrection) { // Correct qhat
                long nl = rem.value[j+2+rem.offset] & LONG_MASK;
@@ -2656,17 +2656,29 @@ function destructivedivideknuth(dividend, divisor)
             nl = remainder[i + 2]
             estproducthigh, estproductlow = integermultiplyandaddtosplitlong(divlow, qhat, 0)
             
-            printhex(divlow)
-            printhex(qhat)
-            printhex(estproducthigh)
-            printhex(estproductlow)
-            
             if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
                qhat = qhat - 1
-               qrem = qrem + divhigh
+               qrem = make32bitinteger(qrem + divhigh)
+               
+               printhex(qrem)
+               if qrem >= divhigh then
+                  estproductlow = make32bitinteger(estproductlow - divlow)
+                  
+                  print(getintegerstringhexadecimal(estproducthigh) .. getintegerstringhexadecimal(estproductlow))
+                  print(getintegerstringhexadecimal(qrem) .. getintegerstringhexadecimal(nl))
+                  
+                  if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
+                     qhat = qhat - 1
+                  end
+               end
             end
          end
-      end--]=]
+         
+         printhex(qhat)
+         printhex(qrem)
+         
+         
+      end
    end
 end
 
