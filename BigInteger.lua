@@ -2578,6 +2578,19 @@ function mutablepow(bigint, exponent)
 end
 
 
+function multiplythensubtract(remainder, div, qhat, offset)
+   local carry, producthigh, productlow
+   local divlength = #div
+   
+   carry = 0
+   remainder[offset] = 0
+   offset = offset + divlength
+   
+   for i = divlength, 1, -1 do
+      producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
+   end
+end
+
 function destructivedivideknuth(dividend, divisor)
    local shift, div
    local quotient, remainder
@@ -2660,12 +2673,8 @@ function destructivedivideknuth(dividend, divisor)
                qhat = qhat - 1
                qrem = make32bitinteger(qrem + divhigh)
                
-               printhex(qrem)
                if qrem >= divhigh then
                   estproductlow = make32bitinteger(estproductlow - divlow)
-                  
-                  print(getintegerstringhexadecimal(estproducthigh) .. getintegerstringhexadecimal(estproductlow))
-                  print(getintegerstringhexadecimal(qrem) .. getintegerstringhexadecimal(nl))
                   
                   if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
                      qhat = qhat - 1
@@ -2674,10 +2683,7 @@ function destructivedivideknuth(dividend, divisor)
             end
          end
          
-         printhex(qhat)
-         printhex(qrem)
-         
-         
+         multiplythensubtract(remainder, div, qhat, i)
       end
    end
 end
