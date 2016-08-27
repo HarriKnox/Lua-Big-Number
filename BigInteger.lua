@@ -301,6 +301,15 @@ function long16bitleftshift(number)
 end
 
 
+function isnegative32bitinteger(number)
+   return number >= negativemask
+end
+
+function getsignint(number)
+   return isnegative32bitinteger(number) and 0xffffffff or 0
+end
+
+
 -- Helper Integer and Long Functions
 function splitlong(number)
    return long32bitrightshift(number), make32bitinteger(number)
@@ -341,6 +350,7 @@ end
 function splitlongtobytesandbits(number)
    return floor(number / 32), make32bitinteger(number, 0x1f)
 end
+
 
 -- Byte Array Functions
 function copyarrayto(source, destination)
@@ -468,7 +478,7 @@ end
 function signextendbytearrayto(source, destination, newlength)
    local length = #source
    local signbytes = newlength - length
-   local signint = length > 0 and source[1] >= negativemask and 0xffffffff or 0
+   local signint = length > 0 and getsignint(source[1])
    
    if signbytes <= 0 then
       if source ~= destination then
@@ -624,7 +634,7 @@ function getbytearraysign(array)
    if #array == 0 then
       return 0
    end
-   if array[1] >= negativemask then
+   if isnegative32bitinteger(array[1]) then
       return -1
    end
    for i = 1, #array do
@@ -722,11 +732,11 @@ function getbytearray(array)
    if sign == -1 then
       destructivenegatebytearray(mag)
       
-      if mag[1] < negativemask then
+      if not isnegative32bitinteger(mag[1]) then
          tableinsert(mag, 1, 0xffffffff)
       end
    elseif sign == 1 then
-      if mag[1] >= negativemask then
+      if isnegative32bitinteger(mag[1]) then
          tableinsert(mag, 1, 0)
       end
    end
@@ -749,19 +759,19 @@ function getminimizedbytearray(array)
    balen = #bytearray
    
    removals = balen - 1
-   signint = bytearray[1] >= negativemask and 0xffffffff or 0
+   signint = getsignint(bytearray[1])
    
    if bytearray[1] == signint then
       for i = 1, balen - 1 do
          if bytearray[i] == signint and bytearray[i + 1] ~= signint then
             if signint == 0 then
-               if bytearray[i + 1] >= negativemask then
+               if isnegative32bitinteger(bytearray[i + 1]) then
                   removals = i - 1
                else
                   removals = i
                end
             else
-               if bytearray[i + 1] >= negativemask then
+               if isnegative32bitinteger(bytearray[i + 1]) then
                   removals = i
                else
                   removals = i - 1
@@ -2588,10 +2598,10 @@ function multiplythensubtract(remainder, div, qhat, offset)
    offset = offset + divlength
    
    for i = divlength, 1, -1 do
-      signint = (remainder[offset] >= negativemask) and 0xffffffff or 0
+      signint = getsignint(remainder[offset])
       producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
       differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
-      differencehigh = make32bitinteger(bitnot(producthigh) + differencehigh + sign)
+      differencehigh = make32bitinteger(bitnot(producthigh) + differencehigh + signint)
       
       remainder[offset] = differencelow
       offset = offset - 1
