@@ -2579,7 +2579,8 @@ end
 
 
 function multiplythensubtract(remainder, div, qhat, offset)
-   local carry, producthigh, productlow
+   local carry, producthigh, productlow, signint
+   local differencehigh, differencelow, _
    local divlength = #div
    
    carry = 0
@@ -2587,8 +2588,17 @@ function multiplythensubtract(remainder, div, qhat, offset)
    offset = offset + divlength
    
    for i = divlength, 1, -1 do
+      signint = (remainder[offset] >= negativemask) and 0xffffffff or 0
       producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
+      differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
+      differencehigh = make32bitinteger(bitnot(producthigh) + differencehigh + sign)
+      
+      remainder[offset] = differencelow
+      offset = offset - 1
+      carry = producthigh + ((differencelow > bitnot(productlow)) and 1 or 0)
    end
+   
+   return carry
 end
 
 function destructivedivideknuth(dividend, divisor)
@@ -2771,6 +2781,10 @@ end
 
 function printhex(number)
    print(getintegerstringhexadecimal(number))
+end
+
+function printhexlong(high, low)
+   print(getintegerstringhexadecimal(high) .. getintegerstringhexadecimal(low))
 end
 
 function printarray(arr)
