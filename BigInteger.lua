@@ -2611,6 +2611,14 @@ function multiplythensubtract(remainder, div, qhat, offset)
    return carry
 end
 
+function divisoradd(divisor, remainder, offset)
+   local carry = 0
+   
+   for i = #divisor, 1, -1 do
+      carry, remainder[i + offset] = splitlong(divisor[i] + remainder[i + offset] + carry)
+   end
+end
+
 function destructivedivideknuth(dividend, divisor)
    local shift, div
    local quotient, remainder
@@ -2703,7 +2711,14 @@ function destructivedivideknuth(dividend, divisor)
             end
          end
          
-         multiplythensubtract(remainder, div, qhat, i)
+         borrow = multiplythensubtract(remainder, div, qhat, i)
+         
+         if bitxor(borrow, negativemask) > nh2 then
+            divisoradd(divisor, remainder, i)
+            qhat = qhat - 1
+         end
+         
+         quotient[i] = qhat
       end
    end
 end
