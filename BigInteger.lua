@@ -2730,10 +2730,7 @@ function destructivedivideknuth(dividend, divisor)
    
    destructiverightshift(remainder, shift)
    
-   --normalize(remainder)
-   --normalize(quotient)
-   
-   --printarray(remainder)
+   return quotient, remainder
 end
 
 function dividemagnitudes(dividend, divisor)
