@@ -2642,8 +2642,7 @@ function destructivedivideknuth(dividend, divisor)
    divhigh = div[1]
    divlow = div[2]
    
-   for i = 1, quotientlength - 1 do
-      print("================")
+   for i = 1, quotientlength do
       qhat = 0
       qrem = 0
       skipcorrection = false
@@ -2672,6 +2671,13 @@ function destructivedivideknuth(dividend, divisor)
          _, temp = integermultiplyandaddtosplitlong(qhat, divhigh, 0)
          qrem = make32bitinteger(nm - temp)
       end
+      
+      --[[
+         if (qhat == 0)
+            continue
+         
+         well, there's no continue in Lua
+      --]]
       
       if qhat ~= 0 then
          --[[
@@ -2721,6 +2727,13 @@ function destructivedivideknuth(dividend, divisor)
          quotient[i] = qhat
       end
    end
+   
+   destructiverightshift(remainder, shift)
+   
+   --normalize(remainder)
+   --normalize(quotient)
+   
+   --printarray(remainder)
 end
 
 function dividemagnitudes(dividend, divisor)
