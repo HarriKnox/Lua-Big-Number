@@ -2730,6 +2730,9 @@ function destructivedivideknuth(dividend, divisor)
    
    destructiverightshift(remainder, shift)
    
+   destructivestripleadingzeros(quotient)
+   destructivestripleadingzeros(remainder)
+   
    return quotient, remainder
 end
 
@@ -2775,7 +2778,7 @@ function dividemagnitudes(dividend, divisor)
    return destructivedivideknuth(dividend, divisor)
 end
 
-function divide(thisvalue, thatvalue)
+function division(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    local sign, quotient, remainder
@@ -2790,6 +2793,22 @@ function divide(thisvalue, thatvalue)
    
    quotient, remainder = dividemagnitudes(thismag, thatmag)
    sign = thissign * thatsign
+   
+   return constructorsignmagnitude(sign, quotient), constructorsignmagnitude(thissign, remainder)
+end
+
+function divideandremainder(thisvalue, thatvalue)
+   return division(thisvalue, thatvalue)
+end
+
+function divide(thisvalue, thatvalue)
+   local q, _ = division(thisvalue, thatvalue)
+   return q
+end
+
+function remainder(thisvalue, thatvalue)
+   local _, r = division(thisvalue, thatvalue)
+   return r
 end
 
 
