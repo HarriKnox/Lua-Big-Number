@@ -18,18 +18,20 @@ taken care of right away. Here are some definitions:
       a) all numbers are valid 32 bit integers
       b) the array is one-indexed (indices start at 1 not 0)
       c) a zero-length array is logically equivalent to 0 (zero)
+      
       d) if the first element is negative (in two's-compliment form) then the
          byte-array will be considered negative (leading zeros will prevent the
          first non-zero element from being interpreted as negative). Likewise,
          if the first element is not negative the byte-array will not be
          considered negative (leading sign bits [0xffffffff] will prevent the
-         byte-array from being interpreted as negative)
+         byte-array from being interpreted as positive)
          
       e) Note: For testing and iterating through byte-arrays the default length
          operator (#) is used. This means that the byte-array must have a
          sequence of numbers for all indices between 1 and #array (that is to
          say for all 1 <= i <= #array, t[i] ~= nil). If #array == 0 then the
-         byte-array is still valid: it has a zero-length sequence.
+         byte-array is still valid: it has a zero-length sequence and is thus
+         equal to 0 (zero).
          
       f) Note: Since a byte-array is a table, it may have keys and values that
          are not in the sequence (such as t.name = 'Bob'). It is possible for
@@ -45,13 +47,16 @@ taken care of right away. Here are some definitions:
       b) leading zeros are not allowed, and thus a magnitude of only zeros is
          not allowed
       
-    * sign: Either -1, 0, or 1; determines whether the value is negative, zero,
+    * sign: Either -1, 0, or +1; determines whether the value is negative, zero,
       or positive, respectively. A sign of 0 cannot be assigned to a value that
-      is not logically equivalent to 0 (zero)
+      is not logically equivalent to 0 (zero). Likewise a sign of +1 or -1
+      cannot be assigned to a value that is logically equivalent to 0 (zero).
+      The first rule is enforced to avoid ambiguity, but the second rule is
+      enforced to avoid unnecessary table-length calls
       
-    * biginteger: a table with (at minimum) two values (sign and magnitude) such
-      that every integer is logically equivalent to a unique combination of sign
-      and magnitude.
+    * biginteger: a table with (at minimum) two values (`sign` and `magnitude`)
+      such that every integer (in range) is has a unique representation in the
+      combination of sign and magnitude
 --]]
 
 -- Local fields/constants
@@ -2588,6 +2593,44 @@ function mutablepow(bigint, exponent)
 end
 
 
+function destructivedivideoneword(dividend, divisor)
+   -- ensure dividend and divisor are both magnitudes
+   -- returns quotient and remainder, both magnitudes
+   local shift, div, qhat
+   local quotient, remainder
+   local dividendlength, dividendestimate
+   
+   div = divisor[1]
+   shift = getleadingzeros(div)
+   
+   dividendlength = #dividend
+   quotient = allocatearray(dividendlength)
+   
+   remainder = dividend[1]
+   if remainder < div then
+      quotient[1] = 0
+   else
+      quotient[1] = floor(remainder / div)
+      remainder = remainder - (quotient[1] * div)
+   end
+   
+   for i = 2, dividendlength do
+      n = dividend[i]
+      qhat = make32bitinteger(floor((remainder * 0x100000000 + n) / div))
+      _, temp = integermultiplyandaddtosplitlong(qhat, div, 0)
+      remainder = make32bitinteger(n - temp)
+      quotient[i] = qhat
+   end
+   
+   if shift > 0 then
+      remainder = remainder % div
+   end
+   
+   destructivestripleadingzeros(quotient)
+   
+   return quotient, {remainder}
+end
+
 function multiplythensubtract(remainder, div, qhat, offset)
    local carry, producthigh, productlow, signint
    local differencehigh, differencelow, _
@@ -2768,7 +2811,7 @@ function dividemagnitudes(dividend, divisor)
       -- if dividendlength == 1, then divisorlength == 1 as well
       return {math.floor(dividend[1] / divisor[1])}, {dividend[1] % divisor[1]}
    elseif divisorlength == 1 then
-      --return destructivedivideoneword(dividend, divisor)
+      return destructivedivideoneword(dividend, divisor)
    end
    
    if dividendlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
