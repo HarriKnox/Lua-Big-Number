@@ -2932,7 +2932,7 @@ end
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
-      error("Knox's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
+      error("Harri's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
    end
    --_ENV.biginteger = biginteger
    return
