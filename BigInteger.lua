@@ -2337,13 +2337,18 @@ function multiplytoomcook(thismag, thatmag)
 end
 
 function multiplymagnitudes(thismag, thatmag)
-   if min(#thismag, #thatmag) < karatsubamultiplythreshold then
+   local thismaglen, thatmaglen
+   
+   thismaglen = #thismag
+   thatmaglen = #thatmag
+   
+   if min(thismaglen, thatmaglen) < karatsubamultiplythreshold then
       -- if either are less than the Karatsuba threshold then do
       -- Colin Plumb multiplication
       -- Note: multiplying a large number (suppose it has 8'675'309-bytes) by a
       -- small number (say at most 79-bytes) will use this method of muliplying
       return multiplycolinplumb(thismag, thatmag)
-   elseif max(#thismag, #thatmag) > toomcookmultiplythreshold then
+   elseif max(thismaglen, thatmaglen) > toomcookmultiplythreshold then
       -- if either are greater than the Toom Cook threshold then do
       -- Toom Cook multiplication
       -- Note: multiplying a large number (suppose it has 8'675'309-bytes) by a
@@ -2792,7 +2797,7 @@ function dividemagnitudes(dividend, divisor)
       error("division by zero")
    elseif dividendlength == 0 then
       -- 0 / x = 0
-      return dividend
+      return dividend, {}
    end
    
    comparison = comparemagnitudes(dividend, divisor)
@@ -2804,6 +2809,7 @@ function dividemagnitudes(dividend, divisor)
       -- dividend < divisor: x / y = 0.abc..., so returns 0, x
       return {}, dividend
    end
+   
    -- dividend > divisor, so x / y = q, r
    
    if dividendlength == 1 then
@@ -2837,7 +2843,7 @@ function division(thisvalue, thatvalue)
    quotient, remainder = dividemagnitudes(thismag, thatmag)
    sign = thissign * thatsign
    
-   return constructorsignmagnitude(sign, quotient), constructorsignmagnitude(thissign, remainder)
+   return constructorsignmagnitudetrusted(sign, quotient), constructorsignmagnitudetrusted(thissign, remainder)
 end
 
 function divideandremainder(thisvalue, thatvalue)
