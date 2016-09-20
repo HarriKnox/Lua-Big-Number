@@ -2601,7 +2601,7 @@ end
 function destructivedivideoneword(dividend, divisor)
    -- ensure dividend and divisor are both magnitudes
    -- returns quotient and remainder, both magnitudes
-   local shift, div, qhat
+   local shift, div, qhat, qrem
    local quotient, remainder
    local dividendlength, dividendestimate
    
@@ -2611,29 +2611,32 @@ function destructivedivideoneword(dividend, divisor)
    dividendlength = #dividend
    quotient = allocatearray(dividendlength)
    
-   remainder = dividend[1]
-   if remainder < div then
+   qrem = dividend[1]
+   if qrem < div then
       quotient[1] = 0
    else
-      quotient[1] = floor(remainder / div)
-      remainder = remainder - (quotient[1] * div)
+      quotient[1] = floor(qrem / div)
+      qrem = qrem - (quotient[1] * div)
    end
    
    for i = 2, dividendlength do
       n = dividend[i]
-      qhat = make32bitinteger(floor((remainder * 0x100000000 + n) / div))
+      qhat = make32bitinteger(floor((qrem * 0x100000000 + n) / div))
       _, temp = integermultiplyandaddtosplitlong(qhat, div, 0)
-      remainder = make32bitinteger(n - temp)
+      qrem = make32bitinteger(n - temp)
       quotient[i] = qhat
    end
    
    if shift > 0 then
-      remainder = remainder % div
+      qrem = qrem % div
    end
    
-   destructivestripleadingzeros(quotient)
+   remainder = {qrem}
    
-   return quotient, {remainder}
+   destructivestripleadingzeros(quotient)
+   destructivestripleadingzeros(remainder)
+   
+   return quotient, remainder
 end
 
 function multiplythensubtract(remainder, div, qhat, offset)
@@ -2843,7 +2846,7 @@ function division(thisvalue, thatvalue)
    quotient, remainder = dividemagnitudes(thismag, thatmag)
    sign = thissign * thatsign
    
-   return constructorsignmagnitudetrusted(sign, quotient), constructorsignmagnitudetrusted(thissign, remainder)
+   return constructorsignmagnitudetrusted(sign, quotient), constructorsignmagnitudetrusted(#remainder == 0 and 0 or thissign, remainder)
 end
 
 function divideandremainder(thisvalue, thatvalue)
