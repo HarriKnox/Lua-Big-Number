@@ -3,28 +3,39 @@ setmetatable(bi, {__index = _G})
 _ENV = bi
 
 --[[
-Since I would inevitably need to write this, I'll just write it now to get it
-taken care of right away. Here are some definitions:
-    * valid 32-bit integer: a value of type 'number' that is non-negative, less
-      than 2 ^ 32, and an integer (no decimal)
+Definitions:
+    * Integer: A Lua value of type 'number' that is an integer (x % 1 == 0).
+    
+    * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
       
-    * byte: a 32-bit integer used in an array and has a sign (in two's
-      compliment form). Most languages define bytes as being 8-bit integers, not
+    * Byte: A 32-bit integer represented as a Two's complement number, used in a
+      byte-array. Most languages define bytes as being 8-bit integers, not
       32-bits. However, since 'byte' is the name of the elements in a byte-array
       in the Java implementation, the name of the elements of the number-arrays
       in this library is 'byte'.
       
-    * byte-array: a sequence (table) of numbers that follows these rules
-      a) all numbers are valid 32 bit integers
-      b) the array is one-indexed (indices start at 1 not 0)
-      c) a zero-length array is logically equivalent to 0 (zero)
-      
-      d) if the first element is negative (in two's-compliment form) then the
-         byte-array will be considered negative (leading zeros will prevent the
-         first non-zero element from being interpreted as negative). Likewise,
-         if the first element is not negative the byte-array will not be
-         considered negative (leading sign bits [0xffffffff] will prevent the
-         byte-array from being interpreted as positive)
+    * Byte-Array: A sequence (table/array) of numbers that follows these rules
+      a) All numbers in the array are valid 32-bit integers.
+         
+      b) A zero-length array or array of all zeros is logically equivalent to 0.
+         
+      c) The array is one-indexed (indices start at 1 not 0) and big-endian. If
+         the array has a byte 0 (array[0]), it will not be read. Byte 1 is the
+         most significant byte.
+         
+      d) The array is interpreted as a Two's complement number: the sign of the
+         byte-array is determined by the sign the most significant byte. If the
+         first byte is a negative Two's complement number, then the byte-array
+         will be considered negative: leading zeros will prevent the byte-array
+         from being interpreted as negative. Likewise, if the first element is
+         not negative, the byte-array will be considered positive: leading sign
+         bits [0xffffffff] will prevent the byte-array from being interpreted as
+         positive.
+          * {   0xFFFF0000} = -65'536 (negative)
+          * {0, 0xFFFF0000} = 4'294'901'760 (positive)
+            
+          * {            0x0000FFFF} = 65'535 (positive)
+          * {0xFFFFFFFF, 0x0000FFFF} = -4'294'901'761 (negative)
          
       e) Note: For testing and iterating through byte-arrays the default length
          operator (#) is used. This means that the byte-array must have a
@@ -37,54 +48,57 @@ taken care of right away. Here are some definitions:
          are not in the sequence (such as t.name = 'Bob'). It is possible for
          someone to pass in any table/prototype/object and it will be
          interpreted as a byte-array. Because of this, the only tables that will
-         fail the byte-array test are those that pass the biginteger test: this
-         is so tables can be interpreted as bigintegers where they could have
-         been interpreted as bytearrays
+         fail the byte-array test are those that pass the biginteger test
+         (byte-array iff not biginteger): this is so tables can be interpreted
+         as bigintegers where they could have been interpreted as bytearrays
       
-    * magnitude: inherently unsigned; a type of byte-array with exceptions:
-      a) all numbers are treated as unsigned (ignores negatives in
-         two's-compliment form)
-      b) leading zeros are not allowed, and thus a magnitude of only zeros is
-         not allowed
+    * Magnitude: A type of byte-array with the following exceptions:
+      a) All numbers are treated as unsigned (ignores negatives in
+         Two's complement form).
+         
+      b) Leading zeros are not allowed, and thus a magnitude of only zeros is
+         not allowed. This ensures every magnitude is unique. A zero-length
+         magnitude is the only magnitude equal to 0.
       
-    * sign: Either -1, 0, or +1; determines whether the value is negative, zero,
-      or positive, respectively. A sign of 0 cannot be assigned to a value that
-      is not logically equivalent to 0 (zero). Likewise a sign of +1 or -1
-      cannot be assigned to a value that is logically equivalent to 0 (zero).
-      The first rule is enforced to avoid ambiguity, but the second rule is
-      enforced to avoid unnecessary table-length calls
+    * Sign (different than the sign bit for a Two's complement number):
+      Either -1, 0, or +1; determines whether the value is negative, zero, or
+      positive, respectively. A sign of 0 cannot be assigned to a value that is
+      not logically equivalent to 0 (zero). Likewise a sign of +1 or -1 cannot
+      be assigned to a value that is logically equivalent to 0 (zero). The first
+      rule is enforced to avoid ambiguity, but the second rule is enforced to
+      avoid unnecessary table-length calls.
       
-    * biginteger: a table with (at minimum) two values (`sign` and `magnitude`)
-      such that every integer (in range) is has a unique representation in the
-      combination of sign and magnitude
---]]
+    * Biginteger: A table with (at minimum) two fields (`sign` and `magnitude`)
+      that are a valid sign and magnitude, such that every integer has a unique
+      representation in the combination of sign and magnitude.
+]]
 
--- Local fields/constants
+--[[ Local fields/constants ]]
 local bitand = (bit32 or bit).band
-local bitor = (bit32 or bit).bor
+local bitor  = (bit32 or bit).bor
 local bitnot = (bit32 or bit).bnot
 local bitxor = (bit32 or bit).bxor
-local bitleftshift = (bit32 and bit32.lshift) or (bit and bit.blshift)
+local bitleftshift  = (bit32 and bit32.lshift) or (bit and bit.blshift)
 local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogit_rshift)
-local bitarithmaticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
+local bitarithmeticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
 local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
-local floor = floor or math.floor
-local max = max or math.max
-local min = min or math.min
-local abs = abs or math.abs
+local floor  = floor  or math.floor
+local max    = max    or math.max
+local min    = min    or math.min
+local abs    = abs    or math.abs
 local random = random or math.random
 
-local stringsub = string.sub
+local stringsub   = string.sub
 local stringmatch = string.match
 local tableinsert = table.insert
 
--- Constants
-local maxinteger = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably
-local maxmagnitudelength = 0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per byte
-local negativemask = 0x80000000
+--[[ Constants ]]
+local maxinteger         = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably (despite being a 32-bit library)
+local maxmagnitudelength =  0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per byte (allows for up to 2^51 bits)
+local negativemask       =      0x80000000 -- mask used for 32-bit integers to get sign
 
--- Threshold values
+--[[ Threshold values ]]
 local karatsubasquarethreshold = 128
 local toomcooksquarethreshold = 216
 
@@ -134,7 +148,7 @@ local characters = {
    [0] = '0'}
 
 
--- Testing functions
+--[[ Testing functions ]]
 function isvalidinteger(int)
    if type(int) ~= 'number' then
       return false, "it's a " .. type(int)
@@ -284,7 +298,7 @@ function isvalidstringnumber(str)
 end
 
 
--- Helper Bitwise Functions
+--[[ Helper Bitwise Functions ]]
 function make32bitinteger(number)
    return bitand(number, 0xffffffff)
 end
@@ -315,7 +329,7 @@ function getsignint(number)
 end
 
 
--- Helper Integer and Long Functions
+--[[ Helper Integer and Long Functions ]]
 function splitlong(number)
    return long32bitrightshift(number), make32bitinteger(number)
 end
@@ -357,7 +371,7 @@ function splitlongtobytesandbits(number)
 end
 
 
--- Byte Array Functions
+--[[ Byte Array Functions ]]
 function copyarrayto(source, destination)
    if source ~= destination then
       for i = 1, #source do
@@ -609,7 +623,7 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 
--- Private Getter functions
+--[[ Private Getter functions ]]
 function gettype(thing)
    return (isvalidinteger(thing) and 'integer') or
           (isvalidbiginteger(thing) and 'biginteger') or
@@ -814,9 +828,9 @@ end
 
 
 function gethighestandlowestbits(array)
-   -- Will return the distances from the least significant bit of the highest
+   -- Will return the distances from the least significant bit to the highest
    -- and lowest set bits of the array. A return value of 0 is the least
-   -- significant bit. Will return -1, -1 if the array is equivalent to 0.
+   -- significant bit. Will return -1 if the array is equivalent to 0.
    local arraylength = #array
    local lowest, highest
    local number, mask, index
@@ -842,8 +856,8 @@ function gethighestandlowestbits(array)
 end
 
 function getleadingzeros(int)
-   -- Returns the number of leading zeros in the two's-complement representation
-   -- of the 32-bit integer.
+   -- Returns the number of leading zeros in the
+   -- two's-complement representation of the 32-bit integer.
    -- Uses Hacker's Delight method used by Java Integer
    local n = 1
    
@@ -923,7 +937,7 @@ function destructiveconvertbytearraytosignmagnitude(bytearray)
 end
 
 
--- Byte-Array Mappers
+--[[ Byte-Array Mappers ]]
 function destructivemapbytearray(bytearray, mapfunction)
    for i = 1, #bytearray do
       bytearray[i] = mapfunction(bytearray[i])
@@ -949,7 +963,7 @@ function destructivemergebytearrays(thisbytearray, thatbytearray, mergefunction)
 end
 
 
--- Constructors
+--[[ Constructors ]]
 function createbiginteger(sign, mag)
    return {sign = sign, magnitude = mag}
 end
@@ -1157,7 +1171,7 @@ function biginteger(a, b)
       elseif typeb == 'function' then
          return constructorbitsrng(a, b)
       end
-   elseif typea == 'biginteger' then
+   elseif typea == 'biginteger' and typeb == 'nil' then
       return clone(a)
    elseif typea == 'byte-array' and typeb == 'nil' then
       return constructorbytearray(a)
@@ -1174,7 +1188,7 @@ function biginteger(a, b)
 end
 
 
--- Comparison Functions
+--[[ Comparison Functions ]]
 function comparemagnitudes(thismag, thatmag)
    local thislength = #thismag
    local thatlength = #thatmag
@@ -1256,7 +1270,7 @@ function maximum(...)
 end
 
 
--- Bitwise functions
+--[[ Bitwise functions ]]
 function bitwisenot(value)
    local ok, reason = isvalidoperablevalue(value)
    if not ok then
@@ -1646,7 +1660,7 @@ function testbit(value, bitfromend)
    return bitand(bytearray[length - byte], bitleftshift(1, bit)) ~= 0
 end
 
--- Private Magnitude Functions
+--[[ Private Magnitude Functions ]]
 function destructiveaddmagnitudes(thismag, thatmag)
    local thislength, thatlength, longerlength
    local carry
@@ -1708,7 +1722,7 @@ function copyandsubtractmagnitudes(minuend, subtrahend)
 end
 
 
--- Public Math Functions
+--[[ Public Math Functions ]]
 function negate(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
@@ -2449,7 +2463,7 @@ function raisemagnitude(mag, exponent)
    if highest == 0 then
       -- if highest == 0 then lowest == 0 and value == 1
       -- value is 1, and 1^e := 1
-      return value
+      return mag
    end
    
    --[[ Still in testing
@@ -2941,6 +2955,7 @@ end
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
    if tonumber(_CC_VERSION) < 1.75 then
+      -- CC 1.75 fixed a bug with the bit32 library that would break this module
       error("Harri's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
    end
    --_ENV.biginteger = biginteger
