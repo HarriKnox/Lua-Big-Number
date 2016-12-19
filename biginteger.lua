@@ -2801,6 +2801,64 @@ function destructivedivideknuth(dividend, divisor)
    return quotient, remainder
 end
 
+function divideburnikelziegler(dividend, divisor)
+   local dividendlength, divisorlength
+   local m, j, n, n32
+   local sigma
+   
+   dividendlength = #dividend
+   divisorlength = #divisor
+   m = bitleftshift(1, 32 - getleadingzeros(floor(divisorlength / burnikelzieglerthreshold)))
+   print(m)
+   --[=[
+            // step 1: let m = min{2^k | (2^k)*BURNIKEL_ZIEGLER_THRESHOLD > s}
+            int m = 1 << (32-Integer.numberOfLeadingZeros(s/BigInteger.BURNIKEL_ZIEGLER_THRESHOLD));
+
+            int j = (b.intLen+m-1) / m;      // step 2a: j = ceil(s/m)
+            int n = j * m;            // step 2b: block length in 32-bit units
+            long n32 = 32L * n;         // block length in bits
+            int sigma = (int) Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
+            MutableBigInteger bShifted = new MutableBigInteger(b);
+            bShifted.safeLeftShift(sigma);   // step 4a: shift b so its length is a multiple of n
+            MutableBigInteger aShifted = new MutableBigInteger (this);
+            aShifted.safeLeftShift(sigma);     // step 4b: shift a by the same amount
+
+            // step 5: t is the number of blocks needed to accommodate a plus one additional bit
+            int t = (int) ((aShifted.bitLength()+n32) / n32);
+            if (t < 2) {
+                t = 2;
+            }
+
+            // step 6: conceptually split a into blocks a[t-1], ..., a[0]
+            MutableBigInteger a1 = aShifted.getBlock(t-1, t, n);   // the most significant block of a
+
+            // step 7: z[t-2] = [a[t-1], a[t-2]]
+            MutableBigInteger z = aShifted.getBlock(t-2, t, n);    // the second to most significant block
+            z.addDisjoint(a1, n);   // z[t-2]
+
+            // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
+            MutableBigInteger qi = new MutableBigInteger();
+            MutableBigInteger ri;
+            for (int i=t-2; i > 0; i--) {
+                // step 8a: compute (qi,ri) such that z=b*qi+ri
+                ri = z.divide2n1n(bShifted, qi);
+
+                // step 8b: z = [ri, a[i-1]]
+                z = aShifted.getBlock(i-1, t, n);   // a[i-1]
+                z.addDisjoint(ri, n);
+                quotient.addShifted(qi, i*n);   // update q (part of step 9)
+            }
+            // final iteration of step 8: do the loop one more time for i=0 but leave z unchanged
+            ri = z.divide2n1n(bShifted, qi);
+            quotient.add(qi);
+
+            ri.rightShift(sigma);   // step 9: a and b were shifted, so shift back
+            return ri;
+        }
+    }]=]
+    return dividend, divisor
+end
+
 function dividemagnitudes(dividend, divisor)
    -- Will divide the two numbers and return the quotient and remainder
    local comparison
@@ -2823,7 +2881,7 @@ function dividemagnitudes(dividend, divisor)
       -- numbers are equal: x / x = 1, so returns 1, 0
       return {1}, {}
    elseif comparison < 0 then
-      -- dividend < divisor: x / y = 0.abc..., so returns 0, x
+      -- dividend < divisor: x / y = 0 + x/y, so returns 0, x
       return {}, dividend
    end
    
@@ -2832,13 +2890,14 @@ function dividemagnitudes(dividend, divisor)
    if dividendlength == 1 then
       -- dividend > divisor > 0, so dividendlengh >= divisorlength > 0
       -- if dividendlength == 1, then divisorlength == 1 as well
+      -- do direct math
       return {math.floor(dividend[1] / divisor[1])}, {dividend[1] % divisor[1]}
    elseif divisorlength == 1 then
       return destructivedivideoneword(dividend, divisor)
    end
    
-   if dividendlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
-      --return divideburnikelziegler(dividend, divisor)
+   if divisorlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
+      return divideburnikelziegler(dividend, divisor)
    end
    
    return destructivedivideknuth(dividend, divisor)
