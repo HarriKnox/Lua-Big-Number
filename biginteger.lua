@@ -828,16 +828,32 @@ function getbytefromend(array, displacement)
 end
 
 
-function gethighestandlowestbits(array)
-   -- Will return the distances from the least significant bit to the highest
-   -- and lowest set bits of the array. A return value of 0 is the least
-   -- significant bit. Will return -1 if the array is equivalent to 0.
+function gethighestsetbit(array)
+   -- Will return the little-endian index of the highest set bit,
+   -- or -1 if array is equal to zero
    local arraylength = #array
-   local lowest, highest
+   local highest
    local number, mask, index
    
-   lowest = -1
-   highest = -1
+   for byte = arraylength - 1, 0, -1 do
+      for bit = 31, 0, -1 do
+         number = array[arraylength - byte]
+         mask = bitleftshift(1, bit)
+         index = byte * 32 + bit
+         if bitand(number, mask) ~= 0 then
+            return index
+         end
+      end
+   end
+   
+   return -1
+end
+
+function getlowestsetbit(array)
+   -- Will return the little-endian index of the lowset set bit,
+   -- or -1 if array is equal to zero
+   local arraylength = #array
+   local number, mask, index
    
    for byte = 0, arraylength - 1 do
       for bit = 0, 31 do
@@ -845,15 +861,13 @@ function gethighestandlowestbits(array)
          mask = bitleftshift(1, bit)
          index = byte * 32 + bit
          if bitand(number, mask) ~= 0 then
-            if lowest == -1 then
-               lowest = index
-            end
-            highest = index
+            return index
+            break
          end
       end
    end
    
-   return highest, lowest
+   return -1
 end
 
 function getleadingzeros(int)
@@ -886,6 +900,20 @@ function getleadingzeros(int)
    end
    
    return n - bitrightshift(int, 31)
+end
+
+function getleadingzeroslong(long)
+   local high, low
+   local leadingzeros
+   
+   high, low = splitlong(long)
+   leadingzeros = getleadingzeros(high)
+   
+   if leadingzeros == 32 then
+      leadingzeros = leadingzeros + getleadingzeros(low)
+   end
+   
+   return leadingzeros
 end
 
 
@@ -2458,7 +2486,8 @@ function raisemagnitude(mag, exponent)
    local highexponent, _
    local result, parttosquare
    
-   highest, lowest = gethighestandlowestbits(mag)
+   highest = gethighestsetbit(mag)
+   lowest = getlowestsetbit(mag)
    
    if highest == 0 then
       -- if highest == 0 then lowest == 0 and value == 1
@@ -2491,7 +2520,7 @@ function raisemagnitude(mag, exponent)
    
    parttosquare = mag
    result = {1}
-   highexponent, _ = gethighestandlowestbits({exponent})
+   highexponent = gethighestsetbit({exponent})
    
    for bitfromend = 0, highexponent - 1 do
       if bitand(exponent, bitleftshift(1, bitfromend)) ~= 0 then
