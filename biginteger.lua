@@ -84,6 +84,7 @@ local bitarithmeticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshif
 local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
 local floor  = floor  or math.floor
+local ceil   = ceil   or math.ceil
 local max    = max    or math.max
 local min    = min    or math.min
 local abs    = abs    or math.abs
@@ -100,9 +101,9 @@ local negativemask       =      0x80000000 -- mask used for 32-bit integers to g
 
 --[[ Threshold values ]]
 local karatsubasquarethreshold = 128
-local toomcooksquarethreshold = 216
-
 local karatsubamultiplythreshold = 80
+
+local toomcooksquarethreshold = 216
 local toomcookmultiplythreshold = 240
 
 local burnikelzieglerthreshold = 80
@@ -856,8 +857,7 @@ function gethighestandlowestbits(array)
 end
 
 function getleadingzeros(int)
-   -- Returns the number of leading zeros in the
-   -- two's-complement representation of the 32-bit integer.
+   -- Returns the number of leading zeros in the 32-bit integer.
    -- Uses Hacker's Delight method used by Java Integer
    local n = 1
    
