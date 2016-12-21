@@ -368,7 +368,7 @@ function integermultiplyandaddtosplitlong(x, ab, c)
 end
 
 function splitlongtobytesandbits(number)
-   return floor(number / 32), make32bitinteger(number, 0x1f)
+   return floor(number / 32), bitand(number, 0x1f)
 end
 
 
@@ -862,7 +862,6 @@ function getlowestsetbit(array)
          index = byte * 32 + bit
          if bitand(number, mask) ~= 0 then
             return index
-            break
          end
       end
    end
