@@ -2829,20 +2829,26 @@ function destructivedivideknuth(dividend, divisor)
    return quotient, remainder
 end
 
-function divideburnikelziegler(dividend, divisor)
-   local dividendlength, divisorlength
-   local m, j, n, n32
-   local sigma
+function destructivedivideburnikelziegler(dividend, divisor)
+   local dividendlength, divisorlength, divisorbitlength
+   local m, j, n, n32, sigma, t
    
    dividendlength = #dividend
    divisorlength = #divisor
-   m = bitleftshift(1, 32 - getleadingzeros(floor(divisorlength / burnikelzieglerthreshold)))
-   print(m)
+   divisorbitlength = gethighestsetbit(divisor) + 1
+   
+   m = 2 ^ (64 - getleadingzeroslong(floor(divisorlength / burnikelzieglerthreshold)))
+   j = ceil(divisorlength / m)
+   n = j * m
+   n32 = n * 32
+   sigma = max(n32 - divisorbitlength, 0)
+   destructiveleftshift(dividend, sigma)
+   destructiveleftshift(divisor, sigma)
+   t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
+   
+   print(m, n, n32, sigma, t, gethighestsetbit(dividend) + 1, dividend[1])
+   
    --[=[
-            // step 1: let m = min{2^k | (2^k)*BURNIKEL_ZIEGLER_THRESHOLD > s}
-            int m = 1 << (32-Integer.numberOfLeadingZeros(s/BigInteger.BURNIKEL_ZIEGLER_THRESHOLD));
-
-            int j = (b.intLen+m-1) / m;      // step 2a: j = ceil(s/m)
             int n = j * m;            // step 2b: block length in 32-bit units
             long n32 = 32L * n;         // block length in bits
             int sigma = (int) Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
@@ -2925,7 +2931,7 @@ function dividemagnitudes(dividend, divisor)
    end
    
    if divisorlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
-      return divideburnikelziegler(dividend, divisor)
+      return destructivedivideburnikelziegler(dividend, divisor)
    end
    
    return destructivedivideknuth(dividend, divisor)
