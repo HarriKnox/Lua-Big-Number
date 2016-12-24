@@ -426,13 +426,39 @@ function allocatearray(length)
    return array
 end
 
+function splitmagnitudeintoblocks(mag, blocklength)
+   local maglength, numberofblocks
+   local blocks, index
+   
+   maglength = #mag
+   numberofblocks = ceil(maglength / blocklength)
+   blocks = allocatearray(numberofblocks)
+   
+   index = maglength
+   
+   -- copy the full blocks into the block array
+   for block = numberofblocks, 2, -1 do
+      for blockindex = blocklength, 1, -1 do
+         blocks[block][blockindex], index = mag[index], index - 1
+      end
+   end
+   
+   --copy the most significant, possibly not full, block
+   for blockindex = index, 1, -1 do
+      blocks[1][blockindex], index = mag[index], index - 1
+   end
+   
+   return blocks
+end
+
 
 function splitarrayatbytefromend(mag, pivot)
    -- Will split an array into two smaller arrays, upper and lower such that
    --  * upper will contain all elements from 1 to #mag - pivot
    --  * lower will contain all elements from (#mag - pivot + 1) to #mag
-   -- pivot indexes from end of magnitude (0 is last element)
-   -- will always return new arrays, even if pivot extends either end of the array
+   --
+   -- `pivot` indexes from end of magnitude (0 is last element)
+   -- It will always return two new arrays, even if pivot isn't in the array
    local maglength = #mag
    local upper, lower
    local upperlength
@@ -2831,7 +2857,7 @@ end
 
 function destructivedivideburnikelziegler(dividend, divisor)
    local dividendlength, divisorlength, divisorbitlength
-   local m, j, n, n32, sigma, t
+   local m, j, n, n32, sigma, t, blocks
    
    dividendlength = #dividend
    divisorlength = #divisor
@@ -2846,23 +2872,11 @@ function destructivedivideburnikelziegler(dividend, divisor)
    destructiveleftshift(divisor, sigma)
    t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
    
+   blocks = splitmagnitudeintoblocks(ashifted, n)
+   
    print(m, n, n32, sigma, t, gethighestsetbit(dividend) + 1, dividend[1])
    
    --[=[
-            int n = j * m;            // step 2b: block length in 32-bit units
-            long n32 = 32L * n;         // block length in bits
-            int sigma = (int) Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
-            MutableBigInteger bShifted = new MutableBigInteger(b);
-            bShifted.safeLeftShift(sigma);   // step 4a: shift b so its length is a multiple of n
-            MutableBigInteger aShifted = new MutableBigInteger (this);
-            aShifted.safeLeftShift(sigma);     // step 4b: shift a by the same amount
-
-            // step 5: t is the number of blocks needed to accommodate a plus one additional bit
-            int t = (int) ((aShifted.bitLength()+n32) / n32);
-            if (t < 2) {
-                t = 2;
-            }
-
             // step 6: conceptually split a into blocks a[t-1], ..., a[0]
             MutableBigInteger a1 = aShifted.getBlock(t-1, t, n);   // the most significant block of a
 
@@ -2888,8 +2902,7 @@ function destructivedivideburnikelziegler(dividend, divisor)
 
             ri.rightShift(sigma);   // step 9: a and b were shifted, so shift back
             return ri;
-        }
-    }]=]
+    ]=]
     return dividend, divisor
 end
 
