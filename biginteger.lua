@@ -432,7 +432,10 @@ function splitmagnitudeintoblocks(mag, blocklength)
    
    maglength = #mag
    numberofblocks = ceil(maglength / blocklength)
-   blocks = allocatearray(numberofblocks)
+   blocks = {}
+   for i = 1, numberofblocks do
+      blocks[i] = {}
+   end
    
    index = maglength
    
@@ -2855,9 +2858,32 @@ function destructivedivideknuth(dividend, divisor)
    return quotient, remainder
 end
 
+function destructiveadddisjoint(mag, add, blocklength)
+   local addlength = #add
+   local maglength = #mag
+   local difference = blocklength - maglength
+   local shiftamount = addlength + difference
+   
+   for i = maglength, 1, -1 do
+      -- shift mag up
+      mag[i + shiftamount] = mag[i]
+   end
+   
+   for i = shiftamount, addlength + 1, -1 do
+      -- insert zeros if necessary
+      mag[i] = 0
+   end
+   
+   for i = min(addlength, shiftamount), 1, do
+      -- add the remaining values from add
+      mag[i] = add[i]
+   end
+end
+
 function destructivedivideburnikelziegler(dividend, divisor)
    local dividendlength, divisorlength, divisorbitlength
-   local m, j, n, n32, sigma, t, blocks
+   local m, j, n, n32, sigma, t
+   local blocks, a1, z
    
    dividendlength = #dividend
    divisorlength = #divisor
@@ -2872,9 +2898,9 @@ function destructivedivideburnikelziegler(dividend, divisor)
    destructiveleftshift(divisor, sigma)
    t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
    
-   blocks = splitmagnitudeintoblocks(ashifted, n)
-   
-   print(m, n, n32, sigma, t, gethighestsetbit(dividend) + 1, dividend[1])
+   blocks = splitmagnitudeintoblocks(dividend, n)
+   a1 = blocks[1]
+   z = blocks[2]
    
    --[=[
             // step 6: conceptually split a into blocks a[t-1], ..., a[0]
