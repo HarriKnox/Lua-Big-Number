@@ -2874,7 +2874,7 @@ function destructiveadddisjoint(mag, add, blocklength)
       mag[i] = 0
    end
    
-   for i = min(addlength, shiftamount), 1, do
+   for i = min(addlength, shiftamount), 1, -1 do
       -- add the remaining values from add
       mag[i] = add[i]
    end
@@ -2894,6 +2894,7 @@ function destructivedivideburnikelziegler(dividend, divisor)
    n = j * m
    n32 = n * 32
    sigma = max(n32 - divisorbitlength, 0)
+   
    destructiveleftshift(dividend, sigma)
    destructiveleftshift(divisor, sigma)
    t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
@@ -2901,14 +2902,9 @@ function destructivedivideburnikelziegler(dividend, divisor)
    blocks = splitmagnitudeintoblocks(dividend, n)
    a1 = blocks[1]
    z = blocks[2]
+   destructiveadddisjoint(z, a1, n)
    
    --[=[
-            // step 6: conceptually split a into blocks a[t-1], ..., a[0]
-            MutableBigInteger a1 = aShifted.getBlock(t-1, t, n);   // the most significant block of a
-
-            // step 7: z[t-2] = [a[t-1], a[t-2]]
-            MutableBigInteger z = aShifted.getBlock(t-2, t, n);    // the second to most significant block
-            z.addDisjoint(a1, n);   // z[t-2]
 
             // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
             MutableBigInteger qi = new MutableBigInteger();
@@ -3012,13 +3008,14 @@ end
 
 -- temporary functions to print the number in hexadecimal or binary
 function getintegerstringhexadecimal(number)
-   local str, index = {}, 1
+   return string.format('%08x', number)
+   --[[local str, index = {}, 1
    
    for i = 28, 0, -4 do
       str[index], index = characters[bitand(bitrightshift(number, i), 0xf)], index + 1
    end
    
-   return table.concat(str)
+   return table.concat(str)]]
 end
 
 function getintegerstringbinary(number)
@@ -3065,15 +3062,20 @@ function stringofbytearray(bigint, dobinary)
          str = getintegerstringbinary(getbytefromend(bytearray, i)) .. '_' .. str
       end
    else
-      if balen == 0 then
-         return string.rep('0', 8)
+      local str = {'{'}
+      
+      if #bytearray > 0 then
+         table.insert(str, '0x')
+         table.insert(str, getintegerstringhexadecimal(bytearray[1]))
+      end
+   
+      for i = 2, balen do
+         table.insert(str, ', 0x')
+         table.insert(str, getintegerstringhexadecimal(bytearray[i]))
       end
       
-      str = getintegerstringhexadecimal(getbytefromend(bytearray, 0))
-   
-      for i = 1, balen - 1 do
-         str = getintegerstringhexadecimal(getbytefromend(bytearray, i)) .. '_' .. str
-      end
+      table.insert(str, '}')
+      return table.concat(str)
    end
    
    return str
