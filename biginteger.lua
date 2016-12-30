@@ -372,7 +372,7 @@ function splitlongtobytesandbits(number)
 end
 
 
---[[ Byte Array Functions ]]
+--[[ Array Functions ]]
 function copyarrayto(source, destination)
    if source ~= destination then
       for i = 1, #source do
@@ -455,13 +455,15 @@ function splitmagnitudeintoblocks(mag, blocklength)
 end
 
 
+--[[ Byte Array Functions ]]
 function splitarrayatbytefromend(mag, pivot)
    -- Will split an array into two smaller arrays, upper and lower such that
    --  * upper will contain all elements from 1 to #mag - pivot
    --  * lower will contain all elements from (#mag - pivot + 1) to #mag
    --
    -- `pivot` indexes from end of magnitude (0 is last element)
-   -- It will always return two new arrays, even if pivot isn't in the array
+   --     (in other words, lower will contain `pivot` elements)
+   -- It will always return two new arrays, even if the array isn't split
    local maglength = #mag
    local upper, lower
    local upperlength
@@ -482,12 +484,12 @@ function splitarrayatbytefromend(mag, pivot)
    upper = {}
    lower = {}
    
-   for i = 1, pivot do
+   for i = 1, upperlength do
       upper[i] = mag[i]
    end
    
-   for i = pivot + 1, maglength do
-      lower[i - pivot] = mag[i]
+   for i = upperlength + 1, maglength do
+      lower[i - upperlength] = mag[i]
    end
    
    return upper, lower
@@ -1716,6 +1718,7 @@ function testbit(value, bitfromend)
    return bitand(bytearray[length - byte], bitleftshift(1, bit)) ~= 0
 end
 
+
 --[[ Private Magnitude Functions ]]
 function destructiveaddmagnitudes(thismag, thatmag)
    local thislength, thatlength, longerlength
@@ -2421,8 +2424,8 @@ function multiplymagnitudes(thismag, thatmag)
    elseif max(thismaglen, thatmaglen) > toomcookmultiplythreshold then
       -- if either are greater than the Toom Cook threshold then do
       -- Toom Cook multiplication
-      -- Note: multiplying a large number (suppose it has 8'675'309-bytes) by a
-      -- small number (say at least 80-bytes) will use this method of muliplying
+      -- Note: multiplying a large number (suppose it has 8'675'309 bytes) by a
+      -- small number (say at least 80 bytes) will use this method of muliplying
       return multiplytoomcook(thismag, thatmag)
    end
    -- otherwise, do the Karatsuba multiplication
@@ -2752,7 +2755,7 @@ function destructivedivideknuth(dividend, divisor)
    divisorlength = #divisor
    
    shift = getleadingzeros(divisor[1])
-   div = copyandleftshift(divisor, shift) -- if shift == 0 then it returns just the copy
+   div = copyandleftshift(divisor, shift) -- if shift == 0, it returns a copy
    
    remainder = copyandleftshift(dividend, shift)
    
@@ -2880,10 +2883,110 @@ function destructiveadddisjoint(mag, add, blocklength)
    end
 end
 
+function divide2n1n(a, b, quotient)
+   local a123, a4, q1, r, s
+   local n, halfn
+   
+   n = #b
+   
+   -- step 1: base case
+   -- if n is odd or small, do school division
+   if bitand(n, 1) == 1 or n < burnikelzieglerthreshold then
+      q1, s = destructivedivideknuth(a, b)
+      clearandcopyintoarray(quotient, q1)
+      return s
+   end
+   
+   halfn = n / 2
+   
+   -- step 2: split A and B
+   -- A = [a1,a2,a3,a4], a123 = [a1,a2,a3], each ai has up to n/2 bytes
+   -- B = [b1,b2], but they are ke;t together in all calculations
+   a123, a4 = splitarrayatbytefromend(a, halfn)
+   
+   -- step 3:   q1 = a123 / b,   R = [r1,r2] = a123 % b
+   q1 = {}
+   r = divide3n2n(a123, b, q1, halfn)
+   
+   -- step 4:   a4 = [r1,r2,a4],   q2 = a4 / b,   S = a4 % b
+   destructiveadddisjoint(a4, r, halfn)
+   
+   s = divide3n2n(a4, b, quotient, halfn)
+   
+   -- step 5:   Q = [q1,q2]
+   destructiveadddisjoint(quotient, q1, halfn)
+   
+   destructivestripleadingzeros(quotient)
+   destructivestripleadingzeros(s)
+   
+   return s
+end
+
+function divide3n2n(a, b, quotient, halfn)
+   local a12, a1, a3, b1, b2, d, _
+   local remainder
+   
+   local one = {1} -- used for decrementing
+   
+   -- step 1: A = [a1,a2,a3], let a12 = [a1,a2]
+   a12, a3 = splitarrayatbytefromend(a, halfn)
+   a1, _ = splitarrayatbytefromend(a12, halfn)
+   
+   -- step 2: B = [b1,b2]
+   b1, b2 = splitarrayatbytefromend(b, halfn)
+   
+   if comparemagnitudes(a1, b1) < 0 then
+      -- step 3a: a1<b1,   Q = a12 / b,   R = a12 % b
+      remainder = divide2n1n(a12, b1, quotient)
+      
+      -- step 4: d = Q * b2
+      d = multiplymagnitudes(quotient, b2)
+   else
+      -- step 3b: Q = (beta^n) - 1,   R = a12 + b1 - b1*2^halfn
+      destructiveaddmagnitudes(a12, b1)
+      destructiveleftshift(b1, 32 * halfn)
+      destructivesubtractmagnitudes(a12, b1)
+      remainder = a12
+      
+      -- Q = beta^halfn - 1 = a halfn-int array of all ones
+      
+      for i = 1, halfn do
+         quotient[i] = 0xffffffff
+      end
+      for i = halfn + 1, #quotient do
+         quotient[i] = nil
+      end
+      
+      -- step 4: d = Q * b2 = (beta^halfn - 1) * b2 = b2 * beta^halfn - b2
+      d = copyandleftshift(b2, 32 * halfn)
+      destructivesubtractmagnitudes(d, b2)
+   end
+   
+   -- step 5: rh = R*beta^halfn + a3 - d (paper erroneously has a4 instead of a3)
+   -- wait until after the loop to subtract d to keep R from going negative
+   -- R = rh
+   destructiveleftshift(remainder, 32 * halfn)
+   destructiveaddmagnitudes(remainder, a3)
+   
+   -- step 6: adjust until R is positive
+   -- rh < 0   ->   R*beta^halfn + a3 - d < 0   ->   R*beta^halfn + a3 < d
+   while comparemagnitudes(remainder, d) < 0 do
+      destructiveaddmagnitudes(remainder, b)
+      destructivesubtractmagnitudes(quotient, one)
+      -- TODO write efficient increment and decrement functions
+   end
+   
+   destructivesubtractmagnitudes(remainder, d)
+   
+   return remainder
+end
+
 function destructivedivideburnikelziegler(dividend, divisor)
    local dividendlength, divisorlength, divisorbitlength
    local m, j, n, n32, sigma, t
-   local blocks, a1, z
+   local blocks, blocklength
+   local a1, z, qi, ri
+   local quotient
    
    dividendlength = #dividend
    divisorlength = #divisor
@@ -2900,32 +3003,36 @@ function destructivedivideburnikelziegler(dividend, divisor)
    t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
    
    blocks = splitmagnitudeintoblocks(dividend, n)
+   blocklength = #blocks
+   
    a1 = blocks[1]
    z = blocks[2]
    destructiveadddisjoint(z, a1, n)
    
-   --[=[
-
-            // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
-            MutableBigInteger qi = new MutableBigInteger();
-            MutableBigInteger ri;
-            for (int i=t-2; i > 0; i--) {
-                // step 8a: compute (qi,ri) such that z=b*qi+ri
-                ri = z.divide2n1n(bShifted, qi);
-
-                // step 8b: z = [ri, a[i-1]]
-                z = aShifted.getBlock(i-1, t, n);   // a[i-1]
-                z.addDisjoint(ri, n);
-                quotient.addShifted(qi, i*n);   // update q (part of step 9)
-            }
-            // final iteration of step 8: do the loop one more time for i=0 but leave z unchanged
-            ri = z.divide2n1n(bShifted, qi);
-            quotient.add(qi);
-
-            ri.rightShift(sigma);   // step 9: a and b were shifted, so shift back
-            return ri;
-    ]=]
-    return dividend, divisor
+   qi = {}
+   quotient = {}
+   
+   for i = 3, blocklength do
+      ri = divide2n1n(z, divisor, qi)
+      
+      z = blocks[i]
+      
+      destructiveadddisjoint(z, ri, n)
+      
+      -- does MutableBigInteger.addShifted without a separate function
+      -- perhaps I will build an optimized procedure for this, but for now: here
+      destructiveaddmagnitudes(quotient, copyandleftshift(qi, (blocklength + 1 - i) * n * 32))
+   end
+   
+   ri = divide2n1n(z, divisor, qi)
+   destructiveaddmagnitudes(quotient, qi)
+   
+   destructiverightshift(ri, sigma)
+   
+   printarray(quotient)
+   printarray(ri)
+   
+   return quotient, ri
 end
 
 function dividemagnitudes(dividend, divisor)
