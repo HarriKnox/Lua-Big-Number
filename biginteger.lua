@@ -2792,7 +2792,8 @@ function destructivedivideknuth(dividend, divisor)
                qrem = (int) (tmp >>> 32);
             }
          --]]
-         qhat = make32bitinteger(floor((nh * 0x100000000 + nm) / divhigh))
+          -- multiply by float to force it to a positive float in Lua 5.3
+         qhat = make32bitinteger(floor((nh * 0x100000000.0 + nm) / divhigh))
          _, temp = integermultiplyandaddtosplitlong(qhat, divhigh, 0)
          qrem = make32bitinteger(nm - temp)
       end
@@ -3028,9 +3029,6 @@ function destructivedivideburnikelziegler(dividend, divisor)
    destructiveaddmagnitudes(quotient, qi)
    
    destructiverightshift(ri, sigma)
-   
-   printarray(quotient)
-   printarray(ri)
    
    return quotient, ri
 end
