@@ -2834,6 +2834,11 @@ function destructivedivideknuth(dividend, divisor)
                qrem = make32bitinteger(qrem + divhigh)
                
                if qrem >= divhigh then
+                  if divlow > estproductlow then
+                     estproducthigh = estproducthigh - 1
+                     estproductlow = estproductlow + 0x100000000
+                  end
+                  
                   estproductlow = make32bitinteger(estproductlow - divlow)
                   
                   if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
