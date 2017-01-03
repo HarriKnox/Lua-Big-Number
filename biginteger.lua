@@ -1250,8 +1250,10 @@ end
 function comparemagnitudes(thismag, thatmag)
    local thislength = #thismag
    local thatlength = #thatmag
+   
    if thislength ~= thatlength then
       -- If the magnitudes are different sizes, then they cannot be equal
+      -- The function assumes magnitudes, so leading zeros aren't allowed
       return thislength > thatlength and 1 or -1
    end
    
@@ -1750,25 +1752,39 @@ function copyandaddmagnitudes(thismag, thatmag)
 end
 
 function destructivesubtractmagnitudes(minuend, subtrahend)
+   -- Will calculate the absolute difference between the magnitudes
+   -- Will destructively write value into minuend
    local borrow, difference
-   local longerlen
+   local larger, largerlen, smaller
+   
+   if comparemagnitudes(minuend, subtrahend) < 0 then
+      -- minuend < subtrahend
+      smaller = minuend
+      larger = subtrahend
+   else
+      -- minuend >= subtrahend
+      smaller = subtrahend
+      larger = minuend
+   end
+   
+   largerlen = #larger
    
    borrow = 0
    difference = 0
    longerlen = #minuend
    
-   for i = 0, longerlen - 1 do
-      difference = getbytefromend(minuend, i) -
-                   getbytefromend(subtrahend, i) -
+   for i = 0, largerlen - 1 do
+      difference = getbytefromend(larger, i) -
+                   getbytefromend(smaller, i) -
                    borrow
       
       if difference < 0 then
          borrow = 1
-         --difference = -difference
       else
          borrow = 0
       end
-      minuend[longerlen - i] = make32bitinteger(difference)
+      
+      minuend[largerlen - i] = make32bitinteger(difference)
    end
    
    destructivestripleadingzeros(minuend)
@@ -2326,7 +2342,7 @@ function multiplykaratsuba(thismag, thatmag)
 end
 
 function multiplytoomcook(thismag, thatmag)
-   local a2, a1, a0, b2, b1, b0, ss
+   local a2, a1, a0, b2, b1, b0, ss, _
    local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1
    
    local longerlength = max(#thismag, #thatmag)
