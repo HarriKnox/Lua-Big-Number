@@ -1771,7 +1771,6 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    
    borrow = 0
    difference = 0
-   longerlen = #minuend
    
    for i = 0, largerlen - 1 do
       difference = getbytefromend(larger, i) -
@@ -2344,9 +2343,15 @@ end
 function multiplytoomcook(thismag, thatmag)
    local a2, a1, a0, b2, b1, b0, ss, _
    local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1
+   local vm1sign
+   -- This algorithm takes advantage of magnitude destruction to avoid making
+   -- extra unnecessary arrays and biginteger objects. Only one number
+   -- calculated has the potential to be negative (all others are non-negative),
+   -- thus its sign is handled separately
    
    local longerlength = max(#thismag, #thatmag)
    
+   -- All slices here are non-negative values
    a2, a1, a0, ss = gettoomcookslices(thismag, longerlength)
    b2, b1, b0, _  = gettoomcookslices(thatmag, longerlength)
    
@@ -2359,9 +2364,12 @@ function multiplytoomcook(thismag, thatmag)
    -- db1 = b2.add(b0);
    db1 = copyandaddmagnitudes(b2, b0)
    
+   
    -- vm1 = da1.subtract(a1).multiply(db1.subtract(b1));
+   vm1sign = comparemagnitudes(da1, a1) * comparemagnitudes(db1, b1)
    vm1 = multiplymagnitudes(copyandsubtractmagnitudes(da1, a1),
                             copyandsubtractmagnitudes(db1, b1))
+   
    
    -- da1 = da1.add(a1);
    destructiveaddmagnitudes(da1, a1)
@@ -2373,26 +2381,42 @@ function multiplytoomcook(thismag, thatmag)
    v1 = multiplymagnitudes(da1, db1)
    
    -- v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
-   --     db1.add(b2).shiftLeft(1).subtract(b0)); last instances of da1 and db1, so mutate
+   --      db1.add(b2).shiftLeft(1).subtract(b0)); last instances of da1 and db1, so mutate
    destructiveaddmagnitudes(da1, a2)
    destructiveleftshift(da1, 1)
+   
    destructivesubtractmagnitudes(da1, a0)
+   
    destructiveaddmagnitudes(db1, b2)
    destructiveleftshift(db1, 1)
+   
    destructivesubtractmagnitudes(db1, b0)
+   
    v2 = multiplymagnitudes(da1, db1)
    
    -- vinf = a2.multiply(b2);
    vinf = multiplymagnitudes(a2, b2)
    
    -- t2 = v2.subtract(vm1).exactDivideBy3(); last instance of v2, so t2 = v2
-   destructivesubtractmagnitudes(v2, vm1)
+   if v2sign ~= vm1sign then
+      destructiveaddmagnitudes(v2, vm1)
+   else
+      destructivesubtractmagnitudes(v2, vm1)
+   end
+   
    destructiveexactdividebythree(v2)
    t2 = v2
    
-   -- tm1 = v1.subtract(vm1).shiftRight(1);
-   tm1 = copyandsubtractmagnitudes(v1, vm1)
-   destructiverightshift(tm1, 1)
+   -- tm1 = v1.subtract(vm1).shiftRight(1); last instance of vm1, so tm1 = vm1
+   if vm1sign < 0 then
+      destructiveaddmagnitudes(vm1, v1) -- v1 - -vm1 = v1 + vm1
+   else
+      -- this function returns the difference regardless of the order
+      -- in this algorithm, tm1 will never be negative
+      destructivesubtractmagnitudes(vm1, v1)
+   end
+   destructiverightshift(vm1, 1)
+   tm1 = vm1
    
    -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
    destructivesubtractmagnitudes(v1, v0)
