@@ -2929,7 +2929,7 @@ function destructiveadddisjoint(mag, add, blocklength)
    end
 end
 
-function divide2n1n(a, b, quotient)
+function divide2n1n(a, b)
    local a123, a4, q1, r, s
    local n, halfn
    
@@ -2939,25 +2939,21 @@ function divide2n1n(a, b, quotient)
    -- if n is odd or small, do school division
    if bitand(n, 1) == 1 or n < burnikelzieglerthreshold then
       q1, s = destructivedivideknuth(a, b)
-      clearandcopyintoarray(quotient, q1)
-      return s
+      return q1, s
    end
-   
    halfn = n / 2
    
    -- step 2: split A and B
    -- A = [a1,a2,a3,a4], a123 = [a1,a2,a3], each ai has up to n/2 bytes
-   -- B = [b1,b2], but they are ke;t together in all calculations
+   -- B = [b1,b2], but they're kept together in all calculations, so don't split
    a123, a4 = splitarrayatbytefromend(a, halfn)
    
    -- step 3:   q1 = a123 / b,   R = [r1,r2] = a123 % b
-   q1 = {}
-   r = divide3n2n(a123, b, q1, halfn)
+   q1, r = divide3n2n(a123, b, halfn)
    
    -- step 4:   a4 = [r1,r2,a4],   q2 = a4 / b,   S = a4 % b
    destructiveadddisjoint(a4, r, halfn)
-   
-   s = divide3n2n(a4, b, quotient, halfn)
+   quotient, s = divide3n2n(a4, b, halfn)
    
    -- step 5:   Q = [q1,q2]
    destructiveadddisjoint(quotient, q1, halfn)
@@ -2965,25 +2961,23 @@ function divide2n1n(a, b, quotient)
    destructivestripleadingzeros(quotient)
    destructivestripleadingzeros(s)
    
-   return s
+   return quotient, s
 end
 
-function divide3n2n(a, b, quotient, halfn)
+function divide3n2n(a, b, halfn)
    local a12, a1, a3, b1, b2, d, _
-   local remainder
+   local quotient, remainder
    
    local one = {1} -- used for decrementing
-   
    -- step 1: A = [a1,a2,a3], let a12 = [a1,a2]
    a12, a3 = splitarrayatbytefromend(a, halfn)
    a1, _ = splitarrayatbytefromend(a12, halfn)
-   
    -- step 2: B = [b1,b2]
    b1, b2 = splitarrayatbytefromend(b, halfn)
    
    if comparemagnitudes(a1, b1) < 0 then
-      -- step 3a: a1<b1,   Q = a12 / b,   R = a12 % b
-      remainder = divide2n1n(a12, b1, quotient)
+      -- step 3a: a1<b1,   Q = a12 / b1,   R = a12 % b1
+      quotient, remainder = divide2n1n(a12, b1)
       
       -- step 4: d = Q * b2
       d = multiplymagnitudes(quotient, b2)
@@ -2995,12 +2989,9 @@ function divide3n2n(a, b, quotient, halfn)
       remainder = a12
       
       -- Q = beta^halfn - 1 = a halfn-int array of all ones
-      
+      quotient = {}
       for i = 1, halfn do
          quotient[i] = 0xffffffff
-      end
-      for i = halfn + 1, #quotient do
-         quotient[i] = nil
       end
       
       -- step 4: d = Q * b2 = (beta^halfn - 1) * b2 = b2 * beta^halfn - b2
@@ -3024,7 +3015,7 @@ function divide3n2n(a, b, quotient, halfn)
    
    destructivesubtractmagnitudes(remainder, d)
    
-   return remainder
+   return quotient, remainder
 end
 
 function destructivedivideburnikelziegler(dividend, divisor)
@@ -3055,11 +3046,10 @@ function destructivedivideburnikelziegler(dividend, divisor)
    z = blocks[2]
    destructiveadddisjoint(z, a1, n)
    
-   qi = {}
    quotient = {}
    
    for i = 3, blocklength do
-      ri = divide2n1n(z, divisor, qi)
+      qi, ri = divide2n1n(z, divisor)
       
       z = blocks[i]
       
@@ -3070,7 +3060,7 @@ function destructivedivideburnikelziegler(dividend, divisor)
       destructiveaddmagnitudes(quotient, copyandleftshift(qi, (blocklength + 1 - i) * n * 32))
    end
    
-   ri = divide2n1n(z, divisor, qi)
+   qi, ri = divide2n1n(z, divisor)
    destructiveaddmagnitudes(quotient, qi)
    
    destructiverightshift(ri, sigma)
