@@ -1559,7 +1559,7 @@ function bitwiseshift(value, displacement, right)
    
    if #mag == 0 then
       if sign == -1 then
-         mag[1] = 0xffffffff
+         mag[1] = 0x01
       else
          sign = 0
       end
@@ -1583,7 +1583,7 @@ function mutablebitwiseshift(bigint, displacement, right)
    
    if #bigint.magnitude == 0 then
       if bigint.sign == -1 then
-         bigint.magnitude[1] = 0xffffffff
+         bigint.magnitude[1] = 0x01
       else
          bigint.sign = 0
       end
@@ -1598,7 +1598,7 @@ function bitwiseleftshift(value, displacement)
 end
 
 function mutablebitwiseleftshift(bigint, displacement)
-   return mutablebitshift(bigint, displacement, false)
+   return mutablebitwiseshift(bigint, displacement, false)
 end
 
 
@@ -1607,7 +1607,7 @@ function bitwiserightshift(value, displacement)
 end
 
 function mutablebitwiserightshift(bigint, displacement)
-   return mutablebitshift(bigint, displacement, true)
+   return mutablebitwiseshift(bigint, displacement, true)
 end
 
 
