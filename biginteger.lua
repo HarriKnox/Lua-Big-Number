@@ -1497,6 +1497,8 @@ function destructiverightshift(mag, displacement)
       mag[maglength - i] = nil
    end
    
+   destructivestripleadingzeros(mag)
+   
    return mag
 end
 
@@ -1520,8 +1522,6 @@ function destructivebitwiseshift(mag, displacement, right)
    else
       destructiveleftshift(mag, displacement)
    end
-   
-   destructivestripleadingzeros(mag)
    
    return mag
 end
@@ -1743,6 +1743,8 @@ function destructiveaddmagnitudes(thismag, thatmag)
       -- the value of the carry in front of everything.
       tableinsert(thismag, 1, carry)
    end
+   
+   destructivestripleadingzeros(thismag)
    
    return thismag
 end
@@ -2927,6 +2929,10 @@ function destructiveadddisjoint(mag, add, blocklength)
       -- add the remaining values from add
       mag[i] = add[i]
    end
+   
+   destructivestripleadingzeros(mag)
+   
+   return mag
 end
 
 function divide2n1n(a, b)
@@ -2938,8 +2944,7 @@ function divide2n1n(a, b)
    -- step 1: base case
    -- if n is odd or small, do school division
    if bitand(n, 1) == 1 or n < burnikelzieglerthreshold then
-      q1, s = destructivedivideknuth(a, b)
-      return q1, s
+      return destructivedivideknuth(a, b)
    end
    halfn = n / 2
    
@@ -2969,9 +2974,11 @@ function divide3n2n(a, b, halfn)
    local quotient, remainder
    
    local one = {1} -- used for decrementing
+   
    -- step 1: A = [a1,a2,a3], let a12 = [a1,a2]
    a12, a3 = splitarrayatbytefromend(a, halfn)
    a1, _ = splitarrayatbytefromend(a12, halfn)
+   
    -- step 2: B = [b1,b2]
    b1, b2 = splitarrayatbytefromend(b, halfn)
    
