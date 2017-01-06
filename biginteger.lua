@@ -4,73 +4,87 @@ _ENV = bi
 
 --[[
 Definitions:
-    * Integer: A Lua value of type 'number' that is an integer (x % 1 == 0).
-    
-    * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
+ * Integer: A Lua value of type 'number' that is an integer (x % 1 == 0).
+ 
+ * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
+   
+ * Byte: A 32-bit integer represented as a Two's complement number, used in a
+   byte-array. Most languages define bytes as being 8-bit integers, not
+   32-bits. However, since 'byte' is the name of the elements in a byte-array
+   in the Java implementation, the name of the elements of the number-arrays
+   in this library is 'byte'.
+   
+ * Byte-Array: A sequence (table/array) of numbers that follows these rules
+   a) All numbers in the array are valid 32-bit integers.
       
-    * Byte: A 32-bit integer represented as a Two's complement number, used in a
-      byte-array. Most languages define bytes as being 8-bit integers, not
-      32-bits. However, since 'byte' is the name of the elements in a byte-array
-      in the Java implementation, the name of the elements of the number-arrays
-      in this library is 'byte'.
+   b) A zero-length array or array of all zeros is logically equivalent to 0.
       
-    * Byte-Array: A sequence (table/array) of numbers that follows these rules
-      a) All numbers in the array are valid 32-bit integers.
-         
-      b) A zero-length array or array of all zeros is logically equivalent to 0.
-         
-      c) The array is one-indexed (indices start at 1 not 0) and big-endian. If
-         the array has a byte 0 (array[0]), it will not be read. Byte 1 is the
-         most significant byte.
-         
-      d) The array is interpreted as a Two's complement number: the sign of the
-         byte-array is determined by the sign the most significant byte. If the
-         first byte is a negative Two's complement number, then the byte-array
-         will be considered negative: leading zeros will prevent the byte-array
-         from being interpreted as negative. Likewise, if the first element is
-         not negative, the byte-array will be considered positive: leading sign
-         bits [0xffffffff] will prevent the byte-array from being interpreted as
-         positive.
-          * {   0xFFFF0000} = -65'536 (negative)
-          * {0, 0xFFFF0000} = 4'294'901'760 (positive)
-            
-          * {            0x0000FFFF} = 65'535 (positive)
-          * {0xFFFFFFFF, 0x0000FFFF} = -4'294'901'761 (negative)
-         
-      e) Note: For testing and iterating through byte-arrays the default length
-         operator (#) is used. This means that the byte-array must have a
-         sequence of numbers for all indices between 1 and #array (that is to
-         say for all 1 <= i <= #array, t[i] ~= nil). If #array == 0 then the
-         byte-array is still valid: it has a zero-length sequence and is thus
-         equal to 0 (zero).
-         
-      f) Note: Since a byte-array is a table, it may have keys and values that
-         are not in the sequence (such as t.name = 'Bob'). It is possible for
-         someone to pass in any table/prototype/object and it will be
-         interpreted as a byte-array. Because of this, the only tables that will
-         fail the byte-array test are those that pass the biginteger test
-         (byte-array iff not biginteger): this is so tables can be interpreted
-         as bigintegers where they could have been interpreted as bytearrays
+   c) The array is one-indexed (indices start at 1 not 0) and big-endian. If
+      the array has a byte 0 (array[0]), it will not be read. Byte 1 is the
+      most significant byte.
       
-    * Magnitude: A type of byte-array with the following exceptions:
-      a) All numbers are treated as unsigned (ignores negatives in
-         Two's complement form).
+   d) The array is interpreted as a Two's complement number: the sign of the
+      byte-array is determined by the sign the most significant byte. If the
+      first byte is a negative Two's complement number, then the byte-array
+      will be considered negative: leading zeros will prevent the byte-array
+      from being interpreted as negative. Likewise, if the first element is
+      not negative, the byte-array will be considered positive: leading sign
+      bits [0xffffffff] will prevent the byte-array from being interpreted as
+      positive.
+       * {   0xffff0000} = -65'536 (negative)
+       * {0, 0xffff0000} = 4'294'901'760 (positive)
          
-      b) Leading zeros are not allowed, and thus a magnitude of only zeros is
-         not allowed. This ensures every magnitude is unique. A zero-length
-         magnitude is the only magnitude equal to 0.
+       * {            0x0000ffff} = 65'535 (positive)
+       * {0xffffffff, 0x0000ffff} = -4'294'901'761 (negative)
       
-    * Sign (different than the sign bit for a Two's complement number):
-      Either -1, 0, or +1; determines whether the value is negative, zero, or
-      positive, respectively. A sign of 0 cannot be assigned to a value that is
-      not logically equivalent to 0 (zero). Likewise a sign of +1 or -1 cannot
-      be assigned to a value that is logically equivalent to 0 (zero). The first
-      rule is enforced to avoid ambiguity, but the second rule is enforced to
-      avoid unnecessary table-length calls.
+   e) Note: For testing and iterating through byte-arrays the default length
+      operator (#) is used. This means that the byte-array must have a
+      sequence of numbers for all indices between 1 and #array (that is to
+      say for all 1 <= i <= #array, t[i] ~= nil). If #array == 0 then the
+      byte-array is still valid: it has a zero-length sequence and is thus
+      equal to 0 (zero).
       
-    * Biginteger: A table with (at minimum) two fields (`sign` and `magnitude`)
-      that are a valid sign and magnitude, such that every integer has a unique
-      representation in the combination of sign and magnitude.
+   f) Note: Since a byte-array is a table, it may have keys and values that
+      are not in the sequence (such as t.name = 'Bob'). It is possible for
+      someone to pass in any table/prototype/object and it will be
+      interpreted as a byte-array. Because of this, the only tables that
+      would otherwise pass the byte-array test will fail if they pass the
+      biginteger test (byte-array iff not biginteger): this is so tables can
+      be interpreted as bigintegers where they could have been interpreted as
+      bytearrays.
+   
+ * Magnitude: A type of byte-array with the following exceptions:
+   a) All numbers are treated as unsigned (ignores negatives in
+      Two's complement form).
+      
+   b) Leading zeros are not allowed, and thus a magnitude of only zeros is
+      not allowed. A zero-length magnitude is the only magnitude equal to 0.
+      This ensures every magnitude is unique.
+   
+ * Sign (different than the sign bit for a Two's complement number):
+   Either -1, 0, or +1; determines whether the value is negative, zero, or
+   positive, respectively. A sign of 0 cannot be assigned to a value that is
+   not logically equivalent to 0 (zero). Likewise a sign of +1 or -1 cannot
+   be assigned to a value that is logically equivalent to 0 (zero). The first
+   rule is enforced to avoid ambiguity, but the second rule is enforced to
+   avoid unnecessary table-length calls.
+   
+ * Biginteger: A table with (at minimum) two fields (`sign` and `magnitude`)
+   that are a valid sign and magnitude, such that every integer has a unique
+   representation in the combination of sign and magnitude.
+]]
+
+--[[
+To-do list:
+ * GCD
+ * modulus
+ * quick increment and decrement
+ * prime number stuff
+ * tostring
+ * serializable magnitude string
+ * string reading ("Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
+ * metatable
+ * ratio module
 ]]
 
 --[[ Local fields/constants ]]
