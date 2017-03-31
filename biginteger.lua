@@ -1125,7 +1125,7 @@ function constructorbytearraytrusted(array)
       destructivenegatebytearray(array)
    end
    
-   return constructorsignmagnitude(sign, array)
+   return constructorsignmagnitudetrusted(sign, array)
 end
 
 function constructorbytearray(array)
@@ -1151,7 +1151,7 @@ function constructorstringradix(str, radix)
       error("str not valid: " .. reason)
    end
    
-   strsign = stringmatch(str, '[-+]')
+   strsign = stringmatch(str, '^[-+]')
    
    sign = strsign == '-' and -1 or 1
    cursor = strsign and 2 or 1
@@ -1217,7 +1217,7 @@ function constructorstringradix(str, radix)
    
    destructivestripleadingzeros(mag)
    
-   return constructorsignmagnitude(sign, mag)
+   return constructorsignmagnitudetrusted(sign, mag)
 end
 
 function clone(bigint)
@@ -3164,6 +3164,21 @@ end
 function remainder(thisvalue, thatvalue)
    local _, r = division(thisvalue, thatvalue)
    return r
+end
+
+
+--[[ String Functions ]]
+function tostring(thisval, radix)
+   local thissign, thismag
+   local ok, reason = isvalidradix(radix)
+   
+   if not ok then
+      error("radix not valid radix: " .. reason)
+   end
+   
+   thissign, thismag = getsignandmagnitude(thisval)
+   
+   
 end
 
 
