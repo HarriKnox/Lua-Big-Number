@@ -378,6 +378,34 @@ function splitlongandstripleadingzeros(number)
 end
 
 function integermultiplyandaddtosplitlong(x, ab, c)
+   local q
+   local a = bitrightshift(ab, 16)
+   local b = bitand(ab, 0xffff)
+   
+   local xa = x * a
+   local xb = x * b
+   
+   q = xa / 0x10000
+   local xahigh = q - (q % 1)
+   
+   local xalow = bitleftshift(xa, 16)
+   
+   q = xb / 0x100000000
+   local xbhigh = q - (q % 1)
+   
+   
+   local xblow = ab % 0x100000000
+   
+   local lowword = xalow + xblow + c
+   
+   q = lowword / 0x100000000
+   local highword = xahigh + xbhigh + q - (q % 1)
+   
+   lowword = lowword % 0x100000000
+   
+   return highword, lowword
+   
+   --[[ function calls are slow
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
@@ -395,6 +423,7 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    lowword = make32bitinteger(lowword)
    
    return highword, lowword
+   --]]
 end
 
 function splitlongtobytesandbits(number)
