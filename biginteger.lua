@@ -1135,9 +1135,9 @@ end
 function constructorstringradix(str, radix)
    local mag
    local strlength = #str
-   local sign, cursor, strsign, numberofdigits, digitsperintegerradix
+   local sign, strsign, numberofdigits, digitsperintegerradix
    local numberofbits, numberofwords
-   local firstgrouplength, superradix, group, groupvalue
+   local firstgrouplength, superradix, group, groupvalue, cursor, ncursor
    local ok, reason
    
    -- Some edits and changes occurred here
@@ -1206,8 +1206,9 @@ function constructorstringradix(str, radix)
    -- Process remaining groups
    superradix = intradix[radix]
    while cursor <= strlength do
-      group = stringsub(str, cursor, cursor + digitsperintegerradix - 1)
-      cursor = cursor + digitsperintegerradix
+      ncursor = cursor + digitsperintegerradix
+      group = stringsub(str, cursor, ncursor - 1)
+      cursor = ncursor
       groupvalue = tonumber(group, radix)
       if not groupvalue then
          error("illegal digit: " .. group)
