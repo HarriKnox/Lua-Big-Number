@@ -45,17 +45,19 @@ Definitions:
       equal to 0 (zero).
       
    f) Note: Since a byte-array is a table, it may have keys and values that
-      are not in the sequence (such as t.name = 'Bob'). It is possible for
+      are not in the sequence (such as t.name = 'Harri'). It is possible for
       someone to pass in any table/prototype/object and it will be
       interpreted as a byte-array. Because of this, the only tables that
       would otherwise pass the byte-array test will fail if they pass the
-      biginteger test (byte-array iff not biginteger): this is so tables can
-      be interpreted as bigintegers where they could have been interpreted as
-      bytearrays.
+      biginteger test (byte-array iff array of bytes and not biginteger): this
+      is so tables that could be interpreted as bigintegers would be interpreted
+      as bigintegers where they may have been interpreted as bytearrays.
    
  * Magnitude: A type of byte-array with the following exceptions:
    a) All numbers are treated as unsigned (ignores negatives in
       Two's complement form).
+       * {            0x0000ffff} = 65'535 (positive)
+       * {0xffffffff, 0x0000ffff} = 18'446'744'069'414'649'855 (positive)
       
    b) Leading zeros are not allowed, and thus a magnitude of only zeros is
       not allowed. A zero-length magnitude is the only magnitude equal to 0.
@@ -63,11 +65,12 @@ Definitions:
    
  * Sign (different than the sign bit for a Two's complement number):
    Either -1, 0, or +1; determines whether the value is negative, zero, or
-   positive, respectively. A sign of 0 cannot be assigned to a value that is
-   not logically equivalent to 0 (zero). Likewise a sign of +1 or -1 cannot
-   be assigned to a value that is logically equivalent to 0 (zero). The first
-   rule is enforced to avoid ambiguity, but the second rule is enforced to
-   avoid unnecessary table-length calls.
+   positive, respectively.
+    * A sign of +1 or -1 cannot be assigned to a value that is logically
+      equivalent to 0 (zero). This is to avoid ambiguity in +0 and -0 and makes
+      all zeros equivalent.
+    * A sign of 0 cannot be assigned to a value that is not logically equivalent
+      to 0 (zero). A non-zero magnitude with no sign is an illegal number.
    
  * Biginteger: A table with (at minimum) two fields (`sign` and `magnitude`)
    that are a valid sign and magnitude, such that every integer has a unique
@@ -76,15 +79,16 @@ Definitions:
 
 --[[
 To-do list:
+ * tostring
  * GCD
  * modulus
  * quick increment and decrement
  * prime number stuff
- * tostring
- * serializable magnitude string
+ * serializable magnitude/bytearray string
  * string reading ("Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
  * metatable
  * ratio module
+ * make fast (functional overhead for bitwise operations is high, but Lua 5.2 doesn't support bitwise sigils)
 ]]
 
 --[[ Local fields/constants ]]
@@ -378,6 +382,32 @@ function splitlongandstripleadingzeros(number)
 end
 
 function integermultiplyandaddtosplitlong(x, ab, c)
+--[[
+   Speed boost for Lua 5.3 using bitwise operators instead of function calls:
+   bitand -> &, bitor  -> |, bitnot -> ~, etc. Unfortunately, those sigils are
+   incompatible with Lua 5.2. The alternative is to use strings and the load
+   function. For example:
+   
+function somearbitraryoperation(a, b, c)
+   return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
+end
+   
+   becomes
+   
+load("function somearbitraryoperation(a, b, c) \
+   return a & (~b << (c | 3)) \
+end")()
+   
+   The string keeps the 5.2 interpreter from erroring and the load allows the
+   5.3 interpreter to understand and compile it. Because the load function
+   returns an executable chunk without executing it you need to call it
+   afterward. Also, quotes don't carry across newlines so I escaped the newlines
+   with the backslashes.
+   
+   The entire function needs to be wrapped in the load string. Simply using
+   load("function bitand(a, b) return a & b end")() and calling bitand will
+   still cause functional overhead.
+--]]
    local q
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
