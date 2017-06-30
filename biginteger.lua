@@ -111,6 +111,8 @@ local random = random or math.random
 local stringsub   = string.sub
 local stringmatch = string.match
 local tableinsert = table.insert
+-- Because of functional overhead, use table.insert only to insert in the
+-- middle/beginning of an array. Use `t[#t + 1] = _` when appending.
 
 --[[ Constants ]]
 local maxinteger         = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably (despite being a 32-bit library)
@@ -385,7 +387,7 @@ function integermultiplyandaddtosplitlong(x, ab, c)
 --[[
    Speed boost for Lua 5.3 using bitwise operators instead of function calls:
    bitand -> &, bitor  -> |, bitnot -> ~, etc. Unfortunately, those sigils are
-   incompatible with Lua 5.2. The alternative is to use strings and the load
+   incompatible with Lua 5.2. The alternative is to use strings and the `load`
    function. For example:
    
 function somearbitraryoperation(a, b, c)
@@ -398,8 +400,8 @@ load("function somearbitraryoperation(a, b, c) \
    return a & (~b << (c | 3)) \
 end")()
    
-   The string keeps the 5.2 interpreter from erroring and the load allows the
-   5.3 interpreter to understand and compile it. Because the load function
+   The string keeps the 5.2 interpreter from erroring and the `load` allows the
+   5.3 interpreter to understand and compile it. Because the `load` function
    returns an executable chunk without executing it you need to call it
    afterward. Also, quotes don't carry across newlines so I escaped the newlines
    with the backslashes.
@@ -462,18 +464,14 @@ end
 
 
 --[[ Array Functions ]]
-function copyarrayto(source, destination)
-   if source ~= destination then
-      for i = 1, #source do
-         destination[i] = source[i]
-      end
+function copyarray(source)
+   local destination = {}
+   
+   for i = 1, #source do
+      destination[i] = source[i]
    end
    
    return destination
-end
-
-function copyarray(array)
-   return copyarrayto(array, {})
 end
 
 function cleararray(array)
@@ -703,6 +701,13 @@ end
 
 
 function negatebytearrayto(source, destination)
+   --[[
+      This function is correct, even though it seems it should do something with
+      `addend` after the loop. The only number that would cause an overflow when
+      added to 1 is 0b1111111111111111 (-1). The bitnot of that is 0. Thus the
+      only number that would cause `addend` to still be 1 after the loop is 0,
+      and the negation of 0 is 0.
+   --]]
    local length = #source
    local addend = 1
    
@@ -1043,7 +1048,7 @@ function convertsignmagnitudetobytearrayto(sign, source, destination)
          tableinsert(destination, 1, 0xffffffff)
       end
    else
-      copyarrayto(source, destination)
+      clearandcopyintoarray(destination, source)
       if getbytearraysign(destination) == -1 then
          tableinsert(destination, 1, 0)
       end
