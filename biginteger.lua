@@ -2,8 +2,7 @@ local bi = {} -- Sandbox for testing purposes.
 setmetatable(bi, {__index = _G})
 _ENV = bi
 
---[[
-Definitions:
+--[[ Definitions:
  * Integer: A Lua value of type 'number' that is an integer (x % 1 == 0).
  
  * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
@@ -77,8 +76,8 @@ Definitions:
    representation in the combination of sign and magnitude.
 ]]
 
---[[
-To-do list:
+--[[ To-do list:
+ * unbreak division, again, for both Lua 5.2 and 5.3
  * tostring
  * GCD
  * modulus
@@ -456,6 +455,23 @@ end")()
    
    return highword, lowword
    --]]
+end
+
+function divide64bitsby32bits(ah, al, b)
+-- This function wouldn't hurt from a 5.3 speed boost either (especially since 5.3 supports 64-bit integers anyway)
+   local ahhl = ah * 0x10000 + math.floor(al / 0x10000)
+   local q1 = math.floor(ahhl / b)
+   local r1 = ahhl % b
+   local r1al = r1 * 0x10000 + (al % 0x10000)
+   local q2 = math.floor(r1al / b)
+   local r2 = r1al % b
+   local ql = ((q1 % 0x10000) * 0x10000) + (q2 % 0x100000000)
+   local qh = math.floor(q1 / 0x10000) + math.floor(q2 / 0x100000000)
+   if ql >= 0x100000000 then
+      qh = qh + 1
+      ql = ql - 0x100000000
+   end
+   return qh, ql, r2
 end
 
 function splitlongtobytesandbits(number)
@@ -2812,7 +2828,7 @@ end
 function destructivedivideoneword(dividend, divisor)
    -- ensure dividend and divisor are both magnitudes
    -- returns quotient and remainder, both magnitudes
-   local shift, div, qhat, qrem
+   local shift, div, qhat, qrem, _
    local quotient, remainder
    local dividendlength, dividendestimate
    
@@ -2820,7 +2836,7 @@ function destructivedivideoneword(dividend, divisor)
    shift = getleadingzeros(div)
    
    dividendlength = #dividend
-   quotient = allocatearray(dividendlength)
+   quotient = {}
    
    qrem = dividend[1]
    if qrem < div then
@@ -2831,10 +2847,8 @@ function destructivedivideoneword(dividend, divisor)
    end
    
    for i = 2, dividendlength do
-      n = dividend[i]
-      qhat = make32bitinteger(floor((qrem * 0x100000000 + n) / div))
-      _, temp = integermultiplyandaddtosplitlong(qhat, div, 0)
-      qrem = make32bitinteger(n - temp)
+      _, qhat, qrem = divide64bitsby32bits(qrem, dividend[i], div)
+      
       quotient[i] = qhat
    end
    
