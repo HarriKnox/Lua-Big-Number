@@ -109,6 +109,8 @@ local random = random or math.random
 
 local stringsub   = string.sub
 local stringmatch = string.match
+local stringrep   = string.rep
+local tableconcat = table.concat
 local tableinsert = table.insert
 -- Because of functional overhead, use table.insert only to insert in the
 -- middle/beginning of an array. Use `t[#t + 1] = _` when appending.
@@ -3228,17 +3230,82 @@ end
 
 
 --[[ String Functions ]]
-function tostring(thisval, radix)
+function makestring(thisval, radix)
    local thissign, thismag
-   local ok, reason = isvalidradix(radix)
+   local ok, reason
+   local stringarray
    
+   ok, reason = isvalidoperablevalue(thisval)
    if not ok then
-      error("radix not valid radix: " .. reason)
+      error("thisval not operable: " .. reason)
+   end
+   
+   if radix then
+      ok, reason = isvalidradix(radix)
+      if not ok then
+         error("radix not valid radix: " .. reason)
+      end
+   else
+      radix = 10
    end
    
    thissign, thismag = getsignandmagnitude(thisval)
    
+   if thissign == 0 then
+      return "0"
+   end
    
+   stringarray = {}
+   
+   if thissign == -1 then
+      stringarray[1] = '-'
+   end
+   
+   --if #thismag < schoenhagebaseconversionthreshold then
+      smalltostring(stringarray, thismag, radix)
+   --else
+   --   largetostring(stringarray, thismag, radix)
+   --end
+   
+   return tableconcat(stringarray)
+end
+
+function intstringofradix(i, radix)
+    local d
+    local t = {}
+    
+    repeat
+        d = i % radix
+        t[#t + 1] = characters[d]
+        i = floor(i / radix)
+    until i == 0
+    
+    return string.reverse(tableconcat(t))
+end
+
+function smalltostring(stringarray, thismag, radix)
+   local q, r
+   local numstr
+   local d = intradix[radix]
+   local numgroups = 0
+   local digitsperint = digitsperinteger[radix]
+   local numstrarray = {}
+   
+   q = thismag
+   while #q > 0 do
+      q, r = divideoneword(q, d)
+      
+      numstr = intstringofradix(floor(r), radix)
+      numstrarray[#numstrarray + 1] = numstr
+   end
+   
+   stringarray[#stringarray + 1] = numstrarray[#numstrarray]
+   
+   for i = #numstrarray - 1, 1, -1 do
+      numstr = numstrarray[i]
+      stringarray[#stringarray + 1] = stringrep('0', digitsperint - #numstr)
+      stringarray[#stringarray + 1] = numstr
+   end
 end
 
 
