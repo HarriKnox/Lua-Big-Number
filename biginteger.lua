@@ -737,6 +737,54 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 
+function convertsignmagnitudetobytearrayto(sign, source, destination)
+   if sign == -1 then
+      negatebytearrayto(source, destination)
+      if getbytearraysign(destination) == 1 then
+         tableinsert(destination, 1, 0xffffffff)
+      end
+   else
+      clearandcopyintoarray(destination, source)
+      if getbytearraysign(destination) == -1 then
+         tableinsert(destination, 1, 0)
+      end
+   end
+   
+   return destination
+end
+
+function copyandconvertsignmagnitudetobytearray(sign, mag)
+   return convertsignmagnitudetobytearrayto(sign, mag, {})
+end
+
+function destructiveconvertsignmagnitudetobytearray(sign, mag)
+   return convertsignmagnitudetobytearrayto(sign, mag, mag)
+end
+
+
+function convertbytearraytosignmagnitudeto(source, destination)
+   local sign = getbytearraysign(source)
+   if sign == 0 then
+      return 0, cleararray(destination)
+   end
+   
+   if sign == -1 then
+      negatebytearrayto(source, destination)
+      return -1, destination
+   end
+   
+   return 1, destructivestripleadingzeros(destination)
+end
+
+function copyandconvertbytearraytosignmagnitude(bytearray)
+   return convertbytearraytosignmagnitudeto(bytearray, {})
+end
+
+function destructiveconvertbytearraytosignmagnitude(bytearray)
+   return convertbytearraytosignmagnitudeto(bytearray, bytearray)
+end
+
+
 --[[ Private Getter functions ]]
 function gettype(thing)
    return (isvalidinteger(thing) and 'integer') or
@@ -1026,54 +1074,6 @@ function getleadingzeroslong(long)
    end
    
    return leadingzeros
-end
-
-
-function convertsignmagnitudetobytearrayto(sign, source, destination)
-   if sign == -1 then
-      negatebytearrayto(source, destination)
-      if getbytearraysign(destination) == 1 then
-         tableinsert(destination, 1, 0xffffffff)
-      end
-   else
-      clearandcopyintoarray(destination, source)
-      if getbytearraysign(destination) == -1 then
-         tableinsert(destination, 1, 0)
-      end
-   end
-   
-   return destination
-end
-
-function copyandconvertsignmagnitudetobytearray(sign, mag)
-   return convertsignmagnitudetobytearrayto(sign, mag, {})
-end
-
-function destructiveconvertsignmagnitudetobytearray(sign, mag)
-   return convertsignmagnitudetobytearrayto(sign, mag, mag)
-end
-
-
-function convertbytearraytosignmagnitudeto(source, destination)
-   local sign = getbytearraysign(source)
-   if sign == 0 then
-      return 0, cleararray(destination)
-   end
-   
-   if sign == -1 then
-      negatebytearrayto(source, destination)
-      return -1, destination
-   end
-   
-   return 1, destructivestripleadingzeros(destination)
-end
-
-function copyandconvertbytearraytosignmagnitude(bytearray)
-   return convertbytearraytosignmagnitudeto(bytearray, {})
-end
-
-function destructiveconvertbytearraytosignmagnitude(bytearray)
-   return convertbytearraytosignmagnitudeto(bytearray, bytearray)
 end
 
 
