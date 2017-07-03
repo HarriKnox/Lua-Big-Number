@@ -2882,7 +2882,7 @@ function destructivedivideknuth(dividend, divisor)
    remainder = copyandleftshift(dividend, shift)
    
    quotientlength = #remainder - divisorlength + 1
-   quotient = allocatearray(quotientlength)
+   quotient = {}
    
    tableinsert(remainder, 1, 0)
    
@@ -2914,10 +2914,7 @@ function destructivedivideknuth(dividend, divisor)
                qrem = (int) (tmp >>> 32);
             }
          --]]
-          -- multiply by float to force it to a positive float in Lua 5.3
-         qhat = make32bitinteger(floor((nh * 0x100000000.0 + nm) / divhigh))
-         _, temp = integermultiplyandaddtosplitlong(qhat, divhigh, 0)
-         qrem = make32bitinteger(nm - temp)
+         _, qhat, qrem = divide64bitsby32bits(nh, nm, divhigh)
       end
       
       --[[
@@ -2976,9 +2973,9 @@ function destructivedivideknuth(dividend, divisor)
             divisoradd(divisor, remainder, i)
             qhat = qhat - 1
          end
-         
-         quotient[i] = qhat
       end
+      
+      quotient[i] = qhat
    end
    
    destructiverightshift(remainder, shift)
@@ -3215,7 +3212,7 @@ function division(thisvalue, thatvalue)
    quotient, remainder = dividemagnitudes(thismag, thatmag)
    sign = thissign * thatsign
    
-   return constructorsignmagnitudetrusted(sign, quotient), constructorsignmagnitudetrusted(#remainder == 0 and 0 or thissign, remainder)
+   return constructorsignmagnitudetrusted(#quotient == 0 and 0 or sign, quotient), constructorsignmagnitudetrusted(#remainder == 0 and 0 or thissign, remainder)
 end
 
 function divideandremainder(thisvalue, thatvalue)
