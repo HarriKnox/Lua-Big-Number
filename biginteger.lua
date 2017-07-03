@@ -2796,43 +2796,39 @@ function mutablepow(bigint, exponent)
 end
 
 
-function destructivedivideoneword(dividend, divisor)
-   -- ensure dividend and divisor are both magnitudes
+function divideoneword(dividend, divisor)
+   -- ensure dividend is magnitude and divisor is 32-bit integer
    -- returns quotient and remainder, both magnitudes
-   local shift, div, qhat, qrem, _
+   local shift, qhat, qrem, _
    local quotient, remainder
    local dividendlength, dividendestimate
    
-   div = divisor[1]
-   shift = getleadingzeros(div)
+   shift = getleadingzeros(divisor)
    
    dividendlength = #dividend
    quotient = {}
    
    qrem = dividend[1]
-   if qrem < div then
+   if qrem < divisor then
       quotient[1] = 0
    else
-      quotient[1] = floor(qrem / div)
-      qrem = qrem - (quotient[1] * div)
+      quotient[1] = floor(qrem / divisor)
+      qrem = qrem - (quotient[1] * divisor)
    end
    
    for i = 2, dividendlength do
-      _, qhat, qrem = divide64bitsby32bits(qrem, dividend[i], div)
+      _, qhat, qrem = divide64bitsby32bits(qrem, dividend[i], divisor)
       
       quotient[i] = qhat
    end
    
    if shift > 0 then
-      qrem = qrem % div
+      qrem = qrem % divisor
    end
    
-   remainder = {qrem}
-   
    destructivestripleadingzeros(quotient)
-   destructivestripleadingzeros(remainder)
    
-   return quotient, remainder
+   return quotient, qrem
 end
 
 function multiplythensubtract(remainder, div, qhat, offset)
@@ -3186,7 +3182,8 @@ function dividemagnitudes(dividend, divisor)
       -- do direct math
       return {math.floor(dividend[1] / divisor[1])}, {dividend[1] % divisor[1]}
    elseif divisorlength == 1 then
-      return destructivedivideoneword(dividend, divisor)
+      quotient, remainder = divideoneword(dividend, divisor[1])
+      return quotient, {remainder}
    end
    
    if divisorlength >= burnikelzieglerthreshold and dividendlength - divisorlength >= burnikelziegleroffset then
