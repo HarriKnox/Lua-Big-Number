@@ -1882,6 +1882,7 @@ end
 
 
 --[[ Public Math Functions ]]
+-- Negation
 function negate(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
@@ -1905,6 +1906,7 @@ function mutablenegate(bigint)
 end
 
 
+-- Absolution
 function absolutevalue(bigint)
    local ok, reason = isvalidbiginteger(bigint)
    
@@ -1930,6 +1932,7 @@ function mutableabsolutevalue(bigint)
 end
 
 
+-- Addition
 function add(thisvalue, thatvalue)
    local sign, mag
    local thissign, thismag
@@ -2023,6 +2026,7 @@ function mutableadd(thisbigint, thatvalue)
 end
 
 
+-- Subtraction
 function subtract(thisvalue, thatvalue)
    local sign, mag
    local thissign, thatsign
@@ -2116,6 +2120,7 @@ function mutablesubtract(thisbigint, thatvalue)
 end
 
 
+-- Squarition
 function squarecolinplumb(mag)
    local maglength
    local result, resultlengh, index
@@ -2354,6 +2359,7 @@ function mutablesquare(bigint)
 end
 
 
+-- Multiplication
 function multiplycolinplumb(thismag, thatmag)
    local thislength, thatlength
    local resultlength, result
@@ -2637,6 +2643,7 @@ function mutablemultiply(thisbigint, thatvalue)
 end
 
 
+-- Exponentiation
 function raisemagnitude(mag, exponent)
    local highest, lowest
    local highexponent, _
@@ -2797,6 +2804,7 @@ function mutablepow(bigint, exponent)
 end
 
 
+-- Division
 function divideoneword(dividend, divisor)
    -- ensure dividend is magnitude and divisor is 32-bit integer
    -- returns quotient and remainder, both magnitudes
