@@ -77,8 +77,7 @@ _ENV = bi
 ]]
 
 --[[ To-do list:
- * unbreak division, again, for both Lua 5.2 and 5.3
- * tostring
+ * fix multiplication/squaring
  * GCD
  * modulus
  * quick increment and decrement
