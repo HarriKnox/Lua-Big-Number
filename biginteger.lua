@@ -3245,79 +3245,81 @@ function tostring(thisval, radix)
 end
 
 
--- temporary functions to print the number in hexadecimal or binary
-function getintegerstringhexadecimal(number)
-   return string.format('%08x', number)
-   --[[local str, index = {}, 1
-   
-   for i = 28, 0, -4 do
-      str[index], index = characters[bitand(bitrightshift(number, i), 0xf)], index + 1
-   end
-   
-   return table.concat(str)]]
-end
-
-function getintegerstringbinary(number)
-   local str, index = {}, 1
-   
-   for i = 31, 0, -1 do
-      str[index], index = characters[bitand(bitrightshift(number, i), 0x1)], index + 1
-   end
-   
-   return table.concat(str)
-end
-
-function printhex(number)
-   print(getintegerstringhexadecimal(number))
-end
-
-function printhexlong(high, low)
-   print(getintegerstringhexadecimal(high) .. getintegerstringhexadecimal(low))
-end
-
-function printarray(arr)
-   print(stringofbytearray(arr))
-end
-
-function stringofbytearray(bigint, dobinary)
-   local bytearray, balen, str
-   local ok, reason = isvalidoperablevalue(bigint)
-   
-   if not ok then
-      error("bigint not operable: " .. reason)
-   end
-   
-   bytearray = getbytearray(bigint)
-   balen = #bytearray
-   
-   if dobinary then
-      if balen == 0 then
-         return string.rep('0', 32)
+do -- Temp stuff, wrapped for organization
+   -- temporary functions to print the number in hexadecimal or binary
+   function getintegerstringhexadecimal(number)
+      return string.format('%08x', number)
+      --[[local str, index = {}, 1
+      
+      for i = 28, 0, -4 do
+         str[index], index = characters[bitand(bitrightshift(number, i), 0xf)], index + 1
       end
       
-      str = getintegerstringbinary(getbytefromend(bytearray, 0))
-   
-      for i = 1, balen - 1 do
-         str = getintegerstringbinary(getbytefromend(bytearray, i)) .. '_' .. str
-      end
-   else
-      local str = {'{'}
+      return table.concat(str)]]
+   end
+
+   function getintegerstringbinary(number)
+      local str, index = {}, 1
       
-      if #bytearray > 0 then
-         table.insert(str, '0x')
-         table.insert(str, getintegerstringhexadecimal(bytearray[1]))
-      end
-   
-      for i = 2, balen do
-         table.insert(str, ', 0x')
-         table.insert(str, getintegerstringhexadecimal(bytearray[i]))
+      for i = 31, 0, -1 do
+         str[index], index = characters[bitand(bitrightshift(number, i), 0x1)], index + 1
       end
       
-      table.insert(str, '}')
       return table.concat(str)
    end
-   
-   return str
+
+   function printhex(number)
+      print(getintegerstringhexadecimal(number))
+   end
+
+   function printhexlong(high, low)
+      print(getintegerstringhexadecimal(high) .. getintegerstringhexadecimal(low))
+   end
+
+   function printarray(arr)
+      print(stringofbytearray(arr))
+   end
+
+   function stringofbytearray(bigint, dobinary)
+      local bytearray, balen, str
+      local ok, reason = isvalidoperablevalue(bigint)
+      
+      if not ok then
+         error("bigint not operable: " .. reason)
+      end
+      
+      bytearray = getmagnitude(bigint)
+      balen = #bytearray
+      
+      if dobinary then
+         if balen == 0 then
+            return string.rep('0', 32)
+         end
+         
+         str = getintegerstringbinary(getbytefromend(bytearray, 0))
+      
+         for i = 1, balen - 1 do
+            str = getintegerstringbinary(getbytefromend(bytearray, i)) .. '_' .. str
+         end
+      else
+         local str = {'{'}
+         
+         if #bytearray > 0 then
+            table.insert(str, '0x')
+            table.insert(str, getintegerstringhexadecimal(bytearray[1]))
+         end
+      
+         for i = 2, balen do
+            table.insert(str, ', 0x')
+            table.insert(str, getintegerstringhexadecimal(bytearray[i]))
+         end
+         
+         table.insert(str, '}')
+         return table.concat(str)
+      end
+      
+      return str
+   end
 end
 
 function reload()
