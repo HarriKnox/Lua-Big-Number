@@ -2122,63 +2122,87 @@ end
 
 -- Squarition
 function squarecolinplumb(mag)
+--[[
+               a  b  c  d  e
+            *  a  b  c  d  e
+            ==================
+               ae be ce de EE
+            ad bd cd DD de
+         ac bc CC cd ce
+      ab BB bc bd be
+   AA ab ac ad ae
+   
+   There is the diagonal:
+                           EE
+                     DD
+               CC
+         BB
+   AA
+   
+   And two triangles of the same set of products
+               ae be ce de
+            ad bd cd
+         ac bc
+      ab
+                        de
+                  cd ce
+            bc bd be
+      ab ac ad ae
+   
+   So diagonal + 2 * triangles
+--]]
    local maglength
-   local result, resultlengh, index
+   local resultlengh, index
+   local diagonal, triangle
    local carry, piece
    local producthigh, productlow, extraint
    
    maglength = #mag
    resultlength = maglength * 2
    
-   result = allocatearray(resultlength)
+   diagonal = allocatearray(resultlength)
    
    for i = 0, maglength - 1 do
-      -- Multiply all squares and put them to result
-      piece = getbytefromend(mag, i)
+      -- Multiply all squares on the diagonal and put them into diagonal
+      piece = mag[#mag - i]
       index = resultlength - i - i
-      result[index - 1], result[index] =
-         integermultiplyandaddtosplitlong(piece, piece, 0)
+      diagonal[index - 1], diagonal[index] = integermultiplyandaddtosplitlong(piece, piece, 0)
    end
    
-   destructiverightshift(result, 1)
+   triangle = allocatearray(resultlength)
    
    for i = 1, maglength - 1 do
       for j = 0, i - 1 do
          index = resultlength - i - j
-         producthigh, productlow = integermultiplyandaddtosplitlong(getbytefromend(mag, j),
-                                                                    getbytefromend(mag, i),
+         producthigh, productlow = integermultiplyandaddtosplitlong(mag[#mag - j],
+                                                                    mag[#mag - i],
                                                                     0)
          
-         -- Add productlow to the corresponding result byte and continue the
+         -- Add productlow to the corresponding triangle byte and continue the
          -- carry up to extraint
-         carry, result[index] = splitlong(result[index] + productlow)
-         extraint, producthigh = splitlong(producthigh + carry)
+         carry, triangle[index] = splitlong(triangle[index] + productlow * 2)
+         extraint, producthigh = splitlong(producthigh * 2 + carry)
          
-         -- Add producthigh to the next corresponding result byte and continue
+         -- Add producthigh to the next corresponding triangle byte and continue
          -- the carry to extraint
          index = index - 1
-         carry, result[index] = splitlong(result[index] + producthigh)
+         carry, triangle[index] = splitlong(triangle[index] + producthigh)
          --extraint = extraint + carry
          --carry = extraint
          carry = extraint + carry
          
-         -- set carry to extraint and propagate through the result
+         -- propagate carry (extraint) through the resulting triangle array
          while carry ~= 0 do
             index = index - 1
-            carry, result[index] = splitlong(result[index] + carry)
+            carry, triangle[index] = splitlong(triangle[index] + carry)
          end
       end
    end
    
-   destructiveleftshift(result, 1)
+   destructiveaddmagnitudes(triangle, diagonal)
+   destructivestripleadingzeros(triangle)
    
-   if bitand(getbytefromend(mag, 0), 1) == 1 then
-      result[resultlength] = result[resultlength] + 1
-   end
-   
-   destructivestripleadingzeros(result)
-   
-   return result
+   return triangle
 end
 
 function squarekaratsuba(mag)
@@ -2739,11 +2763,12 @@ function pow(value, exponent)
    
    result = raisemagnitude(mag, exponent)
    
-   if sign == -1 and bitand(exponent, 1) == 0 then
+   if sign == -1 and exponent % 2 == 0 then
       -- negative number and an even sign is the only instance of sign-changing
       -- if sign == 1 then x^e > 0 always
-      -- if sign == -1 then x^e > 0 if exponent is even
-      -- otherwise x^e < 0 if exponent is odd
+      -- if sign == -1 then
+      --    x^e > 0 if exponent is even
+      --    x^e < 0 if exponent is odd
       sign = 1
    end
    
