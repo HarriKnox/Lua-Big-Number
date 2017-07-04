@@ -2206,6 +2206,18 @@ function squarecolinplumb(mag)
 end
 
 function squarekaratsuba(mag)
+--[[
+   let B be the arbitrary base and Xx be the number we're squaring. X is the
+   upper half of the number and x is the lower half.
+   
+   Xx = X*B + x, so
+   Xx * Xx = (X*B + x)(X*B + x)
+           = X*X*B*B + X*B*x + x*X*B + x*x
+           = X^2*B^2 + 2*X*B*x + x^2
+           = ((X^2)*B + 2*X*x)*B + x^2
+   
+   Since in this case B is a power of 2, multiplying by B is a leftshift
+--]]
    local halfway, shiftup
    local upper, lower
    local uppersquared, lowersquared, innersquared
@@ -2218,8 +2230,7 @@ function squarekaratsuba(mag)
    
    uppersquared = squaremagnitude(upper)
    lowersquared = squaremagnitude(lower)
-   innersquared = destructiveaddmagnitudes(multiplymagnitudes(upper, lower),
-                                           multiplymagnitudes(lower, upper))
+   innersquared = destructiveleftshift(multiplymagnitudes(upper, lower), 1)
    
    destructiveleftshift(uppersquared, shiftup)
    destructiveaddmagnitudes(uppersquared, innersquared)
