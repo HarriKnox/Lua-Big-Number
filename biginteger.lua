@@ -1402,15 +1402,15 @@ function mutablebitwisenot(bigint)
 end
 
 
-function binarybitwise(thisvalue, thatvalue, bitwisefunction)
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise operation"))
+function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise " .. opname))
    
    return constructorbytearraytrusted(destructivemergebytearrays(getbytearray(thisvalue),
                                                                  getbytearray(thatvalue),
                                                                  bitwisefunction))
 end
 
-function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
+function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    local thatbytearray, _
    assert(isvalidbiginteger(thisbigint))
    
@@ -1431,38 +1431,38 @@ end
 
 
 function bitwiseand(thisvalue, thatvalue)
-   return binarybitwise(thisvalue, thatvalue, bitand)
+   return binarybitwise(thisvalue, thatvalue, bitand, "and")
 end
 
 function mutablebitwiseand(thisbigint, thatvalue)
-   return mutablebinarybitwise(thisbigint, thatvalue, bitand)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitand, "and")
 end
 
 
 function bitwiseandnot(thisvalue, thatvalue)
-   return binarybitwise(thisvalue, thatvalue, bitandnot)
+   return binarybitwise(thisvalue, thatvalue, bitandnot, "and-not")
 end
 
 function mutablebitwiseandnot(thisbigint, thatvalue)
-   return mutablebinarybitwise(thisbigint, thatvalue, bitandnot)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitandnot, "and-not")
 end
 
 
 function bitwiseor(thisvalue, thatvalue)
-   return binarybitwise(thisvalue, thatvalue, bitor)
+   return binarybitwise(thisvalue, thatvalue, bitor, "or")
 end
 
 function mutablebitwiseor(thisbigint, thatvalue)
-   return mutablebinarybitwise(thisbigint, thatvalue, bitor)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitor, "or")
 end
 
 
 function bitwisexor(thisvalue, thatbigint)
-   return binarybitwise(thisvalue, thatvalue, bitxor)
+   return binarybitwise(thisvalue, thatvalue, bitxor, "xor")
 end
 
 function mutablebitwisexor(thisbigint, thatvalue)
-   return mutablebinarybitwise(thisbigint, thatvalue, bitxor)
+   return mutablebinarybitwise(thisbigint, thatvalue, bitxor, "xor")
 end
 
 
