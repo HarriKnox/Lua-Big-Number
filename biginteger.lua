@@ -2637,7 +2637,7 @@ function mutablepow(bigint, exponent)
    local parttosquare, result
    
    assert(isvalidbiginteger(bigint))
-   assert(isvalid32bitinteger(exponent)
+   assert(isvalid32bitinteger(exponent))
    
    -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
    if exponent == 0 then
@@ -3109,7 +3109,7 @@ function makestring(thisval, radix)
    local thissign, thismag
    local stringarray
    
-   assert(isvalidoperablevalue(thisval)
+   assert(isvalidoperablevalue(thisval))
    
    if radix then
       assert(isvalidradix(radix))
