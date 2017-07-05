@@ -3258,10 +3258,8 @@ end
 
 -- Computercraft `os.loadAPI` compatibility
 if _CC_VERSION then
-   if tonumber(_CC_VERSION) < 1.75 then
       -- CC 1.75 fixed a bug with the bit32 library that would break this module
-      error("Harri's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
-   end
+   assert(tonumber(_CC_VERSION) >= 1.75, "Harri's BigInteger library compatibility for ComputerCraft requires CC version 1.75 or later")
    --_ENV.biginteger = biginteger
    return
 end
