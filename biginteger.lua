@@ -303,14 +303,6 @@ function isvalidbiginteger(bigint)
    return true
 end
 
-function isvalidoperablevalue(value)
-   if isvalidinteger(value) or isvalidbytearray(value) or isvalidbiginteger(value) then
-      return true
-   end
-   
-   return false, "not a valid operable value: it's a " .. type(value)
-end
-
 function isvalidradix(radix)
    local ok, reason = isvalidinteger(radix)
    local r = "not a valid radix: "
@@ -339,6 +331,22 @@ function isvalidstringnumber(str, radix)
    end
    
    return false, "not a valid string number: contains non-digit character"
+end
+
+function isvalidoperablevalue(value)
+   if isvalidinteger(value) or isvalidbytearray(value) or isvalidbiginteger(value) then
+      return true
+   end
+   
+   return false, "not a valid operable value: it's a " .. type(value)
+end
+
+function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
+   if isvalidoperablevalue(thisvalue) and isvalidoperablevalue(thatvalue) then
+      return true
+   end
+   
+   return false, "attempt to perform " .. operation .. " on " .. gettype(thisvalue) .. " and " .. gettype(thatvalue)
 end
 
 
@@ -1321,10 +1329,7 @@ function compare(thisvalue, thatvalue)
       return 0
    end
    
-   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform comparison on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
-   end
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "comparison"))
    
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
@@ -1398,10 +1403,7 @@ end
 
 
 function binarybitwise(thisvalue, thatvalue, bitwisefunction)
-   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform bitwise operation on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
-   end
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise operation"))
    
    return constructorbytearraytrusted(destructivemergebytearrays(getbytearray(thisvalue),
                                                                  getbytearray(thatvalue),
@@ -1823,10 +1825,7 @@ function add(thisvalue, thatvalue)
    local thatsign, thatmag
    local comparison
    
-   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform addition on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
-   end
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "addition"))
    
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
@@ -1913,10 +1912,7 @@ function subtract(thisvalue, thatvalue)
    local thismag, thatmag
    local comparison
    
-   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform subtraction on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
-   end
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "subtraction"))
    
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
@@ -2476,10 +2472,7 @@ function multiply(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    
-   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform multiplication on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
-   end
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "multiplication"))
    
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
@@ -3090,10 +3083,7 @@ function division(thisvalue, thatvalue)
    local thatsign, thatmag
    local sign, quotient, remainder
    
-   if not isvalidoperablevalue(thisvalue) or not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform division on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue))
-   end
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "division"))
    
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
