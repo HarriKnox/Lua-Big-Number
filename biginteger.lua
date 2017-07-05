@@ -349,6 +349,20 @@ function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
    return false, "attempt to perform " .. operation .. " on " .. gettype(thisvalue) .. " and " .. gettype(thatvalue)
 end
 
+function arevalidbigintegerandoperablevalue(bigint, value, operation)
+   local ok, reason = isvalidbiginteger(bigint)
+   
+   if not ok then
+      return false, reason
+   end
+   
+   if not isvalidoperablevalue(thatvalue) then
+      return false, "attempt to perform " .. operation .. " on biginteger and " .. gettype(value)
+   end
+   
+   return true
+end
+
 
 --[[ Helper Bitwise Functions ]]
 function make32bitinteger(number)
@@ -1412,12 +1426,8 @@ end
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    local thatbytearray, _
-   assert(isvalidbiginteger(thisbigint))
    
-   if not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform bitwise operation on biginteger and "
-         .. gettype(thatvalue))
-   end
+   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "bitwise " .. opname))
    
    thatbytearray = getbytearray(thatvalue)
    
@@ -1862,12 +1872,7 @@ end
 function mutableadd(thisbigint, thatvalue)
    local thatsign, thatmag
    
-   assert(isvalidbiginteger(thisbigint))
-   
-   if not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform addition on biginteger and "
-         .. gettype(thatvalue))
-   end
+   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "addition"))
    
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
@@ -1949,12 +1954,7 @@ end
 function mutablesubtract(thisbigint, thatvalue)
    local thatsign, thatmag
    
-   assert(isvalidbiginteger(thisbigint))
-   
-   if not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform addition on biginteger and "
-         .. gettype(thatvalue))
-   end
+   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "subtraction"))
    
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
@@ -2504,12 +2504,7 @@ function mutablemultiply(thisbigint, thatvalue)
    local mag
    local thatsign, thatmag
    
-   assert(isvalidbiginteger(thisbigint))
-   
-   if not isvalidoperablevalue(thatvalue) then
-      error("attempt to perform multiplication on biginteger and "
-         .. gettype(thatvalue))
-   end
+   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "multiplication"))
    
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
