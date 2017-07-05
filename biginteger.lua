@@ -1945,7 +1945,6 @@ end
 
 function mutablesubtract(thisbigint, thatvalue)
    local thatsign, thatmag
-   local ok, reason
    
    assert(isvalidbiginteger(thisbigint))
    
@@ -2228,7 +2227,6 @@ end
 
 function square(value)
    local sign, mag
-   local ok, reason
    
    assert(isvalidoperablevalue(value))
    
@@ -2598,7 +2596,6 @@ function raisemagnitude(mag, exponent)
 end
 
 function pow(value, exponent)
-   local ok, reason
    local sign, mag
    local highest, lowest
    local result
@@ -2641,7 +2638,6 @@ function pow(value, exponent)
 end
 
 function mutablepow(bigint, exponent)
-   local ok, reason
    local highest, lowest
    local parttosquare, result
    
@@ -3119,7 +3115,6 @@ end
 --[[ String Functions ]]
 function makestring(thisval, radix)
    local thissign, thismag
-   local ok, reason
    local stringarray
    
    assert(isvalidoperablevalue(thisval)
