@@ -1109,43 +1109,21 @@ function createbiginteger(sign, mag)
 end
 
 function constructorinteger(int)
-   local ok, reason = isvalidinteger(int)
-   if not ok then
-      error("int not valid integer: " .. reason)
-   end
+   assert(isvalidinteger(int))
    
    return createbiginteger(getnumbersignandmagnitude(int))
 end
 
 function constructorsignmagnitudetrusted(sign, mag)
-   local ok, reason
-   
-   ok, reason = isvalidsign(sign)
-   if not ok then
-      error("sign not valid sign: " .. reason)
-   end
-   
-   ok, reason = isvalidmagnitude(mag)
-   if not ok then
-      error("mag not valid magnitude: " .. reason)
-   end
-   
-   ok, reason = isvalidsignmagnitudecombination(sign, mag)
-   if not ok then
-      error("sign-magnitude mismatch: " .. reason)
-   end
+   assert(isvalidsign(sign))
+   assert(isvalidmagnitude(mag))
+   assert(isvalidsignmagnitudecombination(sign, mag))
    
    return createbiginteger(sign, mag)
 end
 
 function constructorsignmagnitude(sign, mag)
-   local magnitude
-   local ok, reason
-   
-   ok, reason = isvalidbytearray(mag)
-   if not ok then
-      error("mag not valid magnitude: " .. reason)
-   end
+   assert(isvalidbytearray(mag))
    
    return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
 end
@@ -1154,13 +1132,8 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    local mag = {}
    local numberofwords, excessbytes
    
-   if bitlength < 0 or bitlength % 1 ~= 0 then
-      error("bit length not valid: must be a non-negative integer")
-   end
-   
-   if type(randomnumbergenerator()) ~= "number" then
-      error("RNG function not valid: must return a number in the range [0, 1)")
-   end
+   assert(bitlength >= 0 and bitlength % 1 == 0, "bit length not valid: must be a non-negative integer")
+   assert(type(randomnumbergenerator()) == "number", "RNG function not valid: must return a number in the range [0, 1)")
    
    numberofwords = floor((bitlength + 31) / 32)
    for i = 1, numberofwords do
@@ -1180,12 +1153,8 @@ end
 
 function constructorbytearraytrusted(array)
    local sign, mag
-   local ok, reason
    
-   ok, reason = isvalidbytearray(array)
-   if not ok then
-      error("array not valid byte-array: " .. reason)
-   end
+   assert(isvalidbytearray(array))
    
    sign = getbytearraysign(array)
    
@@ -1209,15 +1178,8 @@ function constructorstringradix(str, radix)
    local ok, reason
    
    -- Some edits and changes occurred here
-   ok, reason = isvalidradix(radix)
-   if not ok then
-      error("radix not valid radix: " .. reason)
-   end
-   
-   ok, reason = isvalidstringnumber(str)
-   if not ok then
-      error("str not valid: " .. reason)
-   end
+   assert(isvalidradix(radix))
+   assert(isvalidstringnumber(str))
    
    strsign = stringmatch(str, '^[-+]')
    
@@ -1244,9 +1206,7 @@ function constructorstringradix(str, radix)
    
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
-   if numberofbits + 31 > 0xffffffff then
-      error("biginteger would overflow supported range")
-   end
+   assert(numberofbits + 31 >= 0xffffffff, "biginteger would overflow supported range")
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
    mag = allocatearray(numberofwords)
@@ -1290,10 +1250,7 @@ function constructorstringradix(str, radix)
 end
 
 function clone(bigint)
-   local ok, reason = isvalidbiginteger(bigint)
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
    
    return constructorsignmangitude(bigint.sign, bigint.magnitude)
 end
@@ -1415,20 +1372,14 @@ end
 
 --[[ Bitwise functions ]]
 function bitwisenot(value)
-   local ok, reason = isvalidoperablevalue(value)
-   if not ok then
-      error("value not operable: " .. reason)
-   end
+   assert(isvalidoperablevalue(value))
    
    return constructorbytearraytrusted(destructivemapbytearray(getbytearray(value), bitnot))
 end
 
 function mutablebitwisenot(bigint)
    local sign, bytearray, _
-   local ok, reason = isvalidbiginteger(bigint)
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
    
    destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
    destructivemapbytearray(bigint.magnitude, bitnot)
@@ -1452,10 +1403,7 @@ end
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction)
    local thatbytearray, _
-   local ok, reason = isvalidbiginteger(thisbigint)
-   if not ok then
-      error("thisbigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(thisbigint))
    
    if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform bitwise operation on biginteger and "
@@ -1611,17 +1559,9 @@ end
 
 function bitwiseshift(value, displacement, right)
    local sign, mag
-   local ok, reason
    
-   ok, reason = isvalidoperablevalue(value)
-   if not ok then
-      error("value not operable: " .. reason)
-   end
-   
-   ok, reason = isvalidabsolute32bitinteger(displacement)
-   if not ok then
-      error("displacement not valid 32-bit integer: " .. reason)
-   end
+   assert(isvalidoperablevalue(value))
+   assert(isvalidabsolute32bitinteger(displacement))
    
    sign, mag = getsignandmagnitude(value)
    destructivebitwiseshift(mag, displacement, right)
@@ -1638,15 +1578,8 @@ function bitwiseshift(value, displacement, right)
 end
 
 function mutablebitwiseshift(bigint, displacement, right)
-   local ok, reason = isvalidbiginteger(bigint)
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
-   
-   ok, reason = isvalidabsolute32bitinteger(displacement)
-   if not ok then
-      error("displacement not valid 32-bit integer: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
+   assert(isvalidabsolute32bitinteger(displacement))
    
    destructivebitwiseshift(bigint.magnitude, displacement, right)
    
@@ -1694,24 +1627,11 @@ function destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
 end
 
 function bitwiseatbit(value, bitfromend, bitwisefunction)
-   local ok, reason
    local bytearray
    
-   ok, reason = isvalidoperablevalue(value)
-   
-   if not ok then
-      error("value not operable: " .. reason)
-   end
-   
-   ok, reason = isvalidinteger(bitfromend)
-   
-   if not ok then
-      error("bitfromend not valid integer: " .. reason)
-   end
-   
-   if bitfromend < 0 then
-      error("bitfromend not valid: negative")
-   end
+   assert(isvalidoperablevalue(value))
+   assert(isvalidinteger(bitfromend))
+   assert(bitfromend >= 0, "not valid integer: negative")
    
    bytearray = getbytearray(value)
    destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
@@ -1720,23 +1640,9 @@ function bitwiseatbit(value, bitfromend, bitwisefunction)
 end
 
 function mutablebitwiseatbit(bigint, bitfromend, bitwisefunction)
-   local ok, reason
-   
-   ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
-   
-   ok, reason = isvalidinteger(bitfromend)
-   
-   if not ok then
-      error("bitfromend not valid 32-bit integer: " .. reason)
-   end
-   
-   if bitfromend < 0 then
-      error("bitfromend not valid: negative")
-   end
+   assert(isvalidbiginteger(bigint))
+   assert(isvalidinteger(bitfromend))
+   assert(bitfromend >= 0, "not valid integer: negative")
    
    destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
    destructivebitwiseatbit(bigint.magnitude, bitfromend, bitwisefunction)
@@ -1772,25 +1678,12 @@ end
 
 
 function testbit(value, bitfromend)
-   local ok, reason
    local bytearray, length
    local byte, bit
    
-   ok, reason = isvalidoperablevalue(value)
-   
-   if not ok then
-      error("value not operable: " .. reason)
-   end
-   
-   ok, reason = isvalidinteger(bitfromend)
-   
-   if not ok then
-      error("bitfromend not integer: " .. reason)
-   end
-   
-   if bitfromend < 0 then
-      error("bitfromend not valid: negative")
-   end
+   assert(isvalidoperablevalue(value))
+   assert(isvalidinteger(bitfromend))
+   assert(bitfromend >= 0, "not valid integer: negative")
    
    byte, bit = splitlongtobytesandbits(bitfromend)
    bytearray = getbytearray(value)
@@ -1884,21 +1777,13 @@ end
 --[[ Public Math Functions ]]
 -- Negation
 function negate(bigint)
-   local ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
    
    return constructorsignmagnitudetrusted(-bigint.sign, copyarray(bigint))
 end
 
 function mutablenegate(bigint)
-   local ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
    
    bigint.sign = -bigint.sign
    
@@ -1908,21 +1793,13 @@ end
 
 -- Absolution
 function absolutevalue(bigint)
-   local ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
    
    return bigint.sign < 0 and negate(bigint) or bigint
 end
 
 function mutableabsolutevalue(bigint)
-   local ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(bigint))
    
    if bigint.sign == -1 then
       bigint.sign = 1
@@ -1978,12 +1855,8 @@ end
 
 function mutableadd(thisbigint, thatvalue)
    local thatsign, thatmag
-   local ok, reason
    
-   ok, reason = isvalidbiginteger(thisbigint)
-   if not ok then
-      error("thisbigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(thisbigint))
    
    if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on biginteger and "
@@ -2074,10 +1947,7 @@ function mutablesubtract(thisbigint, thatvalue)
    local thatsign, thatmag
    local ok, reason
    
-   ok, reason = isvalidbiginteger(thisbigint)
-   if not ok then
-      error("thisbigint not valid biginteger: " .. reason)
-   end
+   assert(isvalidbiginteger(thisbigint))
    
    if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform addition on biginteger and "
@@ -2360,10 +2230,7 @@ function square(value)
    local sign, mag
    local ok, reason
    
-   ok, reason = isvalidoperablevalue(value)
-   if not ok then
-      error("value not operable: " .. reason)
-   end
+   assert(isvalidoperablevalue(value))
    
    sign, mag = getsignandmagnitude(value)
    
@@ -2376,10 +2243,8 @@ end
 
 function mutablesquare(bigint)
    local mag
-   local ok, reason = isvalidbiginteger(bigint)
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
+   
+   assert(isvalidbiginteger(bigint))
    
    if bigint.sign == 0 then
       return bigint
@@ -2640,10 +2505,8 @@ end
 function mutablemultiply(thisbigint, thatvalue)
    local mag
    local thatsign, thatmag
-   local ok, reason = isvalidbiginteger(thisbigint)
-   if not ok then
-      error("thisbigint not valid bitinteger: " .. reason)
-   end
+   
+   assert(isvalidbiginteger(thisbigint))
    
    if not isvalidoperablevalue(thatvalue) then
       error("attempt to perform multiplication on biginteger and "
@@ -2740,17 +2603,8 @@ function pow(value, exponent)
    local highest, lowest
    local result
    
-   ok, reason = isvalidoperablevalue(value)
-   
-   if not ok then
-      error("value not operable: " .. reason)
-   end
-   
-   ok, reason = isvalid32bitinteger(exponent)
-   
-   if not ok then
-      error("exponent not valid: " .. reason)
-   end
+   assert(isvalidoperablevalue(value))
+   assert(isvalid32bitinteger(exponent))
    
    
    -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
@@ -2791,18 +2645,8 @@ function mutablepow(bigint, exponent)
    local highest, lowest
    local parttosquare, result
    
-   ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      error("bigint not valid biginteger: " .. reason)
-   end
-   
-   ok, reason = isvalid32bitinteger(exponent)
-   
-   if not ok then
-      error("exponent not valid: " .. reason)
-   end
-   
+   assert(isvalidbiginteger(bigint))
+   assert(isvalid32bitinteger(exponent)
    
    -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
    if exponent == 0 then
@@ -3202,9 +3046,9 @@ function dividemagnitudes(dividend, divisor)
    dividendlength = #dividend
    divisorlength = #divisor
    
-   if divisorlength == 0 then
-      error("division by zero")
-   elseif dividendlength == 0 then
+   assert(divisorlength > 0, "division by zero")
+   
+   if dividendlength == 0 then
       -- 0 / x = 0
       return dividend, {}
    end
@@ -3278,16 +3122,10 @@ function makestring(thisval, radix)
    local ok, reason
    local stringarray
    
-   ok, reason = isvalidoperablevalue(thisval)
-   if not ok then
-      error("thisval not operable: " .. reason)
-   end
+   assert(isvalidoperablevalue(thisval)
    
    if radix then
-      ok, reason = isvalidradix(radix)
-      if not ok then
-         error("radix not valid radix: " .. reason)
-      end
+      assert(isvalidradix(radix))
    else
       radix = 10
    end
@@ -3389,11 +3227,8 @@ do -- Temp stuff, wrapped for organization
 
    function stringofbytearray(bigint, dobinary)
       local bytearray, balen, str
-      local ok, reason = isvalidoperablevalue(bigint)
       
-      if not ok then
-         error("bigint not operable: " .. reason)
-      end
+      assert(isvalidoperablevalue(bigint))
       
       bytearray = getmagnitude(bigint)
       balen = #bytearray
