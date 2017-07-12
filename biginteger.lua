@@ -77,7 +77,6 @@ _ENV = bi
 ]]
 
 --[[ To-do list:
- * fix multiplication/squaring
  * GCD
  * modulus
  * quick increment and decrement
@@ -642,7 +641,9 @@ function gettoomcookslices(mag, fullsize)
       upperslice[uppersize - i] = mag[maglength - lowersize - middlesize - i]
    end
    
-   return upperslice, middleslice, lowerslice, size * 32
+   return destructivestripleadingzeros(upperslice),
+          destructivestripleadingzeros(middleslice),
+          destructivestripleadingzeros(lowerslice), size * 32
 end
 
 
@@ -1756,7 +1757,7 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    
    if comparemagnitudes(minuend, subtrahend) < 0 then
       -- minuend < subtrahend
-      smaller = minuend
+      smaller = copyarray(minuend)
       larger = subtrahend
    else
       -- minuend >= subtrahend
@@ -2015,8 +2016,7 @@ function squarecolinplumb(mag)
                ae be ce de
             ad bd cd
          ac bc
-      ab
-                        de
+      ab                de
                   cd ce
             bc bd be
       ab ac ad ae
@@ -2079,8 +2079,8 @@ end
 
 function squarekaratsuba(mag)
 --[[
-   let B be the arbitrary base and Xx be the number we're squaring. X is the
-   upper half of the number and x is the lower half.
+   let B be the arbitrary base and Xx be the number we're squaring where
+      Xx = X*B + x
    
    Xx = X*B + x, so
    Xx * Xx = (X*B + x)(X*B + x)
@@ -2175,7 +2175,7 @@ function squaretoomcook(mag)
    destructiveleftshift(da1, 1)
    destructivesubtractmagnitudes(da1, a0)
    v2 = squaremagnitude(da1)
-      
+   
    
    
    -- t2 = v2.subtract(vm1).exactDivideBy3(); last instance of v2, so t2 = v2
