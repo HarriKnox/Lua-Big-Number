@@ -85,6 +85,7 @@ _ENV = bi
  * string reading ("Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
  * metatable
  * ratio module
+ * proper encapsulation (surprisingly, not all functions are supposed to be public)
  * make fast (functional overhead for bitwise operations is high, but Lua 5.2 doesn't support bitwise sigils)
 ]]
 
@@ -94,7 +95,7 @@ local bitor  = (bit32 or bit).bor
 local bitnot = (bit32 or bit).bnot
 local bitxor = (bit32 or bit).bxor
 local bitleftshift  = (bit32 and bit32.lshift) or (bit and bit.blshift)
-local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogit_rshift)
+local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogic_rshift)
 local bitarithmeticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
 local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
@@ -3130,7 +3131,7 @@ function makestring(thisval, radix)
    end
    
    --if #thismag < schoenhagebaseconversionthreshold then
-      smalltostring(stringarray, thismag, radix)
+        smalltostring(stringarray, thismag, radix)
    --else
    --   largetostring(stringarray, thismag, radix)
    --end
@@ -3139,12 +3140,10 @@ function makestring(thisval, radix)
 end
 
 function intstringofradix(i, radix)
-    local d
     local t = {}
     
     repeat
-        d = i % radix
-        t[#t + 1] = characters[d]
+        t[#t + 1] = characters[i % radix]
         i = floor(i / radix)
     until i == 0
     
