@@ -104,13 +104,15 @@ local ceil   = ceil   or math.ceil
 local max    = max    or math.max
 local min    = min    or math.min
 local abs    = abs    or math.abs
+local log    = log    or math.log
 local random = random or math.random
 
-local stringsub   = string.sub
-local stringmatch = string.match
-local stringrep   = string.rep
-local tableconcat = table.concat
-local tableinsert = table.insert
+local stringsub     = string.sub
+local stringmatch   = string.match
+local stringrep     = string.rep
+local stringreverse = string.reverse
+local tableconcat   = table.concat
+local tableinsert   = table.insert
 -- Because of functional overhead, use table.insert only to insert in the
 -- middle/beginning of an array. Use `t[#t + 1] = _` when appending.
 
@@ -118,6 +120,8 @@ local tableinsert = table.insert
 local maxinteger         = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably (despite being a 32-bit library)
 local maxmagnitudelength =  0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per byte (allows for up to 2^51 bits)
 local negativemask       =      0x80000000 -- mask used for 32-bit integers to get sign
+
+local log2 = log(2)
 
 --[[ Threshold values ]]
 local karatsubasquarethreshold = 128
@@ -129,6 +133,9 @@ local toomcookmultiplythreshold = 240
 local burnikelzieglerthreshold = 80
 local burnikelziegleroffset = 40
 
+local schoenhagebaseconversionthreshold = 20
+
+--[[ Tables and Caches ]]
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
 local bitsperdigit = {
@@ -159,7 +166,10 @@ local intradix = {
    0x0e8d4a51, 0x1269ae40, 0x17179149, 0x1cb91000, 0x23744899, 0x2b73a840,
    0x34e63b41, 0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x039aa400}
 
-
+-- The list of ASCII characters used for each digit value, with the index as the
+-- value. Lowercase is used to increase variety in the heights of numbers.
+--              123abckz92gpqbn8 vs 123ABCKZ92GPQBN8
+--                        varied    a large rectangle
 local characters = {
    '1', '2', '3', '4', '5', '6', '7',
    '8', '9', 'a', 'b', 'c', 'd', 'e',
@@ -167,6 +177,31 @@ local characters = {
    'm', 'n', 'o', 'p', 'q', 'r', 's',
    't', 'u', 'v', 'w', 'x', 'y', 'z',
    [0] = '0'}
+
+-- The table of values `log(2) / log(i)`, used for large string base conversion.
+local radixlogs = {
+             nil ,             1 , log2 / log( 3), log2 / log( 4),
+   log2 / log( 5), log2 / log( 6), log2 / log( 7), log2 / log( 8),
+   log2 / log( 9), log2 / log(10), log2 / log(11), log2 / log(12),
+   log2 / log(13), log2 / log(14), log2 / log(15), log2 / log(16),
+   log2 / log(17), log2 / log(18), log2 / log(19), log2 / log(20),
+   log2 / log(21), log2 / log(22), log2 / log(23), log2 / log(24),
+   log2 / log(25), log2 / log(26), log2 / log(27), log2 / log(28),
+   log2 / log(29), log2 / log(30), log2 / log(31), log2 / log(32),
+   log2 / log(33), log2 / log(34), log2 / log(35), log2 / log(36)}
+
+-- The cache of powers r^2^n for each radix r, for large string base conversion.
+-- There are three layers of tables: this is an array of lists of magnitudes.
+--  * `powercache` is an array with radix indices
+--  * `powercache[radix] is a list with exponent indices
+--  * `powercache[radix][n] is an integer or a magnitude equal to radix^2^n
+local powercache = {
+       nil , { 2 ^ 2}, { 3 ^ 2}, { 4 ^ 2}, { 5 ^ 2}, { 6 ^ 2},
+   { 7 ^ 2}, { 8 ^ 2}, { 9 ^ 2}, {10 ^ 2}, {11 ^ 2}, {12 ^ 2},
+   {13 ^ 2}, {14 ^ 2}, {15 ^ 2}, {16 ^ 2}, {17 ^ 2}, {18 ^ 2},
+   {19 ^ 2}, {20 ^ 2}, {21 ^ 2}, {22 ^ 2}, {23 ^ 2}, {24 ^ 2},
+   {25 ^ 2}, {26 ^ 2}, {27 ^ 2}, {28 ^ 2}, {29 ^ 2}, {30 ^ 2},
+   {31 ^ 2}, {32 ^ 2}, {33 ^ 2}, {34 ^ 2}, {35 ^ 2}, {36 ^ 2}}
 
 
 --[[ Testing functions ]]
@@ -3108,7 +3143,7 @@ end
 --[[ String Functions ]]
 function makestring(thisval, radix)
    local thissign, thismag
-   local stringarray
+   local str
    
    assert(isvalidoperablevalue(thisval))
    
@@ -3124,19 +3159,9 @@ function makestring(thisval, radix)
       return "0"
    end
    
-   stringarray = {}
+   str = stringbuildrecursive(thismag, radix, 0)
    
-   if thissign == -1 then
-      stringarray[1] = '-'
-   end
-   
-   --if #thismag < schoenhagebaseconversionthreshold then
-        smalltostring(stringarray, thismag, radix)
-   --else
-   --   largetostring(stringarray, thismag, radix)
-   --end
-   
-   return tableconcat(stringarray)
+   return (thissign == -1 and '-' or '') .. str
 end
 
 function intstringofradix(i, radix)
@@ -3147,12 +3172,13 @@ function intstringofradix(i, radix)
         i = floor(i / radix)
     until i == 0
     
-    return string.reverse(tableconcat(t))
+    return stringreverse(tableconcat(t))
 end
 
-function smalltostring(stringarray, thismag, radix)
+function smalltostring(thismag, radix)
    local q, r
    local numstr
+   local stringarray
    local d = intradix[radix]
    local numgroups = 0
    local digitsperint = digitsperinteger[radix]
@@ -3166,13 +3192,69 @@ function smalltostring(stringarray, thismag, radix)
       numstrarray[#numstrarray + 1] = numstr
    end
    
-   stringarray[#stringarray + 1] = numstrarray[#numstrarray]
+   if #numstrarray == 0 then
+      return ''
+   end
+   
+   stringarray = {numstrarray[#numstrarray]}
    
    for i = #numstrarray - 1, 1, -1 do
       numstr = numstrarray[i]
       stringarray[#stringarray + 1] = stringrep('0', digitsperint - #numstr)
       stringarray[#stringarray + 1] = numstr
    end
+   
+   return tableconcat(stringarray)
+end
+
+function getpowercache(radix, exponent)
+   local sq
+   local radixcache = powercache[radix]
+   local pc
+   
+   for i = #radixcache + 1, exponent do
+      if type(radixcache[i - 1]) == 'number' then
+         sq = radixcache[i - 1] ^ 2
+         
+         if sq > maxinteger then
+            -- If using an int is possible, then use an int.
+            -- Use bigintegers only when number is too big for an int.
+            sq = squaremagnitude(getnumbermagnitude(radixcache[i - 1]))
+         end
+      else
+         sq = squaremagnitude(radixcache[i - 1])
+      end
+      radixcache[i] = sq
+      
+      --printarray(getmagnitude(sq))
+   end
+   
+   pc = radixcache[exponent]
+   
+   if type(pc) == 'number' then
+      return getnumbermagnitude(pc)
+   end
+   
+   return copyarray(pc)
+end
+
+function stringbuildrecursive(thismag, radix, digits)
+   local str, b, n, v, q, r, x
+   if #thismag < schoenhagebaseconversionthreshold then
+      str = smalltostring(thismag, radix)
+      return stringrep('0', digits - #str) .. str
+   end
+   
+   b = gethighestsetbit(thismag) + 1
+   n = floor(log(b * radixlogs[radix]) / log2 + 0.5) - 1
+   x = 2^n
+   
+   v = getpowercache(radix, n)
+   
+   q, r = dividemagnitudes(thismag, v)
+   
+   return stringbuildrecursive(q, radix, digits - x) ..
+          stringbuildrecursive(r, radix, x)
 end
 
 
