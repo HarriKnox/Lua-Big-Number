@@ -1244,7 +1244,7 @@ function constructorstringradix(str, radix)
    
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
-   assert(numberofbits + 31 >= 0xffffffff, "biginteger would overflow supported range")
+   assert(numberofbits + 31 <= 0xffffffff, "biginteger would overflow supported range")
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
    mag = allocatearray(numberofwords)
