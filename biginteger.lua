@@ -401,6 +401,7 @@ end
 
 --[[ Helper Bitwise Functions ]]
 function make32bitinteger(number)
+   -- bitand(number, 0xffffffff)
    return number % 0x100000000
 end
 
@@ -413,20 +414,6 @@ function long16bitrightshift(number)
    local x = number / 0x10000
    return x - (x % 1)
 end
-
---[[ function calls are slow
-function make32bitinteger(number)
-   return bitand(number, 0xffffffff)
-end
-
-function long32bitrightshift(number)
-   return floor(number / 0x100000000)
-end
-
-function long16bitrightshift(number)
-   return floor(number / 0x10000)
-end
---]]
 
 function long32bitleftshift(number)
    return number * 0x100000000
