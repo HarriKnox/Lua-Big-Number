@@ -402,12 +402,8 @@ end
 
 
 --[[ Helper Bitwise Functions ]]
-function isnegative32bitinteger(number)
-   return number >= negativemask
-end
-
 function getsignint(number)
-   return isnegative32bitinteger(number) and 0xffffffff or 0
+   return number >= negativemask and 0xffffffff or 0
 end
 
 
@@ -872,7 +868,7 @@ function getwordarraysign(array)
    if #array == 0 then
       return 0
    end
-   if isnegative32bitinteger(array[1]) then
+   if array[1] >= negativemask then
       return -1
    end
    for i = 1, #array do
@@ -978,11 +974,11 @@ function getwordarray(array)
    if sign == -1 then
       destructivenegatewordarray(mag)
       
-      if not isnegative32bitinteger(mag[1]) then
+      if mag[1] < negativemask then
          tableinsert(mag, 1, 0xffffffff)
       end
    elseif sign == 1 then
-      if isnegative32bitinteger(mag[1]) then
+      if mag[1] >= negativemask then
          tableinsert(mag, 1, 0)
       end
    end
