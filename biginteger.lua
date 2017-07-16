@@ -27,7 +27,7 @@ _ENV = bi
       first byte is a negative Two's complement number, then the byte-array
       will be considered negative: leading zeros will prevent the byte-array
       from being interpreted as negative. Likewise, if the first element is
-      not negative, the byte-array will be considered positive: leading sign
+      not negative, the byte-array will be considered not negative: leading sign
       bits [0xffffffff] will prevent the byte-array from being interpreted as
       positive.
        * {   0xffff0000} = -65'536 (negative)
@@ -37,11 +37,12 @@ _ENV = bi
        * {0xffffffff, 0x0000ffff} = -4'294'901'761 (negative)
       
    e) Note: For testing and iterating through byte-arrays the default length
-      operator (#) is used. This means that the byte-array must have a
-      sequence of numbers for all indices between 1 and #array (that is to
-      say for all 1 <= i <= #array, t[i] ~= nil). If #array == 0 then the
-      byte-array is still valid: it has a zero-length sequence and is thus
-      equal to 0 (zero).
+      operator (#) is used. A valid byte-array must have a sequence of 32-bit
+      numbers for all indices between 1 and #array (that is to say
+      for all 1 <= i <= #array, t[i] is a valid 32-bit integer). If there is
+      any value that is not a 32-bit-integer in the range, it will fail the
+      test. If #array == 0 then the byte-array is still valid: it has a
+      zero-length sequence and is thus equal to 0 (zero).
       
    f) Note: Since a byte-array is a table, it may have keys and values that
       are not in the sequence (such as t.name = 'Harri'). It is possible for
@@ -61,6 +62,10 @@ _ENV = bi
    b) Leading zeros are not allowed, and thus a magnitude of only zeros is
       not allowed. A zero-length magnitude is the only magnitude equal to 0.
       This ensures every magnitude is unique.
+   
+   c) Aside from the public function `constructorsignmagnitude`, magnitudes are
+      completely internally used: all public functions that interpret arrays of
+      bytes will interpret those arrays of bytes as byte-arrays, not magnitudes.
    
  * Sign (different than the sign bit for a Two's complement number):
    Either -1, 0, or +1; determines whether the value is negative, zero, or
@@ -85,6 +90,7 @@ _ENV = bi
  * string reading ("Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
  * metatable
  * ratio module
+ * complex number module
  * proper encapsulation (surprisingly, not all functions are supposed to be public)
  * make fast (functional overhead for bitwise operations is high, but Lua 5.2 doesn't support bitwise sigils)
 ]]
