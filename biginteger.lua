@@ -14,9 +14,12 @@ _ENV = bi
       
    b) A zero-length array or array of all zeros is logically equivalent to 0.
       
-   c) The array is one-indexed (indices start at 1 not 0) and big-endian. If
-      the array has a word 0 (array[0]), it will not be read. Word 1 is the
-      most significant word.
+   c) The array is one-indexed (indices start at 1 not 0). If the array has a
+      word 0 (array[0]), it will not be read. At a high level, the array is
+      big-endian: array[1] is the most significant word; however, to the public
+      the array is little-endian 0-indexed. Functions called by the user that
+      take a bit or word index treat the index as a little-endian index: that
+      is, bit 0 is the least significant bit.
       
    d) The array is interpreted as a Two's complement number: the sign of the
       word-array is determined by the sign the most significant word. If the
@@ -1269,8 +1272,8 @@ function comparemagnitudes(thismag, thatmag)
    local thatlength = #thatmag
    
    if thislength ~= thatlength then
-      -- If the magnitudes are different sizes, then they cannot be equal
-      -- The function assumes magnitudes, so leading zeros aren't allowed
+      -- If the magnitudes are different sizes, then they cannot be equal.
+      -- The function assumes magnitudes, so leading zeros will cause problems
       return thislength > thatlength and 1 or -1
    end
    
@@ -1424,6 +1427,7 @@ function mutablebitwisexor(thisbigint, thatvalue)
 end
 
 
+--[[ Shifting ]]
 function destructiveleftshift(mag, displacement)
    local maglength
    local numberofbits, numberofwords
@@ -1473,9 +1477,7 @@ function destructiverightshift(mag, displacement)
    if numberofwords >= maglength then
       -- when right-shifting more bits than there are in the array, the result
       -- is -1 for negative values and 0 for non-negative values
-      cleararray(mag)
-      
-      return mag
+      return cleararray(mag)
    end
    
    numberofbitsadjusted = 32 - numberofbits
@@ -1580,6 +1582,7 @@ function mutablebitwiserightshift(bigint, displacement)
 end
 
 
+--[[ Bitwise at Bit ]]
 function destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
    local word, bit, length
    
