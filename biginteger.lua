@@ -1070,16 +1070,6 @@ function getminimizedwordarray(array)
    return wordarray
 end
 
-function getwordfromend(array, displacement)
-   local arraylength = #array
-   
-   if displacement < 0 or displacement >= arraylength then
-      return 0
-   end
-   
-   return array[arraylength - displacement]
-end
-
 
 function gethighestsetbit(array)
    -- Will return the little-endian index of the highest set bit,
@@ -1179,16 +1169,18 @@ function destructivemapwordarray(wordarray, mapfunction)
 end
 
 function destructivemergewordarrays(thiswordarray, thatwordarray, mergefunction)
-   local longerlength
+   local thislength, thatlength, longerlength
    
-   longerlength = max(#thiswordarray, #thatwordarray)
+   thislength = #thiswordarray
+   thatlength = #thatwordarray
+   longerlength = max(thislength, thatlength)
    
    destructivesignextendwordarray(thiswordarray, longerlength)
    destructivesignextendwordarray(thatwordarray, longerlength)
    
    for i = 0, longerlength - 1 do
-      thiswordarray[longerlen - i] = mergefunction(getwordfromend(thiswordarray, i),
-                                                   getwordfromend(thatwordarray, i))
+      thiswordarray[longerlen - i] = mergefunction((thiswordarray[thislength - i] or 0),
+                                                   (thatwordarray[thatlength - i] or 0))
    end
    
    return thiswordarray
@@ -1799,7 +1791,8 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    -- Will calculate the absolute difference between the magnitudes
    -- Will destructively write value into minuend
    local borrow, difference
-   local larger, largerlen, smaller
+   local larger, largerlength
+   local smaller, smallerlength
    
    if comparemagnitudes(minuend, subtrahend) < 0 then
       -- minuend < subtrahend
@@ -1811,14 +1804,15 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
       larger = minuend
    end
    
-   largerlen = #larger
+   largerlength = #larger
+   smallerlength = #smaller
    
    borrow = 0
    difference = 0
    
-   for i = 0, largerlen - 1 do
-      difference = getwordfromend(larger, i) -
-                   getwordfromend(smaller, i) -
+   for i = 0, largerlength - 1 do
+      difference = (larger[largerlength - i] or 0) -
+                   (smaller[smallerlength - i] or 0) -
                    borrow
       
       if difference < 0 then
@@ -1827,7 +1821,7 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
          borrow = 0
       end
       
-      minuend[largerlen - i] = make32bitinteger(difference)
+      minuend[largerlength - i] = make32bitinteger(difference)
    end
    
    destructivestripleadingzeros(minuend)
@@ -2322,8 +2316,8 @@ function multiplycolinplumb(thismag, thatmag)
    for i = 0, thislength - 1 do
       for j = 0, thatlength - 1 do
          index = resultlength - i - j
-         producthigh, productlow = integermultiplyandaddtosplitlong(getwordfromend(thismag, i),
-                                                                    getwordfromend(thatmag, j),
+         producthigh, productlow = integermultiplyandaddtosplitlong(thismag[thislength - i],
+                                                                    thatmag[thatlength - j],
                                                                     0)
          
          -- Add productlow to the corresponding result word and continue the
@@ -3316,10 +3310,10 @@ do -- Temp stuff, wrapped for organization
             return string.rep('0', 32)
          end
          
-         str = getintegerstringbinary(getwordfromend(wordarray, 0))
+         str = getintegerstringbinary(wordarray[balen])
       
          for i = 1, balen - 1 do
-            str = getintegerstringbinary(getwordfromend(wordarray, i)) .. '_' .. str
+            str = getintegerstringbinary(wordarray[balen - i]) .. '_' .. str
          end
       else
          local str = {'{'}
