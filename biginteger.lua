@@ -407,11 +407,6 @@ function make32bitinteger(number)
    return number % 0x100000000
 end
 
-function long32bitrightshift(number)
-   local x = number / 0x100000000
-   return x - (x % 1)
-end
-
 function isnegative32bitinteger(number)
    return number >= negativemask
 end
@@ -423,7 +418,7 @@ end
 
 --[[ Helper Integer and Long Functions ]]
 function splitlong(number)
-   return long32bitrightshift(number), make32bitinteger(number)
+   return floor(number / 0x100000000), make32bitinteger(number)
 end
 
 function splitlongandstripleadingzeros(number)
@@ -493,14 +488,14 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    local xa = x * a
    local xb = x * b
    
-   local xahigh = long16bitrightshift(xa)
+   local xahigh = floor(xa / 0x10000)
    local xalow = bitleftshift(xa, 16)
    
-   local xbhigh = long32bitrightshift(xb)
+   local xbhigh = floor(xb / 0x100000000)
    local xblow = make32bitinteger(xb)
    
    local lowword = xalow + xblow + c
-   local highword = xahigh + xbhigh + long32bitrightshift(lowword)
+   local highword = xahigh + xbhigh + floor(lowword / 0x100000000)
    lowword = make32bitinteger(lowword)
    
    return highword, lowword
