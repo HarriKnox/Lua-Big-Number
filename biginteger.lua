@@ -96,7 +96,6 @@ local bitnot = (bit32 or bit).bnot
 local bitxor = (bit32 or bit).bxor
 local bitleftshift  = (bit32 and bit32.lshift) or (bit and bit.blshift)
 local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogic_rshift)
-local bitarithmeticrightshift = (bit32 and bit32.arshift) or (bit and bit.brshift)
 local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
 local floor  = floor  or math.floor
@@ -105,8 +104,9 @@ local max    = max    or math.max
 local min    = min    or math.min
 local abs    = abs    or math.abs
 local log    = log    or math.log
-local random = random or math.random
 
+local stringchar    = string.char
+local stringbyte    = string.byte
 local stringsub     = string.sub
 local stringmatch   = string.match
 local stringrep     = string.rep
@@ -358,10 +358,10 @@ function isvalidstringnumber(str, radix)
    if radix <= 10 then
       pattern = '^[-+]?[0-' .. highest .. ']+$'
    else
-      pattern = '^[-+]?[0-9A-' .. string.char(highest + 55) .. 'a-' .. string.char(highest + 87) .. ']+$'
+      pattern = '^[-+]?[0-9A-' .. stringchar(highest + 55) .. 'a-' .. stringchar(highest + 87) .. ']+$'
    end
    
-   if string.match(str, pattern) then
+   if stringmatch(str, pattern) then
       return true
    end
    
@@ -498,14 +498,14 @@ end
 
 function divide64bitsby32bits(ah, al, b)
 -- This function wouldn't hurt from a 5.3 speed boost either (especially since 5.3 supports 64-bit integers anyway)
-   local ahhl = ah * 0x10000 + math.floor(al / 0x10000)
-   local q1 = math.floor(ahhl / b)
+   local ahhl = ah * 0x10000 + floor(al / 0x10000)
+   local q1 = floor(ahhl / b)
    local r1 = ahhl % b
    local r1al = r1 * 0x10000 + (al % 0x10000)
-   local q2 = math.floor(r1al / b)
+   local q2 = floor(r1al / b)
    local r2 = r1al % b
    local ql = ((q1 % 0x10000) * 0x10000) + (q2 % 0x100000000)
-   local qh = math.floor(q1 / 0x10000) + math.floor(q2 / 0x100000000)
+   local qh = floor(q1 / 0x10000) + floor(q2 / 0x100000000)
    if ql >= 0x100000000 then
       qh = qh + 1
       ql = ql - 0x100000000
@@ -863,7 +863,7 @@ function gettype(thing)
 end
 
 function getcharacternumericalvalue(character)
-   local bytevalue = string.byte(character)
+   local bytevalue = stringbyte(character)
    
    if bytevalue >= 48 and bytevalue <= 57 then
       -- if character is a number, returns in [0, 9]
@@ -3083,7 +3083,7 @@ function dividemagnitudes(dividend, divisor)
       -- dividend > divisor > 0, so dividendlengh >= divisorlength > 0
       -- if dividendlength == 1, then divisorlength == 1 as well
       -- do direct math
-      return {math.floor(dividend[1] / divisor[1])}, {dividend[1] % divisor[1]}
+      return {floor(dividend[1] / divisor[1])}, {dividend[1] % divisor[1]}
    elseif divisorlength == 1 then
       quotient, remainder = divideoneword(dividend, divisor[1])
       return quotient, {remainder}
