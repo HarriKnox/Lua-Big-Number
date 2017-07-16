@@ -7,28 +7,24 @@ _ENV = bi
  
  * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
    
- * Byte: A 32-bit integer represented as a Two's complement number, used in a
-   byte-array. Most languages define bytes as being 8-bit integers, not
-   32-bits. However, since 'byte' is the name of the elements in a byte-array
-   in the Java implementation, the name of the elements of the number-arrays
-   in this library is 'byte'.
+ * Word: A 32-bit integer represented as a Two's complement number.
    
- * Byte-Array: A sequence (table/array) of numbers that follows these rules
+ * Word-Array: A sequence (table/array) of numbers that follows these rules
    a) All numbers in the array are valid 32-bit integers.
       
    b) A zero-length array or array of all zeros is logically equivalent to 0.
       
    c) The array is one-indexed (indices start at 1 not 0) and big-endian. If
-      the array has a byte 0 (array[0]), it will not be read. Byte 1 is the
-      most significant byte.
+      the array has a word 0 (array[0]), it will not be read. Word 1 is the
+      most significant word.
       
    d) The array is interpreted as a Two's complement number: the sign of the
-      byte-array is determined by the sign the most significant byte. If the
-      first byte is a negative Two's complement number, then the byte-array
-      will be considered negative: leading zeros will prevent the byte-array
+      word-array is determined by the sign the most significant word. If the
+      first word is a negative Two's complement number, then the word-array
+      will be considered negative: leading zeros will prevent the word-array
       from being interpreted as negative. Likewise, if the first element is
-      not negative, the byte-array will be considered not negative: leading sign
-      bits [0xffffffff] will prevent the byte-array from being interpreted as
+      not negative, the word-array will be considered not negative: leading sign
+      bits [0xffffffff] will prevent the word-array from being interpreted as
       positive.
        * {   0xffff0000} = -65'536 (negative)
        * {0, 0xffff0000} = 4'294'901'760 (positive)
@@ -36,24 +32,24 @@ _ENV = bi
        * {            0x0000ffff} = 65'535 (positive)
        * {0xffffffff, 0x0000ffff} = -4'294'901'761 (negative)
       
-   e) Note: For testing and iterating through byte-arrays the default length
-      operator (#) is used. A valid byte-array must have a sequence of 32-bit
+   e) Note: For testing and iterating through word-arrays the default length
+      operator (#) is used. A valid word-array must have a sequence of 32-bit
       numbers for all indices between 1 and #array (that is to say
       for all 1 <= i <= #array, t[i] is a valid 32-bit integer). If there is
       any value that is not a 32-bit-integer in the range, it will fail the
-      test. If #array == 0 then the byte-array is still valid: it has a
+      test. If #array == 0 then the word-array is still valid: it has a
       zero-length sequence and is thus equal to 0 (zero).
       
-   f) Note: Since a byte-array is a table, it may have keys and values that
+   f) Note: Since a word-array is a table, it may have keys and values that
       are not in the sequence (such as t.name = 'Harri'). It is possible for
       someone to pass in any table/prototype/object and it will be
-      interpreted as a byte-array. Because of this, the only tables that
-      would otherwise pass the byte-array test will fail if they pass the
-      biginteger test (byte-array iff array of bytes and not biginteger): this
+      interpreted as a word-array. Because of this, the only tables that
+      would otherwise pass the word-array test will fail if they pass the
+      biginteger test (word-array iff array of words and not biginteger): this
       is so tables that could be interpreted as bigintegers would be interpreted
-      as bigintegers where they may have been interpreted as bytearrays.
+      as bigintegers where they may have been interpreted as word-arrays.
    
- * Magnitude: A type of byte-array with the following exceptions:
+ * Magnitude: A type of word-array with the following exceptions:
    a) All numbers are treated as unsigned (ignores negatives in
       Two's complement form).
        * {            0x0000ffff} = 65'535 (positive)
@@ -65,7 +61,7 @@ _ENV = bi
    
    c) Aside from the public function `constructorsignmagnitude`, magnitudes are
       completely internally used: all public functions that interpret arrays of
-      bytes will interpret those arrays of bytes as byte-arrays, not magnitudes.
+      words will interpret those arrays of words as word-arrays, not magnitudes.
    
  * Sign (different than the sign bit for a Two's complement number):
    Either -1, 0, or +1; determines whether the value is negative, zero, or
@@ -86,7 +82,7 @@ _ENV = bi
  * modulus
  * quick increment and decrement
  * prime number stuff
- * serializable magnitude/bytearray string
+ * serializable magnitude/wordarray string
  * string reading ("Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
  * metatable
  * ratio module
@@ -124,7 +120,7 @@ local tableinsert   = table.insert
 
 --[[ Constants ]]
 local maxinteger         = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably (despite being a 32-bit library)
-local maxmagnitudelength =  0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per byte (allows for up to 2^51 bits)
+local maxmagnitudelength =  0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per word (allows for up to 2^51 bits)
 local negativemask       =      0x80000000 -- mask used for 32-bit integers to get sign
 
 local log2 = log(2)
@@ -251,16 +247,16 @@ function isvalidabsolute32bitinteger(int)
    return ok, r .. reason
 end
 
-function isvalidbytearray(array)
+function isvalidwordarray(array)
    local ok, reason
-   local r = "not a valid byte-array: "
+   local r = "not a valid word-array: "
    
    if type(array) ~= 'table' then
       return false, r .. "not an array (table): it's a " .. type(array)
    end
    
    if isvalidbiginteger(array) then
-      return false, r .. "it's a biginteger and will not be treated as a byte-array"
+      return false, r .. "it's a biginteger and will not be treated as a word-array"
    end
    
    for i = 1, #array do
@@ -274,7 +270,7 @@ function isvalidbytearray(array)
 end
 
 function isvalidmagnitude(mag)
-   local ok, reason = isvalidbytearray(mag)
+   local ok, reason = isvalidwordarray(mag)
    local r = "not a valid magnitude: "
    
    if not ok then
@@ -375,7 +371,7 @@ function isvalidstringnumber(str, radix)
 end
 
 function isvalidoperablevalue(value)
-   if isvalidinteger(value) or isvalidbytearray(value) or isvalidbiginteger(value) then
+   if isvalidinteger(value) or isvalidwordarray(value) or isvalidbiginteger(value) then
       return true
    end
    
@@ -540,7 +536,7 @@ function divide64bitsby32bits(ah, al, b)
    return qh, ql, r2
 end
 
-function splitlongtobytesandbits(number)
+function splitlongtowordsandbits(number)
    return floor(number / 32), bitand(number, 0x1f)
 end
 
@@ -624,8 +620,8 @@ function splitmagnitudeintoblocks(mag, blocklength)
 end
 
 
---[[ Byte Array Functions ]]
-function splitarrayatbytefromend(mag, pivot)
+--[[ Word Array Functions ]]
+function splitarrayatwordfromend(mag, pivot)
    -- Will split an array into two smaller arrays, upper and lower such that
    --  * upper will contain all elements from 1 to #mag - pivot
    --  * lower will contain all elements from (#mag - pivot + 1) to #mag
@@ -697,14 +693,14 @@ function gettoomcookslices(mag, fullsize)
 end
 
 
-function signextendbytearrayto(source, destination, newlength)
+function signextendwordarrayto(source, destination, newlength)
    local length = #source
-   local signbytes = newlength - length
+   local signwords = newlength - length
    local signint = length > 0 and getsignint(source[1])
    
-   if signbytes <= 0 then
+   if signwords <= 0 then
       if source ~= destination then
-         -- if no sign bytes are being added and the source and destination are
+         -- if no sign words are being added and the source and destination are
          -- different, then copy the values from source to destination and
          -- return. If the source and destination are the same table, then do
          -- nothing and return.
@@ -715,23 +711,23 @@ function signextendbytearrayto(source, destination, newlength)
       return destination
    end
    
-   for i = newlength, signbytes + 1, -1 do
-      destination[i] = source[i - signbytes]
+   for i = newlength, signwords + 1, -1 do
+      destination[i] = source[i - signwords]
    end
    
-   for i = 1, signbytes do
+   for i = 1, signwords do
       destination[i] = signint
    end
    
    return destination
 end
 
-function copyandsignextendbytearray(array, newlength)
-   return signextendbytearrayto(array, {}, newlength)
+function copyandsignextendwordarray(array, newlength)
+   return signextendwordarrayto(array, {}, newlength)
 end
 
-function destructivesignextendbytearray(array, newlength)
-   return signextendbytearrayto(array, array, newlength)
+function destructivesignextendwordarray(array, newlength)
+   return signextendwordarrayto(array, array, newlength)
 end
 
 
@@ -784,7 +780,7 @@ function destructivestripleadingzeros(array)
 end
 
 
-function negatebytearrayto(source, destination)
+function negatewordarrayto(source, destination)
    --[[
       This function is correct, even though it seems it should do something with
       `addend` after the loop. The only number that would cause an overflow when
@@ -804,12 +800,12 @@ function negatebytearrayto(source, destination)
    return destination
 end
 
-function copyandnegatebytearray(array)
-   return negatebytearrayto(array, {})
+function copyandnegatewordarray(array)
+   return negatewordarrayto(array, {})
 end
 
-function destructivenegatebytearray(array)
-   return negatebytearrayto(array, array)
+function destructivenegatewordarray(array)
+   return negatewordarrayto(array, array)
 end
 
 
@@ -833,15 +829,15 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 
-function convertsignmagnitudetobytearrayto(sign, source, destination)
+function convertsignmagnitudetowordarrayto(sign, source, destination)
    if sign == -1 then
-      negatebytearrayto(source, destination)
-      if getbytearraysign(destination) == 1 then
+      negatewordarrayto(source, destination)
+      if getwordarraysign(destination) == 1 then
          tableinsert(destination, 1, 0xffffffff)
       end
    else
       clearandcopyintoarray(destination, source)
-      if getbytearraysign(destination) == -1 then
+      if getwordarraysign(destination) == -1 then
          tableinsert(destination, 1, 0)
       end
    end
@@ -849,35 +845,35 @@ function convertsignmagnitudetobytearrayto(sign, source, destination)
    return destination
 end
 
-function copyandconvertsignmagnitudetobytearray(sign, mag)
-   return convertsignmagnitudetobytearrayto(sign, mag, {})
+function copyandconvertsignmagnitudetowordarray(sign, mag)
+   return convertsignmagnitudetowordarrayto(sign, mag, {})
 end
 
-function destructiveconvertsignmagnitudetobytearray(sign, mag)
-   return convertsignmagnitudetobytearrayto(sign, mag, mag)
+function destructiveconvertsignmagnitudetowordarray(sign, mag)
+   return convertsignmagnitudetowordarrayto(sign, mag, mag)
 end
 
 
-function convertbytearraytosignmagnitudeto(source, destination)
-   local sign = getbytearraysign(source)
+function convertwordarraytosignmagnitudeto(source, destination)
+   local sign = getwordarraysign(source)
    if sign == 0 then
       return 0, cleararray(destination)
    end
    
    if sign == -1 then
-      negatebytearrayto(source, destination)
+      negatewordarrayto(source, destination)
       return -1, destination
    end
    
    return 1, destructivestripleadingzeros(destination)
 end
 
-function copyandconvertbytearraytosignmagnitude(bytearray)
-   return convertbytearraytosignmagnitudeto(bytearray, {})
+function copyandconvertwordarraytosignmagnitude(wordarray)
+   return convertwordarraytosignmagnitudeto(wordarray, {})
 end
 
-function destructiveconvertbytearraytosignmagnitude(bytearray)
-   return convertbytearraytosignmagnitudeto(bytearray, bytearray)
+function destructiveconvertwordarraytosignmagnitude(wordarray)
+   return convertwordarraytosignmagnitudeto(wordarray, wordarray)
 end
 
 
@@ -885,7 +881,7 @@ end
 function gettype(thing)
    return (isvalidinteger(thing) and 'integer') or
           (isvalidbiginteger(thing) and 'biginteger') or
-          (isvalidbytearray(thing) and 'byte-array') or
+          (isvalidwordarray(thing) and 'word-array') or
           type(thing)
 end
 
@@ -907,7 +903,7 @@ function getcharacternumericalvalue(character)
 end
 
 
-function getbytearraysign(array)
+function getwordarraysign(array)
    if #array == 0 then
       return 0
    end
@@ -922,17 +918,17 @@ function getbytearraysign(array)
    return 0
 end
 
-function getbytearraymagnitude(array)
-   if getbytearraysign(array) == -1 then
-      return copyandnegatebytearray(array)
+function getwordarraymagnitude(array)
+   if getwordarraysign(array) == -1 then
+      return copyandnegatewordarray(array)
    end
    return copyandstripleadingzeros(array)
 end
 
-function getbytearraysignandmagnitude(array)
-   local sign = getbytearraysign(array)
+function getwordarraysignandmagnitude(array)
+   local sign = getwordarraysign(array)
    if sign == -1 then
-      return sign, copyandnegatebytearray(array)
+      return sign, copyandnegatewordarray(array)
    end
    return sign, copyandstripleadingzeros(array)
 end
@@ -955,8 +951,8 @@ function getsign(value)
    if isvalidbiginteger(value) then
       return value.sign
       
-   elseif isvalidbytearray(value) then
-      return getbytearraysign(value)
+   elseif isvalidwordarray(value) then
+      return getwordarraysign(value)
       
    elseif isvalidinteger(value) then
       return getnumbersign(value)
@@ -970,8 +966,8 @@ function getmagnitude(value)
    if isvalidbiginteger(value) then
       return copyarray(value.magnitude)
       
-   elseif isvalidbytearray(value) then
-      return getbytearraymagnitude(value)
+   elseif isvalidwordarray(value) then
+      return getwordarraymagnitude(value)
       
    elseif isvalidinteger(value) then
       return getnumbermagnitude(value)
@@ -985,8 +981,8 @@ function getsignandmagnitude(value)
    if isvalidbiginteger(value) then
       return value.sign, copyarray(value.magnitude)
       
-   elseif isvalidbytearray(value) then
-      return getbytearraysignandmagnitude(value)
+   elseif isvalidwordarray(value) then
+      return getwordarraysignandmagnitude(value)
       
    elseif isvalidinteger(value) then
       return getnumbersignandmagnitude(value)
@@ -997,17 +993,17 @@ function getsignandmagnitude(value)
 end
 
 
-function getbytearray(array)
+function getwordarray(array)
    local sign, mag
    
-   if isvalidbytearray(array) then
+   if isvalidwordarray(array) then
       return copyarray(array)
    end
    
    sign, mag = getsignandmagnitude(array)
    
    if sign == -1 then
-      destructivenegatebytearray(mag)
+      destructivenegatewordarray(mag)
       
       if not isnegative32bitinteger(mag[1]) then
          tableinsert(mag, 1, 0xffffffff)
@@ -1021,8 +1017,8 @@ function getbytearray(array)
    return mag
 end
 
-function getminimizedbytearray(array)
-   local bytearray, balen
+function getminimizedwordarray(array)
+   local wordarray, balen
    local sign, signint
    local removals, endpoint
    
@@ -1032,23 +1028,23 @@ function getminimizedbytearray(array)
       return {}
    end
    
-   bytearray = getbytearray(array)
-   balen = #bytearray
+   wordarray = getwordarray(array)
+   balen = #wordarray
    
    removals = balen - 1
-   signint = getsignint(bytearray[1])
+   signint = getsignint(wordarray[1])
    
-   if bytearray[1] == signint then
+   if wordarray[1] == signint then
       for i = 1, balen - 1 do
-         if bytearray[i] == signint and bytearray[i + 1] ~= signint then
+         if wordarray[i] == signint and wordarray[i + 1] ~= signint then
             if signint == 0 then
-               if isnegative32bitinteger(bytearray[i + 1]) then
+               if isnegative32bitinteger(wordarray[i + 1]) then
                   removals = i - 1
                else
                   removals = i
                end
             else
-               if isnegative32bitinteger(bytearray[i + 1]) then
+               if isnegative32bitinteger(wordarray[i + 1]) then
                   removals = i
                else
                   removals = i - 1
@@ -1064,17 +1060,17 @@ function getminimizedbytearray(array)
    endpoint = balen - removals
    
    for i = 1, endpoint do
-      bytearray[i] = bytearray[i + removals]
+      wordarray[i] = wordarray[i + removals]
    end
    
    for i = endpoint + 1, balen do
-      bytearray[i] = nil
+      wordarray[i] = nil
    end
    
-   return bytearray
+   return wordarray
 end
 
-function getbytefromend(array, displacement)
+function getwordfromend(array, displacement)
    local arraylength = #array
    
    if displacement < 0 or displacement >= arraylength then
@@ -1092,11 +1088,11 @@ function gethighestsetbit(array)
    local highest
    local number, mask, index
    
-   for byte = arraylength - 1, 0, -1 do
+   for word = arraylength - 1, 0, -1 do
       for bit = 31, 0, -1 do
-         number = array[arraylength - byte]
+         number = array[arraylength - word]
          mask = bitleftshift(1, bit)
-         index = byte * 32 + bit
+         index = word * 32 + bit
          if bitand(number, mask) ~= 0 then
             return index
          end
@@ -1112,11 +1108,11 @@ function getlowestsetbit(array)
    local arraylength = #array
    local number, mask, index
    
-   for byte = 0, arraylength - 1 do
+   for word = 0, arraylength - 1 do
       for bit = 0, 31 do
-         number = array[arraylength - byte]
+         number = array[arraylength - word]
          mask = bitleftshift(1, bit)
-         index = byte * 32 + bit
+         index = word * 32 + bit
          if bitand(number, mask) ~= 0 then
             return index
          end
@@ -1173,29 +1169,29 @@ function getleadingzeroslong(long)
 end
 
 
---[[ Byte-Array Mappers ]]
-function destructivemapbytearray(bytearray, mapfunction)
-   for i = 1, #bytearray do
-      bytearray[i] = mapfunction(bytearray[i])
+--[[ Word-Array Mappers ]]
+function destructivemapwordarray(wordarray, mapfunction)
+   for i = 1, #wordarray do
+      wordarray[i] = mapfunction(wordarray[i])
    end
    
-   return bytearray
+   return wordarray
 end
 
-function destructivemergebytearrays(thisbytearray, thatbytearray, mergefunction)
+function destructivemergewordarrays(thiswordarray, thatwordarray, mergefunction)
    local longerlength
    
-   longerlength = max(#thisbytearray, #thatbytearray)
+   longerlength = max(#thiswordarray, #thatwordarray)
    
-   destructivesignextendbytearray(thisbytearray, longerlength)
-   destructivesignextendbytearray(thatbytearray, longerlength)
+   destructivesignextendwordarray(thiswordarray, longerlength)
+   destructivesignextendwordarray(thatwordarray, longerlength)
    
    for i = 0, longerlength - 1 do
-      thisbytearray[longerlen - i] = mergefunction(getbytefromend(thisbytearray, i),
-                                                   getbytefromend(thatbytearray, i))
+      thiswordarray[longerlen - i] = mergefunction(getwordfromend(thiswordarray, i),
+                                                   getwordfromend(thatwordarray, i))
    end
    
-   return thisbytearray
+   return thiswordarray
 end
 
 
@@ -1219,14 +1215,14 @@ function constructorsignmagnitudetrusted(sign, mag)
 end
 
 function constructorsignmagnitude(sign, mag)
-   assert(isvalidbytearray(mag))
+   assert(isvalidwordarray(mag))
    
    return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
 end
 
 function constructorbitsrng(bitlength, randomnumbergenerator)
    local mag = {}
-   local numberofwords, excessbytes
+   local numberofwords, excesswords
    
    assert(bitlength >= 0 and bitlength % 1 == 0, "bit length not valid: must be a non-negative integer")
    assert(type(randomnumbergenerator()) == "number", "RNG function not valid: must return a number in the range [0, 1)")
@@ -1239,30 +1235,30 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
                                 floor(randomnumbergenerator() * 0x10000))
    end
    
-   excessbytes = 32 * numberofwords - bitlength
-   mag[1] = bitand(mag[1], 2 ^ (32 - excessbytes) - 1)
+   excesswords = 32 * numberofwords - bitlength
+   mag[1] = bitand(mag[1], 2 ^ (32 - excesswords) - 1)
    
    destructivestripleadingzeros(mag)
    
    return createbiginteger(1, mag)
 end
 
-function constructorbytearraytrusted(array)
+function constructorwordarraytrusted(array)
    local sign, mag
    
-   assert(isvalidbytearray(array))
+   assert(isvalidwordarray(array))
    
-   sign = getbytearraysign(array)
+   sign = getwordarraysign(array)
    
    if sign == -1 then
-      destructivenegatebytearray(array)
+      destructivenegatewordarray(array)
    end
    
    return constructorsignmagnitudetrusted(sign, array)
 end
 
-function constructorbytearray(array)
-   return constructorbytearraytrusted(getbytearray(array))
+function constructorwordarray(array)
+   return constructorwordarraytrusted(getwordarray(array))
 end
 
 function constructorstringradix(str, radix)
@@ -1344,15 +1340,15 @@ function biginteger(a, b)
    if typea == 'integer' then
       if typeb == 'nil' then
          return constructorinteger(a)
-      elseif typeb == 'byte-array' then
+      elseif typeb == 'word-array' then
          return constructorsignmagnitude(a, b)
       elseif typeb == 'function' then
          return constructorbitsrng(a, b)
       end
    elseif typea == 'biginteger' and typeb == 'nil' then
       return clone(a)
-   elseif typea == 'byte-array' and typeb == 'nil' then
-      return constructorbytearray(a)
+   elseif typea == 'word-array' and typeb == 'nil' then
+      return constructorwordarray(a)
    elseif typea == 'string' then
       if typeb == 'nil' then
          return constructorstringradix(a, 10)
@@ -1451,17 +1447,17 @@ end
 function bitwisenot(value)
    assert(isvalidoperablevalue(value))
    
-   return constructorbytearraytrusted(destructivemapbytearray(getbytearray(value), bitnot))
+   return constructorwordarraytrusted(destructivemapwordarray(getwordarray(value), bitnot))
 end
 
 function mutablebitwisenot(bigint)
-   local sign, bytearray, _
+   local sign, wordarray, _
    assert(isvalidbiginteger(bigint))
    
-   destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
-   destructivemapbytearray(bigint.magnitude, bitnot)
+   destructiveconvertsignmagnitudetowordarray(bigint.sign, bigint.magnitude)
+   destructivemapwordarray(bigint.magnitude, bitnot)
    
-   bigint.sign, _ = destructiveconvertbytearraytosignmagnitude(bigint.magnitude)
+   bigint.sign, _ = destructiveconvertwordarraytosignmagnitude(bigint.magnitude)
    
    return bigint
 end
@@ -1470,22 +1466,22 @@ end
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise " .. opname))
    
-   return constructorbytearraytrusted(destructivemergebytearrays(getbytearray(thisvalue),
-                                                                 getbytearray(thatvalue),
+   return constructorwordarraytrusted(destructivemergewordarrays(getwordarray(thisvalue),
+                                                                 getwordarray(thatvalue),
                                                                  bitwisefunction))
 end
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
-   local thatbytearray, _
+   local thatwordarray, _
    
    assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "bitwise " .. opname))
    
-   thatbytearray = getbytearray(thatvalue)
+   thatwordarray = getwordarray(thatvalue)
    
-   destructiveconvertsignmagnitudetobytearray(thisbigint.sign, thisbigint.magnitude)
-   destructivemergebytearrays(thisbigint.magnitude, thatbytearray, bitwisefunction)
+   destructiveconvertsignmagnitudetowordarray(thisbigint.sign, thisbigint.magnitude)
+   destructivemergewordarrays(thisbigint.magnitude, thatwordarray, bitwisefunction)
    
-   thisbigint.sign, _ = destructiveconvertbytearraytosignmagnitude(thisbigint.magnitude)
+   thisbigint.sign, _ = destructiveconvertwordarraytosignmagnitude(thisbigint.magnitude)
    
    return thisbigint
 end
@@ -1529,7 +1525,7 @@ end
 
 function destructiveleftshift(mag, displacement)
    local maglength
-   local numberofbits, numberofbytes
+   local numberofbits, numberofwords
    local shiftmultiplier, carry
    
    if displacement == 0 then
@@ -1538,7 +1534,7 @@ function destructiveleftshift(mag, displacement)
    
    maglength = #mag
    
-   numberofbytes, numberofbits = splitlongtobytesandbits(displacement)
+   numberofwords, numberofbits = splitlongtowordsandbits(displacement)
    
    shiftmultiplier = bitleftshift(1, numberofbits)
    carry = 0
@@ -1549,7 +1545,7 @@ function destructiveleftshift(mag, displacement)
       end
    end
    
-   for i = 1, numberofbytes do
+   for i = 1, numberofwords do
       mag[maglength + i] = 0
    end
    
@@ -1562,7 +1558,7 @@ end
 
 function destructiverightshift(mag, displacement)
    local maglength
-   local numberofbits, numberofbytes
+   local numberofbits, numberofwords
    local numberofbitsadjusted
    local shiftmultiplier, lowbits, carry, oldcarry
    
@@ -1571,9 +1567,9 @@ function destructiverightshift(mag, displacement)
    end
    
    maglength = #mag
-   numberofbytes, numberofbits = splitlongtobytesandbits(displacement)
+   numberofwords, numberofbits = splitlongtowordsandbits(displacement)
    
-   if numberofbytes >= maglength then
+   if numberofwords >= maglength then
       -- when right-shifting more bits than there are in the array, the result
       -- is -1 for negative values and 0 for non-negative values
       cleararray(mag)
@@ -1594,7 +1590,7 @@ function destructiverightshift(mag, displacement)
       end
    end
    
-   for i = 0, numberofbytes - 1 do
+   for i = 0, numberofwords - 1 do
       mag[maglength - i] = nil
    end
    
@@ -1683,30 +1679,30 @@ function mutablebitwiserightshift(bigint, displacement)
 end
 
 
-function destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
-   local byte, bit, length
+function destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
+   local word, bit, length
    
-   byte, bit = splitlongtobytesandbits(bitfromend)
+   word, bit = splitlongtowordsandbits(bitfromend)
    
-   length = max(#bytearray, byte + 1)
+   length = max(#wordarray, word + 1)
    
-   destructivesignextendbytearray(bytearray, length)
-   bytearray[length - byte] = bitwisefunction(bytearray[length - byte], bitleftshift(1, bit))
+   destructivesignextendwordarray(wordarray, length)
+   wordarray[length - word] = bitwisefunction(wordarray[length - word], bitleftshift(1, bit))
    
-   return bytearray
+   return wordarray
 end
 
 function bitwiseatbit(value, bitfromend, bitwisefunction)
-   local bytearray
+   local wordarray
    
    assert(isvalidoperablevalue(value))
    assert(isvalidinteger(bitfromend))
    assert(bitfromend >= 0, "not valid integer: negative")
    
-   bytearray = getbytearray(value)
-   destructivebitwiseatbit(bytearray, bitfromend, bitwisefunction)
+   wordarray = getwordarray(value)
+   destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
    
-   return constructorbytearraytrusted(bytearray)
+   return constructorwordarraytrusted(wordarray)
 end
 
 function mutablebitwiseatbit(bigint, bitfromend, bitwisefunction)
@@ -1714,9 +1710,9 @@ function mutablebitwiseatbit(bigint, bitfromend, bitwisefunction)
    assert(isvalidinteger(bitfromend))
    assert(bitfromend >= 0, "not valid integer: negative")
    
-   destructiveconvertsignmagnitudetobytearray(bigint.sign, bigint.magnitude)
+   destructiveconvertsignmagnitudetowordarray(bigint.sign, bigint.magnitude)
    destructivebitwiseatbit(bigint.magnitude, bitfromend, bitwisefunction)
-   destructiveconvertbytearraytosignmagnitude(bigint.magnitude)
+   destructiveconvertwordarraytosignmagnitude(bigint.magnitude)
    
    return bigint
 end
@@ -1748,22 +1744,22 @@ end
 
 
 function testbit(value, bitfromend)
-   local bytearray, length
-   local byte, bit
+   local wordarray, length
+   local word, bit
    
    assert(isvalidoperablevalue(value))
    assert(isvalidinteger(bitfromend))
    assert(bitfromend >= 0, "not valid integer: negative")
    
-   byte, bit = splitlongtobytesandbits(bitfromend)
-   bytearray = getbytearray(value)
-   length = #bytearray
+   word, bit = splitlongtowordsandbits(bitfromend)
+   wordarray = getwordarray(value)
+   length = #wordarray
    
-   if byte >= length then
-      return getbytearraysign(bytearray) == -1
+   if word >= length then
+      return getwordarraysign(wordarray) == -1
    end
    
-   return bitand(bytearray[length - byte], bitleftshift(1, bit)) ~= 0
+   return bitand(wordarray[length - word], bitleftshift(1, bit)) ~= 0
 end
 
 
@@ -1821,8 +1817,8 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    difference = 0
    
    for i = 0, largerlen - 1 do
-      difference = getbytefromend(larger, i) -
-                   getbytefromend(smaller, i) -
+      difference = getwordfromend(larger, i) -
+                   getwordfromend(smaller, i) -
                    borrow
       
       if difference < 0 then
@@ -2100,12 +2096,12 @@ function squarecolinplumb(mag)
                                                                     mag[#mag - i],
                                                                     0)
          
-         -- Add productlow to the corresponding triangle byte and continue the
+         -- Add productlow to the corresponding triangle word and continue the
          -- carry up to extraint
          carry, triangle[index] = splitlong(triangle[index] + productlow * 2)
          extraint, producthigh = splitlong(producthigh * 2 + carry)
          
-         -- Add producthigh to the next corresponding triangle byte and continue
+         -- Add producthigh to the next corresponding triangle word and continue
          -- the carry to extraint
          index = index - 1
          carry, triangle[index] = splitlong(triangle[index] + producthigh)
@@ -2148,7 +2144,7 @@ function squarekaratsuba(mag)
    halfway = floor((#mag + 1) / 2)
    shiftup = halfway * 32
    
-   upper, lower = splitarrayatbytefromend(mag, halfway)
+   upper, lower = splitarrayatwordfromend(mag, halfway)
    
    uppersquared = squaremagnitude(upper)
    lowersquared = squaremagnitude(lower)
@@ -2326,16 +2322,16 @@ function multiplycolinplumb(thismag, thatmag)
    for i = 0, thislength - 1 do
       for j = 0, thatlength - 1 do
          index = resultlength - i - j
-         producthigh, productlow = integermultiplyandaddtosplitlong(getbytefromend(thismag, i),
-                                                                    getbytefromend(thatmag, j),
+         producthigh, productlow = integermultiplyandaddtosplitlong(getwordfromend(thismag, i),
+                                                                    getwordfromend(thatmag, j),
                                                                     0)
          
-         -- Add productlow to the corresponding result byte and continue the
+         -- Add productlow to the corresponding result word and continue the
          -- carry up to extraint
          carry, result[index] = splitlong(result[index] + productlow)
          extraint, producthigh = splitlong(producthigh + carry)
          
-         -- Add producthigh to the next corresponding result byte and continue
+         -- Add producthigh to the next corresponding result word and continue
          -- the carry to extraint
          index = index - 1
          carry, result[index] = splitlong(result[index] + producthigh)
@@ -2366,8 +2362,8 @@ function multiplykaratsuba(thismag, thatmag)
    halfway = floor((max(#thismag, #thatmag) + 1) / 2)
    shiftup = halfway * 32
    
-   thisupper, thislower = splitarrayatbytefromend(thismag, halfway)
-   thatupper, thatlower = splitarrayatbytefromend(thatmag, halfway)
+   thisupper, thislower = splitarrayatwordfromend(thismag, halfway)
+   thatupper, thatlower = splitarrayatwordfromend(thatmag, halfway)
    
    uppers = multiplymagnitudes(thisupper, thatupper)
    lowers = multiplymagnitudes(thislower, thatlower)
@@ -2500,14 +2496,14 @@ function multiplymagnitudes(thismag, thatmag)
    if min(thismaglen, thatmaglen) < karatsubamultiplythreshold then
       -- if either are less than the Karatsuba threshold then do
       -- Colin Plumb multiplication
-      -- Note: multiplying a large number (suppose it has 8'675'309-bytes) by a
-      -- small number (say at most 79-bytes) will use this method of muliplying
+      -- Note: multiplying a large number (suppose it has 8'675'309-words) by a
+      -- small number (say at most 79-words) will use this method of muliplying
       return multiplycolinplumb(thismag, thatmag)
    elseif max(thismaglen, thatmaglen) > toomcookmultiplythreshold then
       -- if either are greater than the Toom Cook threshold then do
       -- Toom Cook multiplication
-      -- Note: multiplying a large number (suppose it has 8'675'309 bytes) by a
-      -- small number (say at least 80 bytes) will use this method of muliplying
+      -- Note: multiplying a large number (suppose it has 8'675'309 words) by a
+      -- small number (say at least 80 words) will use this method of muliplying
       return multiplytoomcook(thismag, thatmag)
    end
    -- otherwise, do the Karatsuba multiplication
@@ -2952,9 +2948,9 @@ function divide2n1n(a, b)
    halfn = n / 2
    
    -- step 2: split A and B
-   -- A = [a1,a2,a3,a4], a123 = [a1,a2,a3], each ai has up to n/2 bytes
+   -- A = [a1,a2,a3,a4], a123 = [a1,a2,a3], each ai has up to n/2 words
    -- B = [b1,b2], but they're kept together in all calculations, so don't split
-   a123, a4 = splitarrayatbytefromend(a, halfn)
+   a123, a4 = splitarrayatwordfromend(a, halfn)
    
    -- step 3:   q1 = a123 / b,   R = [r1,r2] = a123 % b
    q1, r = divide3n2n(a123, b, halfn)
@@ -2979,11 +2975,11 @@ function divide3n2n(a, b, halfn)
    local one = {1} -- used for decrementing
    
    -- step 1: A = [a1,a2,a3], let a12 = [a1,a2]
-   a12, a3 = splitarrayatbytefromend(a, halfn)
-   a1, _ = splitarrayatbytefromend(a12, halfn)
+   a12, a3 = splitarrayatwordfromend(a, halfn)
+   a1, _ = splitarrayatwordfromend(a12, halfn)
    
    -- step 2: B = [b1,b2]
-   b1, b2 = splitarrayatbytefromend(b, halfn)
+   b1, b2 = splitarrayatwordfromend(b, halfn)
    
    if comparemagnitudes(a1, b1) < 0 then
       -- step 3a: a1<b1,   Q = a12 / b1,   R = a12 % b1
@@ -3304,38 +3300,38 @@ do -- Temp stuff, wrapped for organization
    end
 
    function printarray(arr)
-      print(stringofbytearray(arr))
+      print(stringofwordarray(arr))
    end
 
-   function stringofbytearray(bigint, dobinary)
-      local bytearray, balen, str
+   function stringofwordarray(bigint, dobinary)
+      local wordarray, balen, str
       
       assert(isvalidoperablevalue(bigint))
       
-      bytearray = getmagnitude(bigint)
-      balen = #bytearray
+      wordarray = getmagnitude(bigint)
+      balen = #wordarray
       
       if dobinary then
          if balen == 0 then
             return string.rep('0', 32)
          end
          
-         str = getintegerstringbinary(getbytefromend(bytearray, 0))
+         str = getintegerstringbinary(getwordfromend(wordarray, 0))
       
          for i = 1, balen - 1 do
-            str = getintegerstringbinary(getbytefromend(bytearray, i)) .. '_' .. str
+            str = getintegerstringbinary(getwordfromend(wordarray, i)) .. '_' .. str
          end
       else
          local str = {'{'}
          
-         if #bytearray > 0 then
+         if #wordarray > 0 then
             table.insert(str, '0x')
-            table.insert(str, getintegerstringhexadecimal(bytearray[1]))
+            table.insert(str, getintegerstringhexadecimal(wordarray[1]))
          end
       
          for i = 2, balen do
             table.insert(str, ', 0x')
-            table.insert(str, getintegerstringhexadecimal(bytearray[i]))
+            table.insert(str, getintegerstringhexadecimal(wordarray[i]))
          end
          
          table.insert(str, '}')
