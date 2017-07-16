@@ -193,8 +193,8 @@ local radixlogs = {
 -- The cache of powers r^2^n for each radix r, for large string base conversion.
 -- There are three layers of tables: this is an array of lists of magnitudes.
 --  * `powercache` is an array with radix indices
---  * `powercache[radix] is a list with exponent indices
---  * `powercache[radix][n] is an integer or a magnitude equal to radix^2^n
+--  * `powercache[radix]` is a list with exponent indices
+--  * `powercache[radix][n]` is an integer or a magnitude equal to radix^2^n
 local powercache = {
        nil , { 2 ^ 2}, { 3 ^ 2}, { 4 ^ 2}, { 5 ^ 2}, { 6 ^ 2},
    { 7 ^ 2}, { 8 ^ 2}, { 9 ^ 2}, {10 ^ 2}, {11 ^ 2}, {12 ^ 2},
@@ -423,7 +423,6 @@ function long16bitleftshift(number)
    return number * 0x10000
 end
 
-
 function isnegative32bitinteger(number)
    return number >= negativemask
 end
@@ -457,26 +456,48 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    incompatible with Lua 5.2. The alternative is to use strings and the `load`
    function. For example:
    
-function somearbitraryoperation(a, b, c)
-   return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
-end
+      function somearbitraryoperation(a, b, c)
+         return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
+      end
    
    becomes
    
-load("function somearbitraryoperation(a, b, c) \
-   return a & (~b << (c | 3)) \
-end")()
+      load("function somearbitraryoperation(a, b, c) \
+         return a & (~b << (c | 3)) \
+      end")()
+   
+   or
+   
+      somearbitraryoperation = load("return function(a, b, c) \
+         return a & (~b << (c | 3)) \
+      end")()
    
    The string keeps the 5.2 interpreter from erroring and the `load` allows the
    5.3 interpreter to understand and compile it. Because the `load` function
    returns an executable chunk without executing it you need to call it
    afterward. Also, quotes don't carry across newlines so I escaped the newlines
-   with the backslashes.
+   with the backslashes. Also also, I prefer the first option because it
+   produces a named chunk and not an anonymous chunk assigned to a variable.
    
-   The entire function needs to be wrapped in the load string. Simply using
-   load("function bitand(a, b) return a & b end")() and calling bitand will
-   still cause functional overhead.
+   
+   The entire function needs to be wrapped in the load string. Simply doing
+   
+      function somearbitraryoperation(a, b, c)
+         return load("return function(a, b) return a & b end")()(a, load("return function(a, b) return a << b end")()(load("return function(b) return ~b end")()(b), load("return function(c, d) return c | d end")()(c, 3)))
+      end
+   
+   will cause massive functional and loading overhead for each call.
+   
+   
+   Also, redefining `bitand`, `bitor`, and the other functions with `load` like
+   
+      bitand = load("return function(a, b) return a & b end")()
+      bitor = load("return function(a, b) return a | b end")()
+      bitor = load("return function(a) return ~a end")()
+   
+   will, again, cause functional overhead slowdowns.
 --]]
+
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
