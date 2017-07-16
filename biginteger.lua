@@ -401,12 +401,6 @@ function arevalidbigintegerandoperablevalue(bigint, value, operation)
 end
 
 
---[[ Helper Bitwise Functions ]]
-function getsignint(number)
-   return number >= negativemask and 0xffffffff or 0
-end
-
-
 --[[ Helper Integer and Long Functions ]]
 function splitlong(number)
    return floor(number / 0x100000000), number % 0x100000000
@@ -657,7 +651,7 @@ end
 function signextendwordarrayto(source, destination, newlength)
    local length = #source
    local signwords = newlength - length
-   local signint = length > 0 and getsignint(source[1])
+   local signint = length > 0 and source[1] >= negativemask and 0xffffffff or 0
    
    if signwords <= 0 then
       if source ~= destination then
@@ -2676,7 +2670,7 @@ function multiplythensubtract(remainder, div, qhat, offset)
    offset = offset + divlength
    
    for i = divlength, 1, -1 do
-      signint = getsignint(remainder[offset])
+      signint = remainder[offset] >= negativemask and 0xffffffff or 0
       producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
       differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
       differencehigh = (bitnot(producthigh) + differencehigh + signint) % 0x100000000
