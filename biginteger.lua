@@ -412,19 +412,6 @@ function long32bitrightshift(number)
    return x - (x % 1)
 end
 
-function long16bitrightshift(number)
-   local x = number / 0x10000
-   return x - (x % 1)
-end
-
-function long32bitleftshift(number)
-   return number * 0x100000000
-end
-
-function long16bitleftshift(number)
-   return number * 0x10000
-end
-
 function isnegative32bitinteger(number)
    return number >= negativemask
 end
