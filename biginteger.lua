@@ -416,18 +416,6 @@ function splitlong(number)
    return floor(number / 0x100000000), number % 0x100000000
 end
 
-function splitlongandstripleadingzeros(number)
-   local highword, lowword = splitlong(number)
-   
-   if highword == 0 then
-      if lowword == 0 then
-         return {}
-      end
-      return {lowword}
-   end
-   return {highword, lowword}
-end
-
 function integermultiplyandaddtosplitlong(x, ab, c)
 --[[
    Speed boost for Lua 5.3 using bitwise operators instead of function calls:
@@ -916,7 +904,15 @@ function getnumbersign(int)
 end
 
 function getnumbermagnitude(int)
-   return splitlongandstripleadingzeros(int < 0 and -int or int)
+   local highword, lowword = splitlong(int)
+   
+   if highword == 0 then
+      if lowword == 0 then
+         return {}
+      end
+      return {lowword}
+   end
+   return {highword, lowword}
 end
 
 function getnumbersignandmagnitude(int)
