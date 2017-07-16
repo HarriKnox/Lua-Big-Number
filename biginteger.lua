@@ -402,11 +402,6 @@ end
 
 
 --[[ Helper Bitwise Functions ]]
-function make32bitinteger(number)
-   -- bitand(number, 0xffffffff)
-   return number % 0x100000000
-end
-
 function isnegative32bitinteger(number)
    return number >= negativemask
 end
@@ -418,7 +413,7 @@ end
 
 --[[ Helper Integer and Long Functions ]]
 function splitlong(number)
-   return floor(number / 0x100000000), make32bitinteger(number)
+   return floor(number / 0x100000000), number % 0x100000000
 end
 
 function splitlongandstripleadingzeros(number)
@@ -492,11 +487,11 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    local xalow = bitleftshift(xa, 16)
    
    local xbhigh = floor(xb / 0x100000000)
-   local xblow = make32bitinteger(xb)
+   local xblow = xb % 0x100000000
    
    local lowword = xalow + xblow + c
    local highword = xahigh + xbhigh + floor(lowword / 0x100000000)
-   lowword = make32bitinteger(lowword)
+   lowword = lowword  % 0x100000000
    
    return highword, lowword
 end
@@ -1205,8 +1200,8 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    for i = 1, numberofwords do
       -- This weird multiplication-addition is necessary since the default
       -- math.random would not operate on all 32 bits
-      mag[i] = make32bitinteger(floor(randomnumbergenerator() * 0x10000) * 0x10000 +
-                                floor(randomnumbergenerator() * 0x10000))
+      mag[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 +
+               floor(randomnumbergenerator() * 0x10000)
    end
    
    excesswords = 32 * numberofwords - bitlength
@@ -1803,7 +1798,7 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
          borrow = 0
       end
       
-      minuend[largerlength - i] = make32bitinteger(difference)
+      minuend[largerlength - i] = difference % 0x100000000
    end
    
    destructivestripleadingzeros(minuend)
@@ -2746,7 +2741,7 @@ function multiplythensubtract(remainder, div, qhat, offset)
       signint = getsignint(remainder[offset])
       producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
       differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
-      differencehigh = make32bitinteger(bitnot(producthigh) + differencehigh + signint)
+      differencehigh = (bitnot(producthigh) + differencehigh + signint) % 0x100000000
       
       remainder[offset] = differencelow
       offset = offset - 1
@@ -2798,7 +2793,7 @@ function destructivedivideknuth(dividend, divisor)
       
       if nh == divhigh then
          qhat = 0xffffffff
-         qrem = make32bitinteger(nh + nm)
+         qrem = (nh + nm) % 0x100000000
          skipcorrection = bitxor(qrem, negativemask) < nh2
       else
          --[[
@@ -2848,7 +2843,7 @@ function destructivedivideknuth(dividend, divisor)
             
             if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
                qhat = qhat - 1
-               qrem = make32bitinteger(qrem + divhigh)
+               qrem = (qrem + divhigh) % 0x100000000
                
                if qrem >= divhigh then
                   if divlow > estproductlow then
@@ -2856,7 +2851,7 @@ function destructivedivideknuth(dividend, divisor)
                      estproductlow = estproductlow + 0x100000000
                   end
                   
-                  estproductlow = make32bitinteger(estproductlow - divlow)
+                  estproductlow = (estproductlow - divlow) % 0x100000000
                   
                   if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
                      qhat = qhat - 1
