@@ -1072,14 +1072,6 @@ end
 
 
 --[[ Word-Array Mappers ]]
-function destructivemapwordarray(wordarray, mapfunction)
-   for i = 1, #wordarray do
-      wordarray[i] = mapfunction(wordarray[i])
-   end
-   
-   return wordarray
-end
-
 function destructivemergewordarrays(thiswordarray, thatwordarray, mergefunction)
    local thislength, thatlength, longerlength
    
@@ -1348,10 +1340,18 @@ end
 
 
 --[[ Bitwise functions ]]
+function bitwisenotintodestination(wordarray, destination)
+   for i = 1, #wordarray do
+      destination[i] = bitnot(wordarray[i])
+   end
+   
+   return destination
+end
+
 function bitwisenot(value)
    assert(isvalidoperablevalue(value))
    
-   return constructorwordarraytrusted(destructivemapwordarray(getwordarray(value), bitnot))
+   return constructorwordarraytrusted(bitwisenotintodestination(getwordarray(value), {}))
 end
 
 function mutablebitwisenot(bigint)
@@ -1359,7 +1359,7 @@ function mutablebitwisenot(bigint)
    assert(isvalidbiginteger(bigint))
    
    destructiveconvertsignmagnitudetowordarray(bigint.sign, bigint.magnitude)
-   destructivemapwordarray(bigint.magnitude, bitnot)
+   bitwisenotintodestination(bigint.magnitude, bigint.magnitude)
    
    bigint.sign, _ = destructiveconvertwordarraytosignmagnitude(bigint.magnitude)
    
