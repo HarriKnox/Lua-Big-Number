@@ -843,23 +843,6 @@ function gettype(thing)
           type(thing)
 end
 
-function getcharacternumericalvalue(character)
-   local bytevalue = stringbyte(character)
-   
-   if bytevalue >= 48 and bytevalue <= 57 then
-      -- if character is a number, returns in [0, 9]
-      return bytevalue - 48
-   elseif bytevalue >= 65 and bytevalue <= 90 then
-      -- if character is uppercase Latin, returns in [10, 35]
-      return bytevalue - 55
-   elseif bytevalue >= 97 and bytevalue <= 122 then
-      -- if character is lowercase Latin, returns in [10, 35]
-      return bytevalue - 87
-   end
-   -- if character is not valid in base36, then return 36 to always fail test
-   return 36
-end
-
 
 function getwordarraysign(array)
    if #array == 0 then
