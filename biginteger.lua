@@ -3124,8 +3124,6 @@ function getpowercache(radix, exponent)
          sq = squaremagnitude(radixcache[i - 1])
       end
       radixcache[i] = sq
-      
-      --printarray(getmagnitude(sq))
    end
    
    pc = radixcache[exponent]
