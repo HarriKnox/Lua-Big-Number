@@ -880,7 +880,7 @@ function getnumbersign(int)
 end
 
 function getnumbermagnitude(int)
-   local highword, lowword = splitlong(int)
+   local highword, lowword = splitlong(abs(int))
    
    if highword == 0 then
       if lowword == 0 then
