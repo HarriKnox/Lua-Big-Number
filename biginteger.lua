@@ -1011,29 +1011,34 @@ function getleadingzeros(int)
    -- Returns the number of leading zeros in the 32-bit integer.
    -- Uses Hacker's Delight method used by Java Integer
    local n = 1
+   local s
    
    if int == 0 then
       return 32
    end
    
-   if bitrightshift(int, 16) == 0 then
+   s = bitrightshift(int, 16)
+   if s == 0 then
       n = n + 16
-      int = bitleftshift(int, 16)
+      int = s
    end
    
-   if bitrightshift(int, 24) == 0 then
+   s = bitrightshift(int, 24)
+   if s == 0 then
       n = n + 8
-      int = bitleftshift(int, 8)
+      int = s
    end
    
-   if bitrightshift(int, 28) == 0 then
+   s = bitrightshift(int, 28)
+   if s == 0 then
       n = n + 4
-      int = bitleftshift(int, 4)
+      int = s
    end
    
-   if bitrightshift(int, 30) == 0 then
+   s = bitrightshift(int, 30)
+   if s == 0 then
       n = n + 2
-      int = bitleftshift(int, 2)
+      int = s
    end
    
    return n - bitrightshift(int, 31)
