@@ -967,7 +967,7 @@ function getwordarray(array)
 end
 
 function gethighestsetbit(array)
-   -- Will return the little-endian index of the highest set bit,
+   -- Will return the zero-indexed, little-endian index of the highest set bit,
    -- or -1 if array is equal to zero
    local arraylength = #array
    local highest
@@ -988,7 +988,7 @@ function gethighestsetbit(array)
 end
 
 function getlowestsetbit(array)
-   -- Will return the little-endian index of the lowset set bit,
+   -- Will return the zero-index, little-endian index of the lowset set bit,
    -- or -1 if array is equal to zero
    local arraylength = #array
    local number, mask, index
