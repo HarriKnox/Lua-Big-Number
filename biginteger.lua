@@ -834,21 +834,12 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 
-function gethighestsetbit(array)
-   -- Will return the zero-indexed, little-endian index of the highest set bit,
-   -- or -1 if array is equal to zero
-   local arraylength = #array
-   local highest
-   local number, mask, index
+function gethighestsetbit(mag)
+   local length = #mag
    
-   for word = arraylength - 1, 0, -1 do
-      for bit = 31, 0, -1 do
-         number = array[arraylength - word]
-         mask = bitleftshift(1, bit)
-         index = word * 32 + bit
-         if bitand(number, mask) ~= 0 then
-            return index
-         end
+   for i = 1, length do
+      if mag[i] ~= 0 then
+         return (length - i + 1) * 32 - getleadingzeros(mag[i]) - 1
       end
    end
    
