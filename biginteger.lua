@@ -866,26 +866,6 @@ function destructivenegatewordarray(array)
 end
 
 
-function destructivemultiplyandadd(mag, factor, addend)
-   local maglength = #mag
-   local product = 0
-   local carry = 0
-   local index = maglength
-   
-   for i = maglength, 1, -1 do
-      carry, mag[i] = integermultiplyandaddtosplitlong(factor, mag[i], carry)
-   end
-   
-   carry = addend
-   
-   for i = maglength, 1, -1 do
-      carry, mag[i] = splitlong(mag[i] + carry)
-   end
-   
-   return mag
-end
-
-
 function gethighestsetbit(mag)
    -- Will return the zero-index, little-endian index of the highset set bit,
    -- or -1 if array is equal to zero
@@ -1123,6 +1103,26 @@ end
 
 function constructorwordarray(array)
    return constructorwordarraytrusted(getwordarray(array))
+end
+
+
+function destructivemultiplyandadd(mag, factor, addend)
+   local maglength = #mag
+   local product = 0
+   local carry = 0
+   local index = maglength
+   
+   for i = maglength, 1, -1 do
+      carry, mag[i] = integermultiplyandaddtosplitlong(factor, mag[i], carry)
+   end
+   
+   carry = addend
+   
+   for i = maglength, 1, -1 do
+      carry, mag[i] = splitlong(mag[i] + carry)
+   end
+   
+   return mag
 end
 
 function constructorstringradix(str, radix)
