@@ -1342,7 +1342,9 @@ end
 
 
 --[[ Bitwise functions ]]
-function bitwisenotintodestination(wordarray, destination)
+function bitwisenotwordarray(wordarray)
+   local destination = {}
+   
    for i = 1, #wordarray do
       destination[i] = bitnot(wordarray[i])
    end
@@ -1353,41 +1355,52 @@ end
 function bitwisenot(value)
    assert(isvalidoperablevalue(value))
    
-   return constructorwordarraytrusted(bitwisenotintodestination(getwordarray(value), {}))
+   return constructorwordarraytrusted(bitwisenotwordarray(getwordarray(value)))
 end
 
 function mutablebitwisenot(bigint)
-   local sign, wordarray, _
    assert(isvalidbiginteger(bigint))
    
-   destructiveconvertsignmagnitudetowordarray(bigint.sign, bigint.magnitude)
-   bitwisenotintodestination(bigint.magnitude, bigint.magnitude)
-   
-   bigint.sign, _ = destructiveconvertwordarraytosignmagnitude(bigint.magnitude)
+   bigint.sign, bigint.magnitude = getwordarraysignandmagnitude(bitwisenot(getwordarray(bigint)))
    
    return bigint
 end
 
 
+function bitwisewordarrays(thisarray, thatarray, mergefunction)
+   local thislength, thatlength, longerlength
+   local thissignint, thatsignint
+   local destination = {}
+   
+   thislength = #thisarray
+   thatlength = #thatarray
+   longerlength = max(thislength, thatlength)
+   
+   thissignint = getwordarraysignint(thisarray)
+   thatsignint = getwordarraysignint(thatarray)
+   
+   for i = 0, longerlength - 1 do
+      destination[longerlength - 1] = mergefunction(thisarray[thislength - i] or thissignint,
+                                                    thatarray[thatlength - i] or thatsignint)
+   end
+   
+   return destination
+end
+
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise " .. opname))
    
-   return constructorwordarraytrusted(destructivemergewordarrays(getwordarray(thisvalue),
-                                                                 getwordarray(thatvalue),
-                                                                 bitwisefunction))
+   return constructorwordarraytrusted(bitwisewordarrays(getwordarray(thisvalue),
+                                                        getwordarray(thatvalue),
+                                                        bitwisefunction))
 end
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
-   local thatwordarray, _
-   
    assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "bitwise " .. opname))
    
-   thatwordarray = getwordarray(thatvalue)
-   
-   destructiveconvertsignmagnitudetowordarray(thisbigint.sign, thisbigint.magnitude)
-   destructivemergewordarrays(thisbigint.magnitude, thatwordarray, bitwisefunction)
-   
-   thisbigint.sign, _ = destructiveconvertwordarraytosignmagnitude(thisbigint.magnitude)
+   thisbigint.sign, thisbigint.magnitude = bitwisewordarrays(getwordarray(thisvalue),
+                                                             getwordarray(thatvalue),
+                                                             bitwisefunction)
    
    return thisbigint
 end
