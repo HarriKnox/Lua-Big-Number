@@ -546,6 +546,58 @@ function numberofleadingzeroslong(long)
 end
 
 
+function numberoftrailingzeros(int)
+   -- Returns the number of trailing zeros in the 32-bit integer.
+   -- Uses Hacker's Delight figure 5-14 method used by Java Integer
+   local y
+   local n = 31
+   
+   if int == 0 then
+      return 32
+   end
+   
+   y = bitleftshift(int, 16)
+   if y ~= 0 then
+      n = n - 16
+      int = y
+   end
+   
+   y = bitleftshift(int, 8)
+   if y ~= 0 then
+      n = n - 8
+      int = y
+   end
+   
+   y = bitleftshift(int, 4)
+   if y ~= 0 then
+      n = n - 4
+      int = y
+   end
+   
+   y = bitleftshift(int, 2)
+   if y ~= 0 then
+      n = n - 2
+      int = y
+   end
+   
+   return n - bitrightshift(int * 2, 31)
+end
+
+function numberoftrailingzeroslong(long)
+   local high, low
+   local trailingzeros
+   
+   high, low = splitlong(long)
+   trailingzeros = numberoftrailingzeros(low)
+   
+   if trailingzeros == 32 then
+      trailingzeros = trailingzeros + numberoftrailingzeros(high)
+   end
+   
+   return trailingzeros
+end
+
+
 --[[ Array Functions ]]
 function copyarray(source)
    local destination = {}
