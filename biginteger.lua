@@ -942,15 +942,7 @@ function getsignandmagnitude(value)
 end
 
 
-function getwordarray(array)
-   local sign, mag
-   
-   if isvalidwordarray(array) then
-      return copyarray(array)
-   end
-   
-   sign, mag = getsignandmagnitude(array)
-   
+function gettrustedsignmagnitudewordarray(sign, mag)
    if sign == -1 then
       destructivenegatewordarray(mag)
       
@@ -965,6 +957,19 @@ function getwordarray(array)
    
    return mag
 end
+
+function getsignmagnitudewordarray(sign, mag)
+   return gettrustedsignmagnitudewordarray(copyarray(mag))
+end
+
+function getwordarray(thing)
+   if isvalidwordarray(thing) then
+      return copyarray(thing)
+   end
+   
+   return gettrustedsignmagnitudewordarray(getsignandmagnitude(thing))
+end
+
 
 function gethighestsetbit(array)
    -- Will return the zero-indexed, little-endian index of the highest set bit,
@@ -1006,6 +1011,7 @@ function getlowestsetbit(array)
    
    return -1
 end
+
 
 function getleadingzeros(int)
    -- Returns the number of leading zeros in the 32-bit integer.
