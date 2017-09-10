@@ -654,7 +654,7 @@ end
 function signextendwordarrayto(source, destination, newlength)
    local length = #source
    local signwords = newlength - length
-   local signint = length > 0 and source[1] >= negativemask and 0xffffffff or 0
+   local signint = getwordarraysignint(source[1])
    
    if signwords <= 0 then
       if source ~= destination then
@@ -843,6 +843,14 @@ function gettype(thing)
           type(thing)
 end
 
+
+function getwordarraysignint(array)
+   if array[1] and array[1] >= negativemask then
+      return 0xffffffff
+   end
+   
+   return 0
+end
 
 function getwordarraysign(array)
    if #array == 0 then
@@ -1134,7 +1142,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
 end
 
 function constructorwordarraytrusted(array)
-   local sign, mag
+   local sign
    
    assert(isvalidwordarray(array))
    
@@ -2667,7 +2675,7 @@ function multiplythensubtract(remainder, div, qhat, offset)
    offset = offset + divlength
    
    for i = divlength, 1, -1 do
-      signint = remainder[offset] >= negativemask and 0xffffffff or 0
+      signint = getwordarraysignint(remainder)
       producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
       differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
       differencehigh = (bitnot(producthigh) + differencehigh + signint) % 0x100000000
