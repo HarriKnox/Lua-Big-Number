@@ -499,6 +499,58 @@ function splitlongtowordsandbits(number)
 end
 
 
+function getleadingzeros(int)
+   -- Returns the number of leading zeros in the 32-bit integer.
+   -- Uses Hacker's Delight method used by Java Integer
+   local n = 1
+   local s
+   
+   if int == 0 then
+      return 32
+   end
+   
+   s = bitrightshift(int, 16)
+   if s == 0 then
+      n = n + 16
+      int = s
+   end
+   
+   s = bitrightshift(int, 24)
+   if s == 0 then
+      n = n + 8
+      int = s
+   end
+   
+   s = bitrightshift(int, 28)
+   if s == 0 then
+      n = n + 4
+      int = s
+   end
+   
+   s = bitrightshift(int, 30)
+   if s == 0 then
+      n = n + 2
+      int = s
+   end
+   
+   return n - bitrightshift(int, 31)
+end
+
+function getleadingzeroslong(long)
+   local high, low
+   local leadingzeros
+   
+   high, low = splitlong(long)
+   leadingzeros = getleadingzeros(high)
+   
+   if leadingzeros == 32 then
+      leadingzeros = leadingzeros + getleadingzeros(low)
+   end
+   
+   return leadingzeros
+end
+
+
 --[[ Array Functions ]]
 function copyarray(source)
    local destination = {}
@@ -787,6 +839,48 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 
+function gethighestsetbit(array)
+   -- Will return the zero-indexed, little-endian index of the highest set bit,
+   -- or -1 if array is equal to zero
+   local arraylength = #array
+   local highest
+   local number, mask, index
+   
+   for word = arraylength - 1, 0, -1 do
+      for bit = 31, 0, -1 do
+         number = array[arraylength - word]
+         mask = bitleftshift(1, bit)
+         index = word * 32 + bit
+         if bitand(number, mask) ~= 0 then
+            return index
+         end
+      end
+   end
+   
+   return -1
+end
+
+function getlowestsetbit(array)
+   -- Will return the zero-index, little-endian index of the lowset set bit,
+   -- or -1 if array is equal to zero
+   local arraylength = #array
+   local number, mask, index
+   
+   for word = 0, arraylength - 1 do
+      for bit = 0, 31 do
+         number = array[arraylength - word]
+         mask = bitleftshift(1, bit)
+         index = word * 32 + bit
+         if bitand(number, mask) ~= 0 then
+            return index
+         end
+      end
+   end
+   
+   return -1
+end
+
+
 --[[ Private Getter functions ]]
 function gettype(thing)
    return (isvalidinteger(thing) and 'integer') or
@@ -928,100 +1022,6 @@ function getwordarray(thing)
    end
    
    return gettrustedsignmagnitudewordarray(getsignandmagnitude(thing))
-end
-
-
-function gethighestsetbit(array)
-   -- Will return the zero-indexed, little-endian index of the highest set bit,
-   -- or -1 if array is equal to zero
-   local arraylength = #array
-   local highest
-   local number, mask, index
-   
-   for word = arraylength - 1, 0, -1 do
-      for bit = 31, 0, -1 do
-         number = array[arraylength - word]
-         mask = bitleftshift(1, bit)
-         index = word * 32 + bit
-         if bitand(number, mask) ~= 0 then
-            return index
-         end
-      end
-   end
-   
-   return -1
-end
-
-function getlowestsetbit(array)
-   -- Will return the zero-index, little-endian index of the lowset set bit,
-   -- or -1 if array is equal to zero
-   local arraylength = #array
-   local number, mask, index
-   
-   for word = 0, arraylength - 1 do
-      for bit = 0, 31 do
-         number = array[arraylength - word]
-         mask = bitleftshift(1, bit)
-         index = word * 32 + bit
-         if bitand(number, mask) ~= 0 then
-            return index
-         end
-      end
-   end
-   
-   return -1
-end
-
-
-function getleadingzeros(int)
-   -- Returns the number of leading zeros in the 32-bit integer.
-   -- Uses Hacker's Delight method used by Java Integer
-   local n = 1
-   local s
-   
-   if int == 0 then
-      return 32
-   end
-   
-   s = bitrightshift(int, 16)
-   if s == 0 then
-      n = n + 16
-      int = s
-   end
-   
-   s = bitrightshift(int, 24)
-   if s == 0 then
-      n = n + 8
-      int = s
-   end
-   
-   s = bitrightshift(int, 28)
-   if s == 0 then
-      n = n + 4
-      int = s
-   end
-   
-   s = bitrightshift(int, 30)
-   if s == 0 then
-      n = n + 2
-      int = s
-   end
-   
-   return n - bitrightshift(int, 31)
-end
-
-function getleadingzeroslong(long)
-   local high, low
-   local leadingzeros
-   
-   high, low = splitlong(long)
-   leadingzeros = getleadingzeros(high)
-   
-   if leadingzeros == 32 then
-      leadingzeros = leadingzeros + getleadingzeros(low)
-   end
-   
-   return leadingzeros
 end
 
 
