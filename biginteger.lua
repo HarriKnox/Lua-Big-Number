@@ -919,7 +919,7 @@ function gettrustedsignmagnitudewordarray(sign, mag)
 end
 
 function getsignmagnitudewordarray(sign, mag)
-   return gettrustedsignmagnitudewordarray(copyarray(mag))
+   return gettrustedsignmagnitudewordarray(sign, copyarray(mag))
 end
 
 function getwordarray(thing)
