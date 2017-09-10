@@ -499,7 +499,7 @@ function splitlongtowordsandbits(number)
 end
 
 
-function getleadingzeros(int)
+function numberofleadingzeros(int)
    -- Returns the number of leading zeros in the 32-bit integer.
    -- Uses Hacker's Delight figure 5-6 method used by Java Integer
    local n = 1
@@ -531,15 +531,15 @@ function getleadingzeros(int)
    return n - bitrightshift(int, 31)
 end
 
-function getleadingzeroslong(long)
+function numberofleadingzeroslong(long)
    local high, low
    local leadingzeros
    
    high, low = splitlong(long)
-   leadingzeros = getleadingzeros(high)
+   leadingzeros = numberofleadingzeros(high)
    
    if leadingzeros == 32 then
-      leadingzeros = leadingzeros + getleadingzeros(low)
+      leadingzeros = leadingzeros + numberofleadingzeros(low)
    end
    
    return leadingzeros
@@ -839,7 +839,7 @@ function gethighestsetbit(mag)
    
    for i = 1, length do
       if mag[i] ~= 0 then
-         return (length - i + 1) * 32 - getleadingzeros(mag[i]) - 1
+         return (length - i + 1) * 32 - numberofleadingzeros(mag[i]) - 1
       end
    end
    
@@ -2568,7 +2568,7 @@ function divideoneword(dividend, divisor)
    local quotient, remainder
    local dividendlength, dividendestimate
    
-   shift = getleadingzeros(divisor)
+   shift = numberofleadingzeros(divisor)
    
    dividendlength = #dividend
    quotient = {}
@@ -2637,7 +2637,7 @@ function destructivedivideknuth(dividend, divisor)
    
    divisorlength = #divisor
    
-   shift = getleadingzeros(divisor[1])
+   shift = numberofleadingzeros(divisor[1])
    div = copyandleftshift(divisor, shift) -- if shift == 0, it returns a copy
    
    remainder = copyandleftshift(dividend, shift)
@@ -2874,7 +2874,7 @@ function destructivedivideburnikelziegler(dividend, divisor)
    divisorlength = #divisor
    divisorbitlength = gethighestsetbit(divisor) + 1
    
-   m = 2 ^ (64 - getleadingzeroslong(floor(divisorlength / burnikelzieglerthreshold)))
+   m = 2 ^ (64 - numberofleadingzeroslong(floor(divisorlength / burnikelzieglerthreshold)))
    j = ceil(divisorlength / m)
    n = j * m
    n32 = n * 32
