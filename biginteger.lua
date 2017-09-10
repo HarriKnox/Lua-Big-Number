@@ -787,54 +787,6 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 
-function convertsignmagnitudetowordarrayto(sign, source, destination)
-   if sign == -1 then
-      negatewordarrayto(source, destination)
-      if getwordarraysign(destination) == 1 then
-         tableinsert(destination, 1, 0xffffffff)
-      end
-   else
-      clearandcopyintoarray(destination, source)
-      if getwordarraysign(destination) == -1 then
-         tableinsert(destination, 1, 0)
-      end
-   end
-   
-   return destination
-end
-
-function copyandconvertsignmagnitudetowordarray(sign, mag)
-   return convertsignmagnitudetowordarrayto(sign, mag, {})
-end
-
-function destructiveconvertsignmagnitudetowordarray(sign, mag)
-   return convertsignmagnitudetowordarrayto(sign, mag, mag)
-end
-
-
-function convertwordarraytosignmagnitudeto(source, destination)
-   local sign = getwordarraysign(source)
-   if sign == 0 then
-      return 0, cleararray(destination)
-   end
-   
-   if sign == -1 then
-      negatewordarrayto(source, destination)
-      return -1, destination
-   end
-   
-   return 1, destructivestripleadingzeros(destination)
-end
-
-function copyandconvertwordarraytosignmagnitude(wordarray)
-   return convertwordarraytosignmagnitudeto(wordarray, {})
-end
-
-function destructiveconvertwordarraytosignmagnitude(wordarray)
-   return convertwordarraytosignmagnitudeto(wordarray, wordarray)
-end
-
-
 --[[ Private Getter functions ]]
 function gettype(thing)
    return (isvalidinteger(thing) and 'integer') or
@@ -1070,26 +1022,6 @@ function getleadingzeroslong(long)
    end
    
    return leadingzeros
-end
-
-
---[[ Word-Array Mappers ]]
-function destructivemergewordarrays(thiswordarray, thatwordarray, mergefunction)
-   local thislength, thatlength, longerlength
-   
-   thislength = #thiswordarray
-   thatlength = #thatwordarray
-   longerlength = max(thislength, thatlength)
-   
-   destructivesignextendwordarray(thiswordarray, longerlength)
-   destructivesignextendwordarray(thatwordarray, longerlength)
-   
-   for i = 0, longerlength - 1 do
-      thiswordarray[longerlen - i] = mergefunction((thiswordarray[thislength - i] or 0),
-                                                   (thatwordarray[thatlength - i] or 0))
-   end
-   
-   return thiswordarray
 end
 
 
