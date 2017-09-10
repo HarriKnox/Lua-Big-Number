@@ -887,6 +887,8 @@ end
 
 
 function gethighestsetbit(mag)
+   -- Will return the zero-index, little-endian index of the highset set bit,
+   -- or -1 if array is equal to zero
    local length = #mag
    
    for i = 1, length do
@@ -901,17 +903,11 @@ end
 function getlowestsetbit(array)
    -- Will return the zero-index, little-endian index of the lowset set bit,
    -- or -1 if array is equal to zero
-   local arraylength = #array
-   local number, mask, index
+   local length = #array
    
-   for word = 0, arraylength - 1 do
-      for bit = 0, 31 do
-         number = array[arraylength - word]
-         mask = bitleftshift(1, bit)
-         index = word * 32 + bit
-         if bitand(number, mask) ~= 0 then
-            return index
-         end
+   for i = length, 1, -1 do
+      if mag[i] ~= 0 then
+         return (length - i) * 32 + numberoftrailingzeros(mag[i])
       end
    end
    
