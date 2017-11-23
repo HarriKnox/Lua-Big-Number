@@ -204,11 +204,29 @@ local tableinsert = table.insert
 --[ Constants ]
 --]===========]
 
+--[==[
+-- The largest number bit32 can work with reliably
+-- (despite being a 32-bit library)
+--
+-- maxinteger = 2^51 - 1
+--]==]
 local maxinteger = 0x7ffffffffffff
+
+
+--[==[
+-- The largest magnitude allowable because of 32 bits per word
+-- (allows for up to `maxinteger` bits)
+--
+-- maxmagnitudelength = 2^51 / 32 - 1
+--]==]
 local maxmagnitudelength = 0x3fffffffffff
+
+
+--[==[ A mask used for 32-bit integers to get the sign ]==]
 local negativemask = 0x80000000
 
 
+--[==[ A constant for the log of 2, used primarily in radix conversion ]==]
 local log2 = log(2)
 
 
@@ -233,8 +251,13 @@ local schoenhagebaseconversionthreshold = 20
 --[ Tables and Caches ]
 --]===================]
 
--- Number of bits contained in a digit grouping in a string integer
--- rounded up, indexed by radix
+--[==[
+-- A table, indexed by radix, of the number of bits contained in one digit of a
+-- string representation of an integer in a given radix, multiplied by 1024 and
+-- rounded up (to prevent underestimation).
+--
+-- bitsperdigit[r] = ceil(1024 * log(r) / log(2))
+--]==]
 local bitsperdigit = {
       0, 1024, 1624, 2048, 2378, 2648,
    2875, 3072, 3247, 3402, 3543, 3672,
@@ -243,8 +266,15 @@ local bitsperdigit = {
    4756, 4814, 4870, 4923, 4975, 5025,
    5074, 5120, 5166, 5210, 5253, 5295}
 
--- The number of digits of a given radix that can fit in a 32 bit integer
--- without overflowing or going negative, indexed by radix
+
+--[==[
+-- A table, indexed by radix, of the number of digits of a given radix that can
+-- fit in a 32-bit integer without overflowing or "going negative" (in Two's
+-- complement form): that is, the largest number `n` for a radix `r` such that
+-- r^n < 2^31 (or 0x80000000).
+--
+-- digitsperinteger[r] = floor(log(2^31) / log(r))
+--]==]
 local digitsperinteger = {
     0, 30, 19, 15, 13, 11,
    11, 10,  9,  9,  8,  8,
@@ -252,9 +282,22 @@ local digitsperinteger = {
     7,  7,  7,  6,  6,  6,
     6,  6,  6,  6,  6,  6,
     6,  6,  6,  6,  6,  5}
+--[[ Note to self, I think the need for 2^31 in r^n < 2^31 is a hold-over from
+the signedness of Java's int type. Since Lua's ints can handle more than 32
+bits, I think I can change the 2^31 to 2^32; basically I'm checking to make
+sure it doesn't overflow and no longer checking if it goes negative. The
+following radices will change: 2, 3, 4, 6, 9, 11, 15, 16, 22, 23, and 36. The
+same will go for indradix.
+]]
 
--- Casts each number to "int digits" which contain the number of digits
--- specified in digitsperinteger
+
+--[==[
+-- A table, indexed by radix, of the maximum value of one digit grouping of a
+-- given radix that can fit in a 32-bit integer without overflowing nor "going
+-- negative".
+--
+-- intradix[r] = r ^ digitsperinteger[r]
+--]==]
 local intradix = {
             0, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
    0x75db9c97, 0x40000000, 0x17179149, 0x3b9aca00, 0x0cc6db61, 0x19a10000,
@@ -263,10 +306,17 @@ local intradix = {
    0x0e8d4a51, 0x1269ae40, 0x17179149, 0x1cb91000, 0x23744899, 0x2b73a840,
    0x34e63b41, 0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x039aa400}
 
--- The list of ASCII characters used for each digit value, with the index as the
--- value. Lowercase is used to increase variety in the heights of numbers.
---              123abckz92gpqbn8 vs 123ABCKZ92GPQBN8
---                        varied    a large rectangle
+
+--[==[
+-- The list of ASCII characters used for each digit value, with the index as
+-- the value. Lowercase is used to increase variety in the heights of numbers.
+-- In the following example, the number on the left has a varied and more
+-- aesthetically-pleasing look, whereas the number on the right looks like a
+-- big rectangle.
+--
+--              123abckz92gpqbn84a30b vs 123ABCKZ92GPQBN84A30B
+--                varied and pretty   vs   a large rectangle
+--]==]
 local characters = {
    '1', '2', '3', '4', '5', '6', '7',
    '8', '9', 'a', 'b', 'c', 'd', 'e',
@@ -275,7 +325,13 @@ local characters = {
    't', 'u', 'v', 'w', 'x', 'y', 'z',
    [0] = '0'}
 
--- The table of values `log(2) / log(i)`, used for large string base conversion.
+
+--[==[
+-- A table, indexed by radix, of base-conversion constants, used for large
+-- string base conversion from the given radix to Base-2.
+--
+-- radixlogs[r] = log2 / log(r)
+--]==]
 local radixlogs = {
              nil ,             1 , log2 / log( 3), log2 / log( 4),
    log2 / log( 5), log2 / log( 6), log2 / log( 7), log2 / log( 8),
@@ -287,11 +343,20 @@ local radixlogs = {
    log2 / log(29), log2 / log(30), log2 / log(31), log2 / log(32),
    log2 / log(33), log2 / log(34), log2 / log(35), log2 / log(36)}
 
--- The cache of powers r^2^n for each radix r, for large string base conversion.
--- There are three layers of tables: this is an array of lists of magnitudes.
---  * `powercache` is an array with radix indices
---  * `powercache[radix]` is a list with exponent indices
---  * `powercache[radix][n]` is an integer or a magnitude equal to radix^2^n
+
+--[==[
+-- The cache of powers r^2^n for each radix r, for large string base
+-- conversion. There are three layers of tables: this is an array of lists of
+-- integers/magnitudes.
+--  * `powercache` is an array with radix indices of lists
+--  * `powercache[r]` is a list with exponent indices of magnitudes
+--  * `powercache[r][n]` is an integer or magnitude
+--
+-- powercache[r][n] = r^2^n
+--
+-- The magnitude in powercache[r][n] is stored as a Lua integer if it's small
+-- enough (less than `maxinteger`), otherwise it's stored as a magnitude.
+--]==]
 local powercache = {
        nil , { 2 ^ 2}, { 3 ^ 2}, { 4 ^ 2}, { 5 ^ 2}, { 6 ^ 2},
    { 7 ^ 2}, { 8 ^ 2}, { 9 ^ 2}, {10 ^ 2}, {11 ^ 2}, {12 ^ 2},
