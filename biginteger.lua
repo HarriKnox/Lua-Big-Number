@@ -20,10 +20,6 @@
 --[                                                                           ]
 --]===========================================================================]
 
-local bi = {} -- Sandbox for testing purposes.
-setmetatable(bi, {__index = _G})
-_ENV = bi
-
 
 --[====[
 -- Definitions:
@@ -129,6 +125,14 @@ _ENV = bi
 --  * make fast (functional overhead for bitwise operations is high,
 --               but Lua 5.2 doesn't support bitwise sigils)
 --]====]
+
+
+--[[ Sandbox for testing purposes ]]
+local bi = {}
+setmetatable(bi, {__index = _G})
+_ENV = bi
+
+
 
 --[==========================================================[
 --[   _____                     _                  _         ]
@@ -722,6 +726,11 @@ function isvalidstringnumber(str, radix)
    end
    
    
+   if stringmatch(str, '^[-+]?$') then
+      return false, r .. "zero-length string"
+   end
+   
+   
    if highest < 10 then
       set = '0-' .. tostring(highest)
    else
@@ -734,12 +743,8 @@ function isvalidstringnumber(str, radix)
       return true
    end
    
-   if stringmatch(std, '^[-+]?$') then
-      return false, r .. "zero-length string"
-   end
    
    _, index, c = stringfind(str, '^[-+]?[' .. set .. ']*([^' .. set .. '])')
-   
    
    return false,
          "not a valid string number: contains non-digit character at index "
@@ -813,54 +818,6 @@ function splitlong(number)
 end
 
 function integermultiplyandaddtosplitlong(x, ab, c)
---[[
-   Speed boost for Lua 5.3 using bitwise operators instead of function calls:
-   bitand -> &, bitor  -> |, bitnot -> ~, etc. Unfortunately, those sigils are
-   incompatible with Lua 5.2. The alternative is to use strings and the `load`
-   function. For example:
-   
-      function somearbitraryoperation(a, b, c)
-         return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
-      end
-   
-   becomes
-   
-      load("function somearbitraryoperation(a, b, c) \
-         return a & (~b << (c | 3)) \
-      end")()
-   
-   or
-   
-      somearbitraryoperation = load("return function(a, b, c) \
-         return a & (~b << (c | 3)) \
-      end")()
-   
-   The string keeps the 5.2 interpreter from erroring and the `load` allows the
-   5.3 interpreter to understand and compile it. Because the `load` function
-   returns an executable chunk without executing it you need to call it
-   afterward. Also, quotes don't carry across newlines so I escaped the newlines
-   with the backslashes. Also also, I prefer the first option because it
-   produces a named chunk and not an anonymous chunk assigned to a variable.
-   
-   
-   The entire function needs to be wrapped in the load string. Simply doing
-   
-      function somearbitraryoperation(a, b, c)
-         return load("return function(a, b) return a & b end")()(a, load("return function(a, b) return a << b end")()(load("return function(b) return ~b end")()(b), load("return function(c, d) return c | d end")()(c, 3)))
-      end
-   
-   will cause massive functional and loading overhead for each call.
-   
-   
-   Also, redefining `bitand`, `bitor`, and the other functions with `load` like
-   
-      bitand = load("return function(a, b) return a & b end")()
-      bitor = load("return function(a, b) return a | b end")()
-      bitor = load("return function(a) return ~a end")()
-   
-   will, again, cause functional overhead slowdowns.
---]]
-
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
@@ -879,9 +836,63 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    
    return highword, lowword
 end
+--[[
+Note to self: speed boost for Lua 5.3 using bitwise operators instead of
+function calls: bitand -> &, bitor  -> |, bitnot -> ~, etc. Unfortunately,
+those sigils are incompatible with Lua 5.2. The alternative is to use strings
+and the `load` function. For example:
+
+   function somearbitraryoperation(a, b, c)
+      return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
+   end
+
+becomes
+
+   load("function somearbitraryoperation(a, b, c) \
+      return a & (~b << (c | 3)) \
+   end")()
+
+or
+
+   somearbitraryoperation = load("return function(a, b, c) \
+      return a & (~b << (c | 3)) \
+   end")()
+
+The string keeps the 5.2 interpreter from erroring and the `load` allows the
+5.3 interpreter to understand and compile it. Because the `load` function
+returns an executable chunk without executing it you need to call it
+afterward. Also, quotes don't carry across newlines so I escaped the newlines
+with the backslashes. Also also, I prefer the first option because it
+produces a named chunk and not an anonymous chunk assigned to a variable.
+
+
+The entire function needs to be wrapped in the load string. Simply doing
+
+   function somearbitraryoperation(a, b, c)
+      return load("return function(a, b) return a & b end")()
+                 (a, load("return function(a, b) return a << b end")()
+                       (load("return function(b) return ~b end")()(b),
+                       load("return function(c, d) return c | d end")()
+                           (c, 3)))
+   end
+
+will cause massive functional and loading overhead for each call from not
+only calling `load` every time, but also splitting the numerous bitwise
+operations across multiple function calls.
+
+
+Also, redefining `bitand`, `bitor`, and the other functions with `load` like
+
+   bitand = load("return function(a, b) return a & b end")()
+   bitor = load("return function(a, b) return a | b end")()
+   bitor = load("return function(a) return ~a end")()
+
+will, again, cause functional overhead slowdowns.
+
+These potential changes could also potentially benefit the next function.
+]]
 
 function divide64bitsby32bits(ah, al, b)
--- This function wouldn't hurt from a 5.3 speed boost either (especially since 5.3 supports 64-bit integers anyway)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
    local q1 = floor(ahhl / b)
    local r1 = ahhl % b
@@ -934,21 +945,6 @@ function numberofleadingzeros(int)
    return n - bitrightshift(int, 31)
 end
 
-function numberofleadingzeroslong(long)
-   local high, low
-   local leadingzeros
-   
-   high, low = splitlong(long)
-   leadingzeros = numberofleadingzeros(high)
-   
-   if leadingzeros == 32 then
-      leadingzeros = leadingzeros + numberofleadingzeros(low)
-   end
-   
-   return leadingzeros
-end
-
-
 function numberoftrailingzeros(int)
    -- Returns the number of trailing zeros in the 32-bit integer.
    -- Uses Hacker's Delight figure 5-14 method used by Java Integer
@@ -984,6 +980,21 @@ function numberoftrailingzeros(int)
    end
    
    return n - bitrightshift(int * 2, 31)
+end
+
+
+function numberofleadingzeroslong(long)
+   local high, low
+   local leadingzeros
+   
+   high, low = splitlong(long)
+   leadingzeros = numberofleadingzeros(high)
+   
+   if leadingzeros == 32 then
+      leadingzeros = leadingzeros + numberofleadingzeros(low)
+   end
+   
+   return leadingzeros
 end
 
 function numberoftrailingzeroslong(long)
