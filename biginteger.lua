@@ -394,13 +394,23 @@ local powercache = {
 --]==]
 function isvalidinteger(int)
    local r = "not a valid integer: "
+   
+   
    if type(int) ~= 'number' then
       return false, r .. "it's a " .. type(int)
-   elseif int > maxinteger or int < -maxinteger then
+   end
+   
+   
+   if int > maxinteger or int < -maxinteger then
       return false, r .. "outside allowable range"
-   elseif int % 1 ~= 0 then
+   end
+   
+   
+   if int % 1 ~= 0 then
       return false, r .. "it's a float"
    end
+   
+   
    return true
 end
 
@@ -414,15 +424,27 @@ end
 --]==]
 function isvalid32bitinteger(int)
    local r = "not a valid 32-bit integer: "
+   
+   
    if type(int) ~= 'number' then
       return false, r .. "it's a " .. type(int)
-   elseif int > 0xffffffff then
+   end
+   
+   
+   if int > 0xffffffff then
       return false, r .. "outside 32 bits"
-   elseif int < 0 then
+   end
+   
+   
+   if int < 0 then
       return false, r .. "negative"
-   elseif int % 1 ~= 0 then
+   end
+   
+   
+   if int % 1 ~= 0 then
       return false, r .. "it's a float"
    end
+   
    
    return true
 end
@@ -440,14 +462,18 @@ end
 -- [-4294967295, 4294967295].
 --]==]
 function isvalidabsolute32bitinteger(int)
-   local ok, reason
    local r = "not a valid absolute 32-bit integer: "
+   
+   local ok, reason
+   
    
    if type(int) ~= 'number' then
       return false, r .. "it's a " .. type(int)
    end
    
+   
    ok, reason = isvalid32bitinteger(abs(int))
+   
    
    return ok, r .. reason
 end
@@ -473,19 +499,25 @@ end
 -- all that space on a bunch of zeros).
 --]==]
 function isvalidwordarray(array)
-   local ok, reason
    local r = "not a valid word-array: "
+   
+   local ok, reason
+   
    
    if type(array) ~= 'table' then
       return false, r .. "not an array (table): it's a " .. type(array)
    end
    
+   
    if isvalidbiginteger(array) then
       return false, r .. "it's a biginteger and will not be treated as a word-array"
    end
    
+   
    for i = 1, #array do
       ok, reason = isvalid32bitinteger(array[i])
+      
+      
       if not ok then
          return false, r .. "element " .. i .. " " .. reason
       end
@@ -503,20 +535,27 @@ end
 --  * with leading zeros
 --]==]
 function isvalidmagnitude(mag)
-   local ok, reason = isvalidwordarray(mag)
    local r = "not a valid magnitude: "
+   
+   local ok, reason
+   
+   
+   ok, reason = isvalidwordarray(mag)
    
    if not ok then
       return false, r .. reason
    end
    
+   
    if #mag >= maxmagnitudelength then
       return false, r .. "too large (overflow)"
    end
    
+   
    if mag[1] == 0 then
       return false, r .. "has leading zeros"
    end
+   
    
    return true
 end
@@ -531,11 +570,16 @@ end
 function isvalidsign(sign)
    local r = "not a valid sign: "
    
+   
    if type(sign) ~= 'number' then
       return false, r .. "not a number: it's a " .. type(sign)
-   elseif sign ~= -1 and sign ~= 0 and sign ~= 1 then
+   end
+   
+   
+   if sign ~= -1 and sign ~= 0 and sign ~= 1 then
       return false, r .. "not in {-1, 0, 1}"
    end
+   
    
    return true
 end
@@ -557,14 +601,33 @@ end
 function isvalidsignmagnitudecombination(sign, mag)
    local r = "not a valid sign-magnitude pair: "
    
+   local ok, reason
+   
+   
+   ok, reason = isvalidsign(sign)
+   
+   if not ok then
+      return false, r .. reason
+   end
+   
+   
+   ok, reason = isvalidmagnitude(mag)
+   
+   if not ok then
+      return false, r .. reason
+   end
+   
+   
    if sign == 0 and #mag ~= 0 then
-      -- a value with that is neither positive nor negative nor zero
       return false, r .. "non-zero magnitude with zero sign"
-   elseif sign ~= 0 and #mag == 0 then
-      -- positive or negative zero (not allowed so there is one unique
-      -- representation of zero (0), and that is sign = 0, #mag = 0
+   end
+   
+   
+   if sign ~= 0 and #mag == 0 then
       return false, r .. "non-zero sign with zero magnitude"
    end
+   
+   
    return true
 end
 
@@ -578,27 +641,36 @@ end
 --  * does not contain a valid sign-magnitude pair
 --]==]
 function isvalidbiginteger(bigint)
-   local ok, reason
    local r = "not a valid biginteger: "
+   
+   local ok, reason
+   
    
    if type(bigint) ~= 'table' then
       return false, r .. "not a table: it's a " .. type(bigint)
    end
    
+   
    ok, reason = isvalidsign(bigint.sign)
+   
    if not ok then
       return false, r .. reason
    end
+   
    
    ok, reason = isvalidmagnitude(bigint.magnitude)
+   
    if not ok then
       return false, r .. reason
    end
    
+   
    ok, reason = isvalidsignmagnitudecombination(bigint.sign, bigint.magnitude)
+   
    if not ok then
       return false, r .. reason
    end
+   
    
    return true
 end
@@ -611,14 +683,22 @@ end
 --  * not in the range [2, 36]
 --]==]
 function isvalidradix(radix)
-   local ok, reason = isvalidinteger(radix)
    local r = "not a valid radix: "
+   
+   local ok, reason
+   
+   
+   ok, reason = isvalidinteger(radix)
    
    if not ok then
       return false, r .. reason
-   elseif radix < 2 or radix > 36 then
+   end
+   
+   
+   if radix < 2 or radix > 36 then
       return false, r .. "outside allowable range"
    end
+   
    
    return true
 end
@@ -631,10 +711,11 @@ end
 --  * contains a character that is not valid with the given radix
 --]==]
 function isvalidstringnumber(str, radix)
-   local set
-   local highest = radix - 1
    local r = "not a valid string-number: "
-   local index, char, _
+   local highest = radix - 1
+   
+   local set, index, c, _
+   
    
    if type(str) ~= 'string' then
       return false, r .. "not a string: it's a" .. type(str)
@@ -644,22 +725,25 @@ function isvalidstringnumber(str, radix)
    if highest < 10 then
       set = '0-' .. tostring(highest)
    else
-      set = '0-9A-' .. string.char(highest + 55) .. 'a-'
-         .. string.char(highest + 87)
+      set = '0-9A-' .. stringchar(highest + 55) .. 'a-'
+         .. stringchar(highest + 87)
    end
    
-   if string.match(str, '^[-+]?[' .. set .. ']+$') then
+   
+   if stringmatch(str, '^[-+]?[' .. set .. ']+$') then
       return true
    end
    
-   if string.match(str, '^[-+]?$') then
+   if stringmatch(std, '^[-+]?$') then
       return false, r .. "zero-length string"
    end
    
-   _, index, char = string.find(str, '^[-+]?[' .. set .. ']*([^' .. set .. '])')
+   _, index, c = stringfind(str, '^[-+]?[' .. set .. ']*([^' .. set .. '])')
    
-   return false, "not a valid string number: contains non-digit character at index "
-      .. tostring(index) .. ": '" .. char .. "'"
+   
+   return false,
+         "not a valid string number: contains non-digit character at index "
+         .. tostring(index) .. ": '" .. char .. "'"
 end
 
 
@@ -669,9 +753,11 @@ end
 -- things.
 --]==]
 function isvalidoperablevalue(value)
-   if isvalidinteger(value) or isvalidwordarray(value) or isvalidbiginteger(value) then
+   if isvalidinteger(value) or isvalidwordarray(value)
+         or isvalidbiginteger(value) then
       return true
    end
+   
    
    return false, "not a valid operable value: it's a " .. type(value)
 end
@@ -688,7 +774,9 @@ function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
       return true
    end
    
-   return false, "attempt to perform " .. operation .. " on " .. gettype(thisvalue) .. " and " .. gettype(thatvalue)
+   
+   return false, "attempt to perform " .. operation .. " on "
+         .. gettype(thisvalue) .. " and " .. gettype(thatvalue)
 end
 
 
@@ -699,15 +787,21 @@ end
 -- the operation being attempted into the returned reason.
 --]==]
 function arevalidbigintegerandoperablevalue(bigint, value, operation)
-   local ok, reason = isvalidbiginteger(bigint)
+   local ok, reason
+   
+   
+   ok, reason = isvalidbiginteger(bigint)
    
    if not ok then
       return false, reason
    end
    
+   
    if not isvalidoperablevalue(thatvalue) then
-      return false, "attempt to perform " .. operation .. " on biginteger and " .. gettype(value)
+      return false, "attempt to perform " .. operation .. " on biginteger and "
+            .. gettype(value)
    end
+   
    
    return true
 end
