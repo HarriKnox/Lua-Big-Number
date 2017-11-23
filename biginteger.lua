@@ -357,20 +357,35 @@ function isvalidradix(radix)
 end
 
 function isvalidstringnumber(str, radix)
-   local pattern
+   local set
    local highest = radix - 1
+   local r = "not a valid string-number: "
+   local index, char, _
    
-   if radix <= 10 then
-      pattern = '^[-+]?[0-' .. highest .. ']+$'
-   else
-      pattern = '^[-+]?[0-9A-' .. stringchar(highest + 55) .. 'a-' .. stringchar(highest + 87) .. ']+$'
+   if type(str) ~= 'string' then
+      return false, r .. "not a string: it's a" .. type(str)
    end
    
-   if stringmatch(str, pattern) then
+   
+   if highest < 10 then
+      set = '0-' .. tostring(highest)
+   else
+      set = '0-9A-' .. string.char(highest + 55) .. 'a-'
+         .. string.char(highest + 87)
+   end
+   
+   if string.match(str, '^[-+]?[' .. set .. ']+$') then
       return true
    end
    
-   return false, "not a valid string number: contains non-digit character"
+   if string.match(str, '^[-+]?$') then
+      return false, r .. "zero-length string"
+   end
+   
+   _, index, char = string.find(str, '^[-+]?[' .. set .. ']*([^' .. set .. '])')
+   
+   return false, "not a valid string number: contains non-digit character at index "
+      .. tostring(index) .. ": '" .. char .. "'"
 end
 
 function isvalidoperablevalue(value)
