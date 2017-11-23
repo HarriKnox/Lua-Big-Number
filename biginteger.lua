@@ -385,6 +385,13 @@ local powercache = {
 --[                                                                        ]
 --]========================================================================]
 
+--[==[
+-- Tests whether the passed value is an integer that the library can use. This
+-- fails if the value is
+--  * not an number type (string, table, etc)
+--  * outside the range of [-maxinteger, maxinteger]
+--  * a float
+--]==]
 function isvalidinteger(int)
    local r = "not a valid integer: "
    if type(int) ~= 'number' then
@@ -397,6 +404,14 @@ function isvalidinteger(int)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a 32-bit integer that the library can use.
+-- This fails if the value is
+--  * not a number type (string, table, etc)
+--  * outside the range [0, 4294967295] (it's negative or larger than 32 bits)
+--  * a float
+--]==]
 function isvalid32bitinteger(int)
    local r = "not a valid 32-bit integer: "
    if type(int) ~= 'number' then
@@ -412,6 +427,18 @@ function isvalid32bitinteger(int)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a 32-bit integer that, when made positive,
+-- the library can use. This fails if the value is
+--  * not a number
+--  * not a 32-bit integer when made positive
+--
+-- Note, this is not looking at the Two's complement form of the number (that
+-- would be redundant since the number would need to be a 32-bit number
+-- anyway). This checks the value to ensure it is in the range
+-- [-4294967295, 4294967295].
+--]==]
 function isvalidabsolute32bitinteger(int)
    local ok, reason
    local r = "not a valid absolute 32-bit integer: "
@@ -425,6 +452,26 @@ function isvalidabsolute32bitinteger(int)
    return ok, r .. reason
 end
 
+
+--[==[
+-- Tests whether the passed value is a word-array that the library can use.
+-- This fails if the value is
+--  * not a table (string, number, etc)
+--  * a biginteger (in which it won't be treated as a word-array)
+--  * an array that contains a value that is not a 32-bit integer
+--
+-- Note, this function (and every other array function, for that matter) uses
+-- the length operator (#) in a `for i = 1, #array do` loop. You could pass a
+-- table with a metatable with a custom __len metamethod, but for it to pass
+-- this function the metatable would also need to ensure that every integer
+-- index i from 1 to #array (inclusive), array[i] maps to a valid 32-bit
+-- integer. That being said, this isn't supposed to discourage the use of
+-- metatables: you can create space-efficient big word-arrays using metatables
+-- (for example, suppose you needed a big word-array that was one word followed
+-- by a million zero-words; it probably would be better to use the __index
+-- metamethod to "pretend" that all those zeros are there instead of wasting
+-- all that space on a bunch of zeros).
+--]==]
 function isvalidwordarray(array)
    local ok, reason
    local r = "not a valid word-array: "
@@ -447,6 +494,14 @@ function isvalidwordarray(array)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a magnitude that the library can use. This
+-- fails if the value is
+--  * not a valid word array
+--  * too large
+--  * with leading zeros
+--]==]
 function isvalidmagnitude(mag)
    local ok, reason = isvalidwordarray(mag)
    local r = "not a valid magnitude: "
@@ -466,6 +521,13 @@ function isvalidmagnitude(mag)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a sign that the library can use. This
+-- fails if the value is
+--  * not a number
+--  * not -1, 0, or 1
+--]==]
 function isvalidsign(sign)
    local r = "not a valid sign: "
    
@@ -478,6 +540,20 @@ function isvalidsign(sign)
    return true
 end
 
+
+--[==[
+-- Tests whether the sign and magnitude given are a sign-magnitude pairing that
+-- the library can use. This fails if
+--  * `sign` isn't a sign
+--  * `mag` isn't a magnitude
+--  * a non-zero magnitude is paired with a zero-sign (ambiguous sign)
+--  * a zere-magnitude is paired with a non-zero-sign (redundant zeros)
+--
+-- Note, preventing redundant zeros are just to enforce that there aren't
+-- multiple notations for the same value, that is -0, 0, and +0. This isn't as
+-- big of an issue as ambiguous signage, so I might remove this part of the
+-- test later.
+--]==]
 function isvalidsignmagnitudecombination(sign, mag)
    local r = "not a valid sign-magnitude pair: "
    
@@ -492,6 +568,15 @@ function isvalidsignmagnitudecombination(sign, mag)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a biginteger that the library can use.
+-- This fails if the value
+--  * is not a table
+--  * does not contain a valid sign
+--  * does not contain a valid magnitude
+--  * does not contain a valid sign-magnitude pair
+--]==]
 function isvalidbiginteger(bigint)
    local ok, reason
    local r = "not a valid biginteger: "
@@ -518,6 +603,13 @@ function isvalidbiginteger(bigint)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a radix that the library can use. This
+-- fails if the value is
+--  * not an integer
+--  * not in the range [2, 36]
+--]==]
 function isvalidradix(radix)
    local ok, reason = isvalidinteger(radix)
    local r = "not a valid radix: "
@@ -531,6 +623,13 @@ function isvalidradix(radix)
    return true
 end
 
+
+--[==[
+-- Tests whether the passed value is a string-number that the library can use.
+-- This fails if the value
+--  * is not a string
+--  * contains a character that is not valid with the given radix
+--]==]
 function isvalidstringnumber(str, radix)
    local set
    local highest = radix - 1
@@ -563,6 +662,12 @@ function isvalidstringnumber(str, radix)
       .. tostring(index) .. ": '" .. char .. "'"
 end
 
+
+--[==[
+-- Tests if the passed value is either a integer, word-array, or biginteger
+-- that the library can use. This fails if the value is neither of those
+-- things.
+--]==]
 function isvalidoperablevalue(value)
    if isvalidinteger(value) or isvalidwordarray(value) or isvalidbiginteger(value) then
       return true
@@ -571,6 +676,13 @@ function isvalidoperablevalue(value)
    return false, "not a valid operable value: it's a " .. type(value)
 end
 
+
+--[==[
+-- Tests if the passed values are both operable values and fails if either are
+-- not. The second return value (the reason it failed) will incorporate the
+-- operation attempted, thus the `operation` parameter is a string of what the
+-- operation was (such as "addition" or "multiplication").
+--]==]
 function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
    if isvalidoperablevalue(thisvalue) and isvalidoperablevalue(thatvalue) then
       return true
@@ -579,6 +691,13 @@ function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
    return false, "attempt to perform " .. operation .. " on " .. gettype(thisvalue) .. " and " .. gettype(thatvalue)
 end
 
+
+--[==[
+-- Tests if the first value is a biginteger and the second value is an operable
+-- value. This fails if the first value is not a biginteger or the second value
+-- is not operable. Like the previous function, this incorporates the name of
+-- the operation being attempted into the returned reason.
+--]==]
 function arevalidbigintegerandoperablevalue(bigint, value, operation)
    local ok, reason = isvalidbiginteger(bigint)
    
