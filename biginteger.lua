@@ -24,6 +24,9 @@
 --[====[
 -- Definitions:
 --  * Integer: A Lua value of type 'number' that has no decimal (x % 1 == 0).
+--
+--  * Long: An integer that is larger than 32 bits when positive. An integer l
+--    is a long if l < -4294967295 or l > 4294967295.
 --  
 --  * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
 --    
