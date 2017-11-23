@@ -23,7 +23,7 @@
 
 --[====[
 -- Definitions:
---  * Integer: A Lua value of type 'number' that is an integer (x % 1 == 0).
+--  * Integer: A Lua value of type 'number' that has no decimal (x % 1 == 0).
 --  
 --  * 32-bit Integer: An integer that is non-negative and less than 2 ^ 32.
 --    
@@ -64,6 +64,16 @@
 --       any value that is not a 32-bit-integer in the range, it will fail the
 --       test. If #array == 0 then the word-array is still valid: it has a
 --       zero-length sequence and is thus equal to 0 (zero).
+--
+--        * You could pass a table with a metatable with a custom __len
+--          metamethod, but you would probably need to modify the __index
+--          metamethod to ensure that for each integer i in [1, #array],
+--          array[i] is a 32-bit integer. Doing so could make some big
+--          word-arrays more space efficient. Suppose you needed a 76 followed
+--          by a million zero-words; you could modify the __len to say it's a
+--          1'000'001 words long, then modify the __index to say only index 1
+--          has a value `76` and indices 2 to 1'000'001 have values `0`, and
+--          all other indices have value `nil`.
 --       
 --    f) Note: Since a word-array is a table, it may have keys and values that
 --       are not in the sequence (such as t.name = 'Harri'). It is possible for
@@ -500,16 +510,7 @@ end
 --  * an array that contains a value that is not a 32-bit integer
 --
 -- Note, this function (and every other array function, for that matter) uses
--- the length operator (#) in a `for i = 1, #array do` loop. You could pass a
--- table with a metatable with a custom __len metamethod, but for it to pass
--- this function the metatable would also need to ensure that every integer
--- index i from 1 to #array (inclusive), array[i] maps to a valid 32-bit
--- integer. That being said, this isn't supposed to discourage the use of
--- metatables: you can create space-efficient big word-arrays using metatables
--- (for example, suppose you needed a big word-array that was one word followed
--- by a million zero-words; it probably would be better to use the __index
--- metamethod to "pretend" that all those zeros are there instead of wasting
--- all that space on a bunch of zeros).
+-- the length operator (#) in a `for i = 1, #array do` loop.
 --]==]
 function isvalidwordarray(array)
    local r = "not a valid word-array: "
