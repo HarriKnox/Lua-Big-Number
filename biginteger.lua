@@ -117,28 +117,30 @@ local bitleftshift  = (bit32 and bit32.lshift) or (bit and bit.blshift)
 local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogic_rshift)
 local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
-local floor  = floor  or math.floor
-local ceil   = ceil   or math.ceil
-local max    = max    or math.max
-local min    = min    or math.min
-local abs    = abs    or math.abs
-local log    = log    or math.log
+local floor = floor or math.floor
+local ceil  = ceil  or math.ceil
+local max   = max   or math.max
+local min   = min   or math.min
+local abs   = abs   or math.abs
+local log   = log   or math.log
 
 local stringchar    = string.char
 local stringbyte    = string.byte
 local stringsub     = string.sub
 local stringmatch   = string.match
+local stringfind    = string.find
 local stringrep     = string.rep
 local stringreverse = string.reverse
-local tableconcat   = table.concat
-local tableinsert   = table.insert
--- Because of functional overhead, use table.insert only to insert in the
--- middle/beginning of an array. Use `t[#t + 1] = _` when appending.
 
---[[ Constants ]]
-local maxinteger         = 0x7ffffffffffff -- 2^51 - 1; largest number bit32 can work with reliably (despite being a 32-bit library)
-local maxmagnitudelength =  0x3fffffffffff -- 2^51 / 32 - 1; largest magnitude allowable because of 32 bits per word (allows for up to 2^51 bits)
-local negativemask       =      0x80000000 -- mask used for 32-bit integers to get sign
+
+local tableconcat = table.concat
+local tableinsert = table.insert
+
+
+local maxinteger = 0x7ffffffffffff
+local maxmagnitudelength = 0x3fffffffffff
+local negativemask = 0x80000000
+
 
 local log2 = log(2)
 
@@ -178,7 +180,7 @@ local digitsperinteger = {
 -- Casts each number to "int digits" which contain the number of digits
 -- specified in digitsperinteger
 local intradix = {
-   0x00000000, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
+            0, 0x40000000, 0x4546b3db, 0x40000000, 0x48c27395, 0x159fd800,
    0x75db9c97, 0x40000000, 0x17179149, 0x3b9aca00, 0x0cc6db61, 0x19a10000,
    0x309f1021, 0x57f6c100, 0x0a2f1b6f, 0x10000000, 0x18754571, 0x247dbc80,
    0x3547667b, 0x4c4b4000, 0x6b5a6e1d, 0x06c20a40, 0x08d2d931, 0x0b640000,
