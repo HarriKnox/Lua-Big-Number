@@ -128,6 +128,10 @@ _ENV = bi
 --[                                                          ]
 --]==========================================================]
 
+--[===================[
+--[ Bitwise Functions ]
+--]===================]
+
 local bitand = (bit32 or bit).band
 local bitor  = (bit32 or bit).bor
 local bitnot = (bit32 or bit).bnot
@@ -136,12 +140,24 @@ local bitleftshift  = (bit32 and bit32.lshift) or (bit and bit.blshift)
 local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogic_rshift)
 local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
 
+
+
+--[================[
+--[ Math Functions ]
+--]================]
+
 local floor = floor or math.floor
 local ceil  = ceil  or math.ceil
 local max   = max   or math.max
 local min   = min   or math.min
 local abs   = abs   or math.abs
 local log   = log   or math.log
+
+
+
+--[==================[
+--[ String Functions ]
+--]==================]
 
 local stringchar    = string.char
 local stringbyte    = string.byte
@@ -152,9 +168,19 @@ local stringrep     = string.rep
 local stringreverse = string.reverse
 
 
+
+--[=================[
+--[ Table Functions ]
+--]=================]
+
 local tableconcat = table.concat
 local tableinsert = table.insert
 
+
+
+--[===========[
+--[ Constants ]
+--]===========]
 
 local maxinteger = 0x7ffffffffffff
 local maxmagnitudelength = 0x3fffffffffff
@@ -163,7 +189,12 @@ local negativemask = 0x80000000
 
 local log2 = log(2)
 
---[[ Threshold values ]]
+
+
+--[==================[
+--[ Threshold Values ]
+--]==================]
+
 local karatsubasquarethreshold = 128
 local karatsubamultiplythreshold = 80
 
@@ -175,7 +206,11 @@ local burnikelziegleroffset = 40
 
 local schoenhagebaseconversionthreshold = 20
 
---[[ Tables and Caches ]]
+
+--[===================[
+--[ Tables and Caches ]
+--]===================]
+
 -- Number of bits contained in a digit grouping in a string integer
 -- rounded up, indexed by radix
 local bitsperdigit = {
