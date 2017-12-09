@@ -864,6 +864,12 @@ function splitlong(number)
    return floor(number / 0x100000000), number % 0x100000000
 end
 
+
+function splitlongtowordsandbits(number)
+   return floor(number / 32), bitand(number, 0x1f)
+end
+
+
 function integermultiplyandaddtosplitlong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
@@ -953,10 +959,6 @@ function divide64bitsby32bits(ah, al, b)
       ql = ql - 0x100000000
    end
    return qh, ql, r2
-end
-
-function splitlongtowordsandbits(number)
-   return floor(number / 32), bitand(number, 0x1f)
 end
 
 
