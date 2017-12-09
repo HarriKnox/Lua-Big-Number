@@ -529,7 +529,8 @@ function isvalidwordarray(array)
    
    --[[ Next, if it could be terated as a biginteger, then fail ]]
    if isvalidbiginteger(array) then
-      return false, r .. "it's a biginteger and will not be treated as a word-array"
+      return false, r
+            .. "it's a biginteger and will not be treated as a word-array"
    end
    
    
