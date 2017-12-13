@@ -911,10 +911,9 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    return highword, lowword
 end
 --[[
-Note to self: speed boost for Lua 5.3 using bitwise operators instead of
-function calls: bitand -> &, bitor  -> |, bitnot -> ~, etc. Unfortunately,
-those sigils are incompatible with Lua 5.2. The alternative is to use strings
-and the `load` function. For example:
+Note to self: speed boost for Lua 5.3 using bitwise operator sigils instead of
+function calls. Unfortunately, those sigils are incompatible with Lua 5.2. The
+alternative is to use strings and the `load` function. For example:
 
    function somearbitraryoperation(a, b, c)
       return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
@@ -932,15 +931,19 @@ or
       return a & (~b << (c | 3)) \
    end")()
 
+
 The string keeps the 5.2 interpreter from erroring and the `load` allows the
 5.3 interpreter to understand and compile it. Because the `load` function
-returns an executable chunk without executing it you need to call it
-afterward. Also, quotes don't carry across newlines so I escaped the newlines
-with the backslashes. Also also, I prefer the first option because it
-produces a named chunk and not an anonymous chunk assigned to a variable.
+returns an executable chunk without executing it you need to call it afterward.
+Also, quotes don't carry across newlines so I escaped the newlines with the
+backslashes. Also also, I prefer the first option because it produces a named
+chunk and not an anonymous chunk assigned to a variable.
 
 
-The entire function needs to be wrapped in the load string. Simply doing
+The entire function needs to be wrapped in the load string. Simply doing the
+following will cause massive functional and loading overhead for each call from
+not only calling `load` every time, but also splitting the numerous bitwise
+operations across multiple function calls.
 
    function somearbitraryoperation(a, b, c)
       return load("return function(a, b) return a & b end")()
@@ -950,18 +953,14 @@ The entire function needs to be wrapped in the load string. Simply doing
                            (c, 3)))
    end
 
-will cause massive functional and loading overhead for each call from not
-only calling `load` every time, but also splitting the numerous bitwise
-operations across multiple function calls.
-
 
 Also, redefining `bitand`, `bitor`, and the other functions with `load` like
+this will, again, cause functional overhead slowdowns.
 
    bitand = load("return function(a, b) return a & b end")()
    bitor = load("return function(a, b) return a | b end")()
    bitor = load("return function(a) return ~a end")()
 
-will, again, cause functional overhead slowdowns.
 
 These potential changes could also potentially benefit the next function.
 ]]
@@ -1014,6 +1013,11 @@ function numberofleadingzeros(int)
    
    return n - bitrightshift(int, 31)
 end
+--[[
+Note to self: speed boost from using multiplication and divides instead of
+function calls for the shifts.
+--]]
+
 
 function numberoftrailingzeros(int)
    -- Returns the number of trailing zeros in the 32-bit integer.
@@ -1051,6 +1055,10 @@ function numberoftrailingzeros(int)
    
    return n - bitrightshift(int * 2, 31)
 end
+--[[
+Note to self: like the previous, perhaps there is a faster way to do this in
+Lua 5.2 using multiplications and divides.
+--]]
 
 
 function numberofleadingzeroslong(long)
