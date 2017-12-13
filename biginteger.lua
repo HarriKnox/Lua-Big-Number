@@ -881,16 +881,37 @@ end
 --[                                                       ]
 --]=======================================================]
 
+--[==[
+-- Takes a long and splits it into two 32-bit integers so the lowest 32-bits
+-- are in the second return value and all bits higher than 32 bits are
+-- bit-shifted to the right and returned in the first value.
+--]==]
 function splitlong(number)
    return floor(number / 0x100000000), number % 0x100000000
 end
 
 
+--[==[
+-- Takes a number and splits it into two integers so the second return value is
+-- the lowest 5 bits (less than 32) and the first return value is the number
+-- without those 5 bits.
+--]==]
 function splitlongtowordsandbits(number)
    return floor(number / 32), bitand(number, 0x1f)
 end
 
 
+--[==[
+-- A helper function to do 64-bit multiplication using 32-bit integers. Takes
+-- two 32-bit integers `x` and `ab` and multiplies them together, then adds a
+-- third value `c`. Returns the result of `x * ab + c = r` as a split long.
+--
+-- All of this math is done since 64-bit floats (the default size/type of Lua
+-- numbers until Lua 5.3) allow for at most 53 bits of mantissa, thus the
+-- largest integer possible without losing precision is a 53-bit integer. Since
+-- the use of 64 bits is rather useful, this math allows us to multiply and add
+-- numbers without the fear of losing bits, at the cost of taking longer.
+--]==]
 function integermultiplyandaddtosplitlong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
@@ -969,6 +990,16 @@ this will, again, cause functional overhead slowdowns.
 These potential changes could also potentially benefit the next function.
 ]]
 
+
+--[==[
+-- Another helper function to do 64-bit division using 32-bit integers. Takes
+-- two 32-bit integers `ah` and `al` and pretends they're one big 64-bit
+-- integer `a` and divides that by `b`. Returns the quotient and remainder of
+-- `a / b` as a split long and 32-bit integer (respectively).
+--
+-- Like the previous function, this function is necessary to facilitate 64-bit
+-- arithmetic using 32-bit integers.
+--]==]
 function divide64bitsby32bits(ah, al, b)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
    local q1 = floor(ahhl / b)
@@ -986,9 +1017,12 @@ function divide64bitsby32bits(ah, al, b)
 end
 
 
+--[==[
+-- Returns the number of leading zeros in the 32-bit integer. This rendition
+-- uses the Hacker's Delight algorithm (HD Figure 5-6), that is used by the
+-- Java Integer class.
+--]==]
 function numberofleadingzeros(int)
-   -- Returns the number of leading zeros in the 32-bit integer.
-   -- Uses Hacker's Delight figure 5-6 method used by Java Integer
    local n = 1
    
    
@@ -1029,9 +1063,12 @@ function calls for the shifts.
 --]]
 
 
+--[==[
+-- Returns the number of trailing zeros in the 32-bit integer. This rendition
+-- uses the Hacker's Delight algorithm (HD Figure 5-14), that is used by the
+-- Java Integer class.
+--]==]
 function numberoftrailingzeros(int)
-   -- Returns the number of trailing zeros in the 32-bit integer.
-   -- Uses Hacker's Delight figure 5-14 method used by Java Integer
    local y
    local n = 31
    
@@ -1077,6 +1114,12 @@ Lua 5.2 using multiplications and divides.
 --]]
 
 
+--[==[
+-- Returns the number of leading zeros in a 64-bit integer. Because this
+-- function uses only the most significant bits, the least significant aren't
+-- looked at so a full 64-bit integer can be used without the fear of the loss
+-- of the lowest bits.
+--]==]
 function numberofleadingzeroslong(long)
    local high, low
    local leadingzeros
@@ -1091,6 +1134,13 @@ function numberofleadingzeroslong(long)
    return leadingzeros
 end
 
+
+--[==[
+-- Returns the number of trailing zeros in a 64-bit integer. Because this
+-- function uses the least significant bits, the results of it are undefined if
+-- passed an integer too large for the 64-bit floating-point number (a 54-bit
+-- integer or larger).
+--]==]
 function numberoftrailingzeroslong(long)
    local high, low
    local trailingzeros
