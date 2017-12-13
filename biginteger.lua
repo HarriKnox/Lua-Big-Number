@@ -895,20 +895,24 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
+   
    local xa = x * a
    local xb = x * b
+   
    
    local xahigh = floor(xa / 0x10000)
    local xalow = bitleftshift(xa, 16)
    
+   
    local xbhigh = floor(xb / 0x100000000)
    local xblow = xb % 0x100000000
    
-   local lowword = xalow + xblow + c
-   local highword = xahigh + xbhigh + floor(lowword / 0x100000000)
-   lowword = lowword  % 0x100000000
    
-   return highword, lowword
+   local carry, rlow = splitlong(xalow + xblow + c)
+   local rhigh = xahigh + xbhigh + carry
+   
+   
+   return rhigh, rlow
 end
 --[[
 Note to self: speed boost for Lua 5.3 using bitwise operator sigils instead of
@@ -987,29 +991,35 @@ function numberofleadingzeros(int)
    -- Uses Hacker's Delight figure 5-6 method used by Java Integer
    local n = 1
    
+   
    if int == 0 then
       return 32
    end
+   
    
    if bitrightshift(int, 16) == 0 then
       n = n + 16
       int = bitleftshift(int, 16)
    end
    
+   
    if bitrightshift(int, 24) == 0 then
       n = n + 8
       int = bitleftshift(int, 8)
    end
+   
    
    if bitrightshift(int, 28) == 0 then
       n = n + 4
       int = bitleftshift(int, 4)
    end
    
+   
    if bitrightshift(int, 30) == 0 then
       n = n + 2
       int = bitleftshift(int, 2)
    end
+   
    
    return n - bitrightshift(int, 31)
 end
@@ -1025,9 +1035,11 @@ function numberoftrailingzeros(int)
    local y
    local n = 31
    
+   
    if int == 0 then
       return 32
    end
+   
    
    y = bitleftshift(int, 16)
    if y ~= 0 then
@@ -1035,11 +1047,13 @@ function numberoftrailingzeros(int)
       int = y
    end
    
+   
    y = bitleftshift(int, 8)
    if y ~= 0 then
       n = n - 8
       int = y
    end
+   
    
    y = bitleftshift(int, 4)
    if y ~= 0 then
@@ -1047,11 +1061,13 @@ function numberoftrailingzeros(int)
       int = y
    end
    
+   
    y = bitleftshift(int, 2)
    if y ~= 0 then
       n = n - 2
       int = y
    end
+   
    
    return n - bitrightshift(int * 2, 31)
 end
