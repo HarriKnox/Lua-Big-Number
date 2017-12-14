@@ -1326,10 +1326,15 @@ end
 -- of the lowest bits.
 --]==]
 function numberofleadingzeroslong(long)
+   --[[ Split the long ]]
    local high, low = splitlong(long)
+   
+   
+   --[[ Get the number of leading zeros in the high word ]]
    local leadingzeros = numberofleadingzeros(high)
    
    
+   --[[ If the zeros extend into the low word, get the total number of zeros ]]
    if leadingzeros == 32 then
       leadingzeros = 32 + numberofleadingzeros(low)
    end
@@ -1346,10 +1351,15 @@ end
 -- integer or larger).
 --]==]
 function numberoftrailingzeroslong(long)
+   --[[ Split the long ]]
    local high, low = splitlong(long)
+   
+   
+   --[[ Get the number of trailing zeros in the low word ]]
    local trailingzeros = numberoftrailingzeros(low)
    
    
+   --[[ If the zeros extend into high word, get the total number of zeros ]]
    if trailingzeros == 32 then
       trailingzeros = 32 + numberoftrailingzeros(high)
    end
