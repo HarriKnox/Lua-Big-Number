@@ -1106,9 +1106,9 @@ end
 -- this function would be rewritten as the following, guarded by an
 -- if-statement that ensures the version is 5.3 and above.
 --
---    load("function integermultiplyandaddtosplitlong(x, ab, c) \
---       return x * ab + c \
---    end")
+--    load("function integermultiplyandaddtosplitlong(x, ab, c)               \
+--       return x * ab + c                                                    \
+--    end")()
 --
 --
 -- Generally, speed boosts for Lua 5.3 work using bitwise operator sigils
@@ -1122,14 +1122,14 @@ end
 -- 
 -- becomes
 -- 
---    load("function somearbitraryoperation(a, b, c) \
---       return a & (~b << (c | 3)) \
+--    load("function somearbitraryoperation(a, b, c)                          \
+--       return a & (~b << (c | 3))                                           \
 --    end")()
 -- 
 -- or
 -- 
---    somearbitraryoperation = load("return function(a, b, c) \
---       return a & (~b << (c | 3)) \
+--    somearbitraryoperation = load("return function(a, b, c)                 \
+--       return a & (~b << (c | 3))                                           \
 --    end")()
 -- 
 -- 
@@ -1176,12 +1176,15 @@ end
 -- Like the previous function, this function is necessary to facilitate 64-bit
 -- arithmetic using 32-bit integers.
 --]==]
+--[[
 --                           
 --                           _________________________________________________
 --  ______________________  |  ______________________________________________
 -- |                      | | |                                              |
 -- | XX    XX    XX    XX | | | XX    XX    XX    XX    XX    XX    XX    XX | x * ab (64)
 -- |______________________| | |______________________________________________|
+--
+--]]
 function divide64bitsby32bits(ah, al, b)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
    local q1 = floor(ahhl / b)
@@ -1240,8 +1243,8 @@ function numberofleadingzeros(int)
    return n - bitrightshift(int, 31)
 end
 --[[
--- Note to self: speed boost from using multiplication and divides instead of
--- function calls for the shifts.
+-- Note to self: speed boost from using multiplications, comparisons, and
+-- divides instead of function calls for the shifts.
 --]]
 
 
@@ -1292,7 +1295,7 @@ function numberoftrailingzeros(int)
 end
 --[[
 -- Note to self: like the previous, perhaps there is a faster way to do this in
--- Lua 5.2 using multiplications and divides.
+-- Lua 5.2 using multiplications, comparisons, and divides.
 --]]
 
 
