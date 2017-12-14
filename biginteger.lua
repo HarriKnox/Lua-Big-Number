@@ -1601,11 +1601,11 @@ end
 
 function negatewordarrayto(source, destination)
    --[[
-      This function is correct, even though it seems it should do something with
-      `addend` after the loop. The only number that would cause an overflow when
-      added to 1 is 0b1111111111111111 (-1). The bitnot of that is 0. Thus the
-      only number that would cause `addend` to still be 1 after the loop is 0,
-      and the negation of 0 is 0.
+   -- This function is correct, even though it seems it should do something with
+   -- `addend` after the loop. The only number that would cause an overflow when
+   -- added to 1 is 0b1111111111111111 (-1). The bitnot of that is 0. Thus the
+   -- only number that would cause `addend` to still be 1 after the loop is 0,
+   -- and the negation of 0 is 0.
    --]]
    local length = #source
    local addend = 1
@@ -2691,32 +2691,32 @@ end
 -- Squarition
 function squarecolinplumb(mag)
 --[[
-               a  b  c  d  e
-            *  a  b  c  d  e
-            ==================
-               ae be ce de EE
-            ad bd cd DD de
-         ac bc CC cd ce
-      ab BB bc bd be
-   AA ab ac ad ae
-   
-   There is the diagonal:
-                           EE
-                     DD
-               CC
-         BB
-   AA
-   
-   And two triangles of the same set of products
-               ae be ce de
-            ad bd cd
-         ac bc
-      ab                de
-                  cd ce
-            bc bd be
-      ab ac ad ae
-   
-   So diagonal + 2 * triangles
+--             a  b  c  d  e
+--          *  a  b  c  d  e
+--          ==================
+--             ae be ce de EE
+--          ad bd cd DD de
+--       ac bc CC cd ce
+--    ab BB bc bd be
+-- AA ab ac ad ae
+-- 
+-- There is the diagonal:
+--                         EE
+--                   DD
+--             CC
+--       BB
+-- AA
+-- 
+-- And two triangles of the same set of products
+--             ae be ce de
+--          ad bd cd
+--       ac bc
+--    ab                de
+--                cd ce
+--          bc bd be
+--    ab ac ad ae
+-- 
+-- So diagonal + 2 * triangles
 --]]
    local maglength
    local resultlengh, index
@@ -2774,16 +2774,16 @@ end
 
 function squarekaratsuba(mag)
 --[[
-   let B be the arbitrary base and Xx be the number we're squaring where
-      Xx = X*B + x
-   
-   Xx = X*B + x, so
-   Xx * Xx = (X*B + x)(X*B + x)
-           = X*X*B*B + X*B*x + x*X*B + x*x
-           = X^2*B^2 + 2*X*B*x + x^2
-           = ((X^2)*B + 2*X*x)*B + x^2
-   
-   Since in this case B is a power of 2, multiplying by B is a leftshift
+-- let B be the arbitrary base and Xx be the number we're squaring where
+--    Xx = X*B + x
+-- 
+-- Xx = X*B + x, so
+-- Xx * Xx = (X*B + x)(X*B + x)
+--         = X*X*B*B + X*B*x + x*X*B + x*x
+--         = X^2*B^2 + 2*X*B*x + x^2
+--         = ((X^2)*B + 2*X*x)*B + x^2
+-- 
+-- Since in this case B is a power of 2, multiplying by B is a leftshift
 --]]
    local halfway, shiftup
    local upper, lower
@@ -3096,7 +3096,8 @@ function multiplytoomcook(thismag, thatmag)
    
    -- tm1 = v1.subtract(vm1).shiftRight(1); last instance of vm1, so tm1 = vm1
    if vm1sign < 0 then
-      destructiveaddmagnitudes(vm1, v1) -- v1 - -vm1 = v1 + vm1
+      -- v1 - -vm1 = v1 + vm1
+      destructiveaddmagnitudes(vm1, v1)
    else
       -- this function returns the difference regardless of the order
       -- in this algorithm, tm1 will never be negative
@@ -3245,26 +3246,26 @@ function raisemagnitude(mag, exponent)
    end
    
    --[[ Still in testing
-   if highest == lowest then
-      -- Otherwise the value is a power of 2 and can be easily exponentiated by
-      -- left-shifting. 
-      
-      shifts = lowest * (exponent - 1)
-      ok, reason = isvalidinteger(shifts)
-      
-      if not ok then
-         error("value too large to be exponentiated")
-      end
-      
-      destructiveleftshift(mag, shifts)
-      
-      if bitand(exponent, 1) == 0 then
-         -- exponent is even
-         sign = 1
-      end
-      
-      return constructorsignmagnitude(sign, mag)
-   end
+   -- if highest == lowest then
+   --    -- Otherwise the value is a power of 2 and can be easily exponentiated by
+   --    -- left-shifting. 
+   --    
+   --    shifts = lowest * (exponent - 1)
+   --    ok, reason = isvalidinteger(shifts)
+   --    
+   --    if not ok then
+   --       error("value too large to be exponentiated")
+   --    end
+   --    
+   --    destructiveleftshift(mag, shifts)
+   --    
+   --    if bitand(exponent, 1) == 0 then
+   --       -- exponent is even
+   --       sign = 1
+   --    end
+   --    
+   --    return constructorsignmagnitude(sign, mag)
+   -- end
    --]]
    
    parttosquare = mag
@@ -3448,7 +3449,9 @@ function destructivedivideknuth(dividend, divisor)
    divisorlength = #divisor
    
    shift = numberofleadingzeros(divisor[1])
-   div = copyandleftshift(divisor, shift) -- if shift == 0, it returns a copy
+   
+   -- if shift == 0, it returns a copy
+   div = copyandleftshift(divisor, shift)
    
    remainder = copyandleftshift(dividend, shift)
    
@@ -3475,44 +3478,44 @@ function destructivedivideknuth(dividend, divisor)
          skipcorrection = bitxor(qrem, negativemask) < nh2
       else
          --[[
-            long nChunk = (((long)nh) << 32) | (nm & LONG_MASK);
-            if (nChunk >= 0) {
-               qhat = (int) (nChunk / dhLong);
-               qrem = (int) (nChunk - (qhat * dhLong));
-            } else {
-               long tmp = divWord(nChunk, dh);
-               qhat = (int) (tmp & LONG_MASK);
-               qrem = (int) (tmp >>> 32);
-            }
+         -- long nChunk = (((long)nh) << 32) | (nm & LONG_MASK);
+         -- if (nChunk >= 0) {
+         --    qhat = (int) (nChunk / dhLong);
+         --    qrem = (int) (nChunk - (qhat * dhLong));
+         -- } else {
+         --    long tmp = divWord(nChunk, dh);
+         --    qhat = (int) (tmp & LONG_MASK);
+         --    qrem = (int) (tmp >>> 32);
+         -- }
          --]]
          _, qhat, qrem = divide64bitsby32bits(nh, nm, divhigh)
       end
       
       --[[
-         if (qhat == 0)
-            continue
-         
-         well, there's no continue in Lua
+      -- if (qhat == 0)
+      --    continue
+      -- 
+      -- well, there's no continue in Lua
       --]]
       
       if qhat ~= 0 then
          --[[
-            if (!skipCorrection) { // Correct qhat
-               long nl = rem.value[j+2+rem.offset] & LONG_MASK;
-               long rs = ((qrem & LONG_MASK) << 32) | nl;
-               long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
-
-               if (unsignedLongCompare(estProduct, rs)) {
-                  qhat--;
-                  qrem = (int)((qrem & LONG_MASK) + dhLong);
-                  if ((qrem & LONG_MASK) >=  dhLong) {
-                     estProduct -= (dl & LONG_MASK);
-                     rs = ((qrem & LONG_MASK) << 32) | nl;
-                     if (unsignedLongCompare(estProduct, rs))
-                        qhat--;
-                  }
-               }
-            }
+         -- if (!skipCorrection) { // Correct qhat
+         --    long nl = rem.value[j+2+rem.offset] & LONG_MASK;
+         --    long rs = ((qrem & LONG_MASK) << 32) | nl;
+         --    long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+         --
+         --    if (unsignedLongCompare(estProduct, rs)) {
+         --       qhat--;
+         --       qrem = (int)((qrem & LONG_MASK) + dhLong);
+         --       if ((qrem & LONG_MASK) >=  dhLong) {
+         --          estProduct -= (dl & LONG_MASK);
+         --          rs = ((qrem & LONG_MASK) << 32) | nl;
+         --          if (unsignedLongCompare(estProduct, rs))
+         --             qhat--;
+         --       }
+         --    }
+         -- }
          --]]
          
          if not skipcorrection then
@@ -3621,7 +3624,8 @@ function divide3n2n(a, b, halfn)
    local a12, a1, a3, b1, b2, d, _
    local quotient, remainder
    
-   local one = {1} -- used for decrementing
+   -- used for decrementing
+   local one = {1}
    
    -- step 1: A = [a1,a2,a3], let a12 = [a1,a2]
    a12, a3 = splitarrayatwordfromend(a, halfn)
@@ -3915,17 +3919,20 @@ function stringbuildrecursive(thismag, radix, digits)
 end
 
 
-do -- Temp stuff, wrapped for organization
+-- Temp stuff, wrapped for organization
+do
    -- temporary functions to print the number in hexadecimal or binary
    function getintegerstringhexadecimal(number)
       return string.format('%08x', number)
-      --[[local str, index = {}, 1
-      
-      for i = 28, 0, -4 do
-         str[index], index = characters[bitand(bitrightshift(number, i), 0xf)], index + 1
-      end
-      
-      return table.concat(str)]]
+      --[[
+      -- local str, index = {}, 1
+      -- 
+      -- for i = 28, 0, -4 do
+      --    str[index], index = characters[bitand(bitrightshift(number, i), 0xf)], index + 1
+      -- end
+      -- 
+      -- return table.concat(str)
+      --]]
    end
 
    function getintegerstringbinary(number)
@@ -4002,4 +4009,5 @@ if _CC_VERSION then
    return
 end
 
-return bi--{biginteger = biginteger}
+return bi
+--{biginteger = biginteger}
