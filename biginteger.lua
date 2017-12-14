@@ -1102,9 +1102,19 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    return rhigh, rlow
 end
 --[[
--- Note to self: speed boost for Lua 5.3 using bitwise operator sigils instead
--- of function calls. Unfortunately, those sigils are incompatible with Lua
--- 5.2. The alternative is to use strings and the `load` function. For example:
+-- Note to self: speed boost for this function by using `load`. Specifically,
+-- this function would be rewritten as the following, guarded by an
+-- if-statement that ensures the version is 5.3 and above.
+--
+--    load("function integermultiplyandaddtosplitlong(x, ab, c) \
+--       return x * ab + c \
+--    end")
+--
+--
+-- Generally, speed boosts for Lua 5.3 work using bitwise operator sigils
+-- instead of function calls. Unfortunately, those sigils are incompatible with
+-- Lua 5.2. The alternative is to use strings and the `load` function. For
+-- example:
 -- 
 --    function somearbitraryoperation(a, b, c)
 --       return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
@@ -1166,6 +1176,12 @@ end
 -- Like the previous function, this function is necessary to facilitate 64-bit
 -- arithmetic using 32-bit integers.
 --]==]
+--                           
+--                           _________________________________________________
+--  ______________________  |  ______________________________________________
+-- |                      | | |                                              |
+-- | XX    XX    XX    XX | | | XX    XX    XX    XX    XX    XX    XX    XX | x * ab (64)
+-- |______________________| | |______________________________________________|
 function divide64bitsby32bits(ah, al, b)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
    local q1 = floor(ahhl / b)
