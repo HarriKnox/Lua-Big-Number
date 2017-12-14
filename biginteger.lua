@@ -1208,44 +1208,51 @@ end
 -- Java Integer class.
 --]==]
 function numberofleadingzeros(int)
-   local n = 1
+   local n = 0
    
    
+   --[[ Special case that is easy to check ]]
    if int == 0 then
       return 32
    end
    
    
-   if bitrightshift(int, 16) == 0 then
+   --[[ Check if the highest 16 bits are zeros ]]
+   if int <= 0x0000ffff then
       n = n + 16
-      int = bitleftshift(int, 16)
+      int = int * 0x10000
    end
    
    
-   if bitrightshift(int, 24) == 0 then
+   --[[ Check if the highest 8 bits are zeros ]]
+   if int <= 0x00ffffff then
       n = n + 8
-      int = bitleftshift(int, 8)
+      int = int * 0x100
    end
    
    
-   if bitrightshift(int, 28) == 0 then
+   --[[ Check if the highest 4 bits are zeros ]]
+   if int <= 0x0fffffff then
       n = n + 4
-      int = bitleftshift(int, 4)
+      int = int * 0x10
    end
    
    
-   if bitrightshift(int, 30) == 0 then
+   --[[ Check if the highest 2 bits are zeros ]]
+   if int <= 0x3fffffff then
       n = n + 2
-      int = bitleftshift(int, 2)
+      int = int * 0x4
    end
    
    
-   return n - bitrightshift(int, 31)
+   --[[ Check if the highest bit is a zero ]]
+   if int <= 0x7fffffff then
+      n = n = 1
+   end
+   
+   
+   return n
 end
---[[
--- Note to self: speed boost from using multiplications, comparisons, and
--- divides instead of function calls for the shifts.
---]]
 
 
 --[==[
