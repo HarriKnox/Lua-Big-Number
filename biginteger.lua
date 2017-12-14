@@ -1203,9 +1203,10 @@ end
 
 
 --[==[
--- Returns the number of leading zeros in the 32-bit integer. This rendition
--- uses the Hacker's Delight algorithm (HD Figure 5-6), that is used by the
--- Java Integer class.
+-- Returns the number of leading zeros in the 32-bit integer. This uses one of
+-- the Hacker's Delight algorithms featured in HD Figure 5-6. Some optimizing
+-- modifications were made (switching the bit-shifts to multiplications) for
+-- speed.
 --]==]
 function numberofleadingzeros(int)
    local n = 0
@@ -1256,9 +1257,14 @@ end
 
 
 --[==[
--- Returns the number of trailing zeros in the 32-bit integer. This rendition
--- uses the Hacker's Delight algorithm (HD Figure 5-14), that is used by the
--- Java Integer class.
+-- Returns the number of trailing zeros in the 32-bit integer. This uses one of
+-- the Hacker's Delight algorithms featured in (HD Figure 5-14).
+--
+-- This uses the algorithm selected by the Java Integer class and is slow
+-- because of all the calls to the bit-shifting function. Unlike the function
+-- for counting leading zeros, this function can't be optimized in the same
+-- way (changing bit-shifts for multiplications and divisions), but that's OK
+-- because this function is rarely called in comparison to its counterpart.
 --]==]
 function numberoftrailingzeros(int)
    local y
@@ -1311,10 +1317,6 @@ function numberoftrailingzeros(int)
    
    return n
 end
---[[
--- Note to self: like the previous, perhaps there is a faster way to do this in
--- Lua 5.2 using multiplications, comparisons, and divides.
---]]
 
 
 --[==[
