@@ -1262,7 +1262,7 @@ end
 --]==]
 function numberoftrailingzeros(int)
    local y
-   local n = 31
+   local n = 32
    
    
    if int == 0 then
@@ -1298,7 +1298,12 @@ function numberoftrailingzeros(int)
    end
    
    
-   return n - bitrightshift(int * 2, 31)
+   if bitleftshift(int, 1) == 0 then
+      n = n - 1
+   end
+   
+   
+   return n
 end
 --[[
 -- Note to self: like the previous, perhaps there is a faster way to do this in
