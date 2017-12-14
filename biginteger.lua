@@ -1265,11 +1265,13 @@ function numberoftrailingzeros(int)
    local n = 32
    
    
+   --[[ Quick check for zero ]]
    if int == 0 then
       return 32
    end
    
    
+   --[[ Check if lowest 16 bits are zeros ]]
    y = bitleftshift(int, 16)
    if y ~= 0 then
       n = n - 16
@@ -1277,6 +1279,7 @@ function numberoftrailingzeros(int)
    end
    
    
+   --[[ Check if lowest 8 bits are zeros ]]
    y = bitleftshift(int, 8)
    if y ~= 0 then
       n = n - 8
@@ -1284,6 +1287,7 @@ function numberoftrailingzeros(int)
    end
    
    
+   --[[ Check if lowest 4 bits are zeros ]]
    y = bitleftshift(int, 4)
    if y ~= 0 then
       n = n - 4
@@ -1291,6 +1295,7 @@ function numberoftrailingzeros(int)
    end
    
    
+   --[[ Check if lowest 2 bits are zeros ]]
    y = bitleftshift(int, 2)
    if y ~= 0 then
       n = n - 2
@@ -1298,6 +1303,7 @@ function numberoftrailingzeros(int)
    end
    
    
+   --[[ Check if lowest bit is zero ]]
    if bitleftshift(int, 1) == 0 then
       n = n - 1
    end
