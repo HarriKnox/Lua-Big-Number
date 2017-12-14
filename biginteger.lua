@@ -1326,15 +1326,14 @@ end
 -- of the lowest bits.
 --]==]
 function numberofleadingzeroslong(long)
-   local high, low
-   local leadingzeros
+   local high, low = splitlong(long)
+   local leadingzeros = numberofleadingzeros(high)
    
-   high, low = splitlong(long)
-   leadingzeros = numberofleadingzeros(high)
    
    if leadingzeros == 32 then
-      leadingzeros = leadingzeros + numberofleadingzeros(low)
+      leadingzeros = 32 + numberofleadingzeros(low)
    end
+   
    
    return leadingzeros
 end
@@ -1347,15 +1346,14 @@ end
 -- integer or larger).
 --]==]
 function numberoftrailingzeroslong(long)
-   local high, low
-   local trailingzeros
+   local high, low = splitlong(long)
+   local trailingzeros = numberoftrailingzeros(low)
    
-   high, low = splitlong(long)
-   trailingzeros = numberoftrailingzeros(low)
    
    if trailingzeros == 32 then
-      trailingzeros = trailingzeros + numberoftrailingzeros(high)
+      trailingzeros = 32 + numberoftrailingzeros(high)
    end
+   
    
    return trailingzeros
 end
