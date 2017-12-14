@@ -1073,23 +1073,29 @@ end
 --               |______________________/\______________________|
 --]]
 function integermultiplyandaddtosplitlong(x, ab, c)
+   --[[ Split `ab` into `a` and `b` ]]
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
    
    
+   --[[ Get `xa` and `xb` ]]
    local xa = x * a
    local xb = x * b
    
    
+   --[[ Split up `xa` and `xb` based on the 32-bit "midline" ]]
    local xahigh = floor(xa / 0x10000)
    local xalow = bitleftshift(xa, 16)
-   
    
    local xbhigh = floor(xb / 0x100000000)
    local xblow = xb % 0x100000000
    
    
+   --[[ Add the lower words ]]
    local carry, rlow = splitlong(xalow + xblow + c)
+   
+   
+   --[[ Add the upper words ]]
    local rhigh = xahigh + xbhigh + carry
    
    
