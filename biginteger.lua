@@ -299,13 +299,14 @@ local digitsperinteger = {
     7,  7,  7,  6,  6,  6,
     6,  6,  6,  6,  6,  6,
     6,  6,  6,  6,  6,  5}
---[[ Note to self, I think the need for 2^31 in r^n < 2^31 is a hold-over from
-the signedness of Java's int type. Since Lua's ints can handle more than 32
-bits, I think I can change the 2^31 to 2^32; basically I'm checking to make
-sure it doesn't overflow and no longer checking if it goes negative. The
-following radices will change: 2, 3, 4, 6, 9, 11, 15, 16, 22, 23, and 36. The
-same will go for indradix.
-]]
+--[[
+-- Note to self, I think the need for 2^31 in r^n < 2^31 is a hold-over from
+-- the signedness of Java's int type. Since Lua's ints can handle more than 32
+-- bits, I think I can change the 2^31 to 2^32; basically I'm checking to make
+-- sure it doesn't overflow and no longer checking if it goes negative. The
+-- following radices will change: 2, 3, 4, 6, 9, 11, 15, 16, 22, 23, and 36.
+-- The same will go for intradix.
+--]]
 
 
 --[==[
@@ -1095,59 +1096,59 @@ function integermultiplyandaddtosplitlong(x, ab, c)
    return rhigh, rlow
 end
 --[[
-Note to self: speed boost for Lua 5.3 using bitwise operator sigils instead of
-function calls. Unfortunately, those sigils are incompatible with Lua 5.2. The
-alternative is to use strings and the `load` function. For example:
-
-   function somearbitraryoperation(a, b, c)
-      return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
-   end
-
-becomes
-
-   load("function somearbitraryoperation(a, b, c) \
-      return a & (~b << (c | 3)) \
-   end")()
-
-or
-
-   somearbitraryoperation = load("return function(a, b, c) \
-      return a & (~b << (c | 3)) \
-   end")()
-
-
-The string keeps the 5.2 interpreter from erroring and the `load` allows the
-5.3 interpreter to understand and compile it. Because the `load` function
-returns an executable chunk without executing it you need to call it afterward.
-Also, quotes don't carry across newlines so I escaped the newlines with the
-backslashes. Also also, I prefer the first option because it produces a named
-chunk and not an anonymous chunk assigned to a variable.
-
-
-The entire function needs to be wrapped in the load string. Simply doing the
-following will cause massive functional and loading overhead for each call from
-not only calling `load` every time, but also splitting the numerous bitwise
-operations across multiple function calls.
-
-   function somearbitraryoperation(a, b, c)
-      return load("return function(a, b) return a & b end")()
-                 (a, load("return function(a, b) return a << b end")()
-                       (load("return function(b) return ~b end")()(b),
-                       load("return function(c, d) return c | d end")()
-                           (c, 3)))
-   end
-
-
-Also, redefining `bitand`, `bitor`, and the other functions with `load` like
-this will, again, cause functional overhead slowdowns.
-
-   bitand = load("return function(a, b) return a & b end")()
-   bitor = load("return function(a, b) return a | b end")()
-   bitor = load("return function(a) return ~a end")()
-
-
-These potential changes could also potentially benefit the next function.
-]]
+-- Note to self: speed boost for Lua 5.3 using bitwise operator sigils instead
+-- of function calls. Unfortunately, those sigils are incompatible with Lua
+-- 5.2. The alternative is to use strings and the `load` function. For example:
+-- 
+--    function somearbitraryoperation(a, b, c)
+--       return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
+--    end
+-- 
+-- becomes
+-- 
+--    load("function somearbitraryoperation(a, b, c) \
+--       return a & (~b << (c | 3)) \
+--    end")()
+-- 
+-- or
+-- 
+--    somearbitraryoperation = load("return function(a, b, c) \
+--       return a & (~b << (c | 3)) \
+--    end")()
+-- 
+-- 
+-- The string keeps the 5.2 interpreter from erroring and the `load` allows the
+-- 5.3 interpreter to understand and compile it. Because the `load` function
+-- returns an executable chunk without executing it you need to call it
+-- afterward. Also, quotes don't carry across newlines so I escaped the
+-- newlines with the backslashes. Also also, I prefer the first option because
+-- it produces a named chunk and not an anonymous chunk assigned to a variable.
+-- 
+-- 
+-- The entire function needs to be wrapped in the load string. Simply doing the
+-- following will cause massive functional and loading overhead for each call
+-- from not only calling `load` every time, but also splitting the numerous
+-- bitwise operations across multiple function calls.
+-- 
+--    function somearbitraryoperation(a, b, c)
+--       return load("return function(a, b) return a & b end")()
+--                  (a, load("return function(a, b) return a << b end")()
+--                        (load("return function(b) return ~b end")()(b),
+--                        load("return function(c, d) return c | d end")()
+--                            (c, 3)))
+--    end
+-- 
+-- 
+-- Also, redefining `bitand`, `bitor`, and the other functions with `load` like
+-- this will, again, cause functional overhead slowdowns.
+-- 
+--    bitand = load("return function(a, b) return a & b end")()
+--    bitor = load("return function(a, b) return a | b end")()
+--    bitor = load("return function(a) return ~a end")()
+-- 
+-- 
+-- These potential changes could also potentially benefit the next function.
+--]]
 
 
 --[==[
@@ -1217,8 +1218,8 @@ function numberofleadingzeros(int)
    return n - bitrightshift(int, 31)
 end
 --[[
-Note to self: speed boost from using multiplication and divides instead of
-function calls for the shifts.
+-- Note to self: speed boost from using multiplication and divides instead of
+-- function calls for the shifts.
 --]]
 
 
@@ -1268,8 +1269,8 @@ function numberoftrailingzeros(int)
    return n - bitrightshift(int * 2, 31)
 end
 --[[
-Note to self: like the previous, perhaps there is a faster way to do this in
-Lua 5.2 using multiplications and divides.
+-- Note to self: like the previous, perhaps there is a faster way to do this in
+-- Lua 5.2 using multiplications and divides.
 --]]
 
 
