@@ -1176,15 +1176,6 @@ end
 -- Like the previous function, this function is necessary to facilitate 64-bit
 -- arithmetic using 32-bit integers.
 --]==]
---[[
---                           
---                           _________________________________________________
---  ______________________  |  ______________________________________________
--- |                      | | |                                              |
--- | XX    XX    XX    XX | | | XX    XX    XX    XX    XX    XX    XX    XX | x * ab (64)
--- |______________________| | |______________________________________________|
---
---]]
 function divide64bitsby32bits(ah, al, b)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
    local q1 = floor(ahhl / b)
