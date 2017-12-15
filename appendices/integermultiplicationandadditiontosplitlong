@@ -1,9 +1,14 @@
-The following graphics describe how the multiplication works. Each XX in the
-boxes represents an 8-bit integer, so for XX's is a 32-bit integer (the XX just
-represent arbitrary hex values: "don't care" values). The numbers in the
-parentheses the bit-length of each number. Because Lua5.2 and prior use 64-bit
-floats as the only number type, the maximum "integer" Lua could use is a 53-bit
-integer, thus any numbers 53-bits or smaller can fit in a Lua number.
+This appendix describes how to multiply two 32-bit integers and add a third
+32-bit integer to get a 64-bit long without overflowing the 53-bit limit in
+Lua 5.2.
+
+
+In the following graphics, each pair of X's (that is, an "XX") represents an
+8-bit integer, so four XX's is a 32-bit integer (the XX just represent
+arbitrary hex values: "don't care" values). The numbers in the parentheses the
+bit-length of each number. Because Lua 5.2 and prior use 64-bit floats as the
+only number type, the maximum "integer" Lua could use is a 53-bit integer, thus
+any numbers 53-bits or smaller can fit in a Lua number.
 
 
 Ignoring `c`, this is what we want: x * ab. We can't do this straight-up,
