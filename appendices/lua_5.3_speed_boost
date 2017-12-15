@@ -1,42 +1,57 @@
-Note to self: speed boost for this function by using `load`. Specifically, this
-function would be rewritten as the following, guarded by an if-statement that
-ensures the version is 5.3 and above.
-
-   load("function integermultiplyandaddtosplitlong(x, ab, c) \
-      return x * ab + c                                      \
-   end")()
+This appendix describes how to use the `load` function and Lua 5.3's operator
+sigils to boost bitwise operations while remaining compatible with Lua 5.2.
 
 
-Generally, speed boosts for Lua 5.3 work using bitwise operator sigils instead
-of function calls. Unfortunately, those sigils are incompatible with Lua 5.2.
-The alternative is to use strings and the `load` function. For example:
+The biggest slowdown in the Biginteger library when run in Lua 5.2 is the
+overhead in function calls and returns. In Lua 5.2, in order to bitwise-and two
+numbers together, you need to call a function to do it.
+
+   r = bit32.band(0x1234, 0x00ff)
+
+
+In Lua 5.3, however, you can use the bitwise operator sigils. These have the
+benefits of being fast (compared to function calls) and succinct.
+
+   r = 0x1234 & 0x00ff
+
+
+The issue when using Lua 5.3 sigils is that a file containing them cannot be
+parsed and interpreted by Lua 5.2, so to create code compatible with both
+versions we'd need to use the `load` function and strings. Suppose we had the
+following function that does some arbitrary and unrealistic bitwise operation.
 
    function somearbitraryoperation(a, b, c)
       return bitand(a, bitleftshift(bitnot(b), bitor(c, 3)))
    end
 
-becomes
 
-   load("function somearbitraryoperation(a, b, c) \
-      return a & (~b << (c | 3))                  \
-   end")()
+We want this function to be fast in Lua 5.3 while still being compatible with
+Lua 5.2. The solution is to add this block of code after the other declaration.
+It uses a `load` call to interpret a chunk defined in a string, with the `load`
+guarded by an if-statement to ensure it's running in the correct version(s).
 
-or
-
-   somearbitraryoperation = load("return function(a, b, c) \
-      return a & (~b << (c | 3))                           \
-   end")()
-
-
-The string keeps the 5.2 interpreter from erroring and the `load` allows the
-5.3 interpreter to understand and compile it. Because the `load` function
-returns an executable chunk without executing it you need to call it afterward.
-Also, quotes don't carry across newlines so I escaped the newlines with the
-backslashes. Also also, I prefer the first option because it produces a named
-chunk and not an anonymous chunk assigned to a variable.
+   if _VERSION == "Lua 5.3" then
+      load( [[ function somearbitraryoperation(a, b, c)
+         return a & (~b << (c | 3))
+      end ]] )()
+   end
 
 
-The entire function needs to be wrapped in the load string. Simply doing the
+The string keeps the 5.2 interpreter from being unable to parse it and the
+`load` allows the 5.3 interpreter to understand and compile it. Because the
+`load` function returns an executable chunk without executing it you need to
+call it afterward. I opted for the multiline string (the double brackets) since
+it allows you to use multiline strings without needing to escape the newline at
+the end of every line.
+
+Also, I explicitely check here for Lua's version as 5.3. It would be better to
+check that the version number is at least 5.3 instead of equal to 5.3, but I'm
+using only equality for the sake of brevity.
+
+
+
+
+The entire function needs to be wrapped in the chunk string. Simply doing the
 following will cause massive functional and loading overhead for each call from
 not only calling `load` every time, but also splitting the numerous bitwise
 operations across multiple function calls.
@@ -58,6 +73,61 @@ this will, again, cause functional overhead slowdowns.
    bitor = load("return function(a) return ~a end")()
 
 
-These potential changes could also potentially benefit the next function.
 
 
+In the context of the function `integermultiplyandaddtosplitlong`, it is
+written as the following (without the comments but still some spacing for
+organization). The floor-divisions are right-shifts and the modulos are
+bitwise-ands.
+
+
+   function integermultiplyandaddtosplitlong(x, ab, c)
+      local a = bitrightshift(ab, 16)
+      local b = bitand(ab, 0xffff)
+      
+      local xa = x * a
+      local xb = x * b
+      
+      local xahigh = floor(xa / 0x10000)
+      local xalow = bitleftshift(xa, 16)
+      local xbhigh = floor(xb / 0x100000000)
+      local xblow = xb % 0x100000000
+      
+      local carry, rlow = splitlong(xalow + xblow + c)
+      local rhigh = xahigh + xbhigh + carry
+      
+      return rhigh, rlow
+   end
+
+
+To speed this function up we could add the following to the library.
+
+   if _VERSION == "Lua 5.3" then
+      load( [[ function integermultiplyandaddtosplitlong(x, ab, c)
+         local a = ab >> 16
+         local b = ab & 0xffff
+         
+         local xa = x * a
+         local xb = x * b
+         
+         local xahigh = xa >> 16
+         local xalow = xa << 16
+         local xbhigh = xb >> 32
+         local xblow = xb & 0xffffffff
+         
+         local carry, rlow = splitlong(xalow + xblow + c)
+         local rhigh = xahigh + xbhigh + carry
+         
+         return rhigh, rlow
+      end ]] )()
+   end
+
+
+Since Lua 5.3 supports 64-bit integers by default anyway, though, we could just
+add this.
+
+   if _VERSION == "Lua 5.3" then
+      load( [[ function integermultiplyandaddtosplitlong(x, ab, c)
+         return x * ab + c
+      end ]] )
+   end
