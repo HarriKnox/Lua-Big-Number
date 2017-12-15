@@ -1,0 +1,156 @@
+The following graphics describe how the multiplication works. Each XX in the
+boxes represents an 8-bit integer, so for XX's is a 32-bit integer (the XX just
+represent arbitrary hex values: "don't care" values). The numbers in the
+parentheses the bit-length of each number. Because Lua5.2 and prior use 64-bit
+floats as the only number type, the maximum "integer" Lua could use is a 53-bit
+integer, thus any numbers 53-bits or smaller can fit in a Lua number.
+
+
+Ignoring `c`, this is what we want: x * ab. We can't do this straight-up,
+though, because the result is larger than 53-bits (we would lose the lowest
+bits of precision).
+                                       ______________________
+                                      |                      |
+                                      | XX    XX    XX    XX | x (32)
+                                      |______________________|
+    __  __                             ______________________
+    \ \/ /                            |                      |
+     >  <                             | XX    XX    XX    XX | ab (32)
+    /_/\_\                            |______________________|
+ _______________________________________________________________
+|_______________________________________________________________|
+    ______     ______________________________________________
+   |______|   |                                              |
+    ______    | XX    XX    XX    XX    XX    XX    XX    XX | x * ab (64)
+   |______|   |______________________________________________|
+
+
+In order to facilitate this multiplication we need to split up one of the
+operands. Let's split up `ab` into `a` (the upper 16 bits) and `b` (the lower
+16 bits). Then we can do two multiplications to get `xa` and `xb`. `xa` is
+shifted left because `a` is shifted left.
+                                       ______________________
+                                      |                      |
+                                      | XX    XX    XX    XX | x (32)
+                                      |______________________|
+    __  __                             __________  __________
+    \ \/ /                            |          ||          |
+     >  <                             | XX    XX || XX    XX |   a,   b
+    /_/\_\                            |__________||__________| (16) (16)
+ _______________________________________________________________
+|_______________________________________________________________|
+                           __________________________________
+                          |                                  |
+    ______                | XX    XX    XX    XX    XX    XX | xb (48)
+   |______|               |__________________________________|
+    ______     __________________________________
+   |______|   |                                  |
+              | XX    XX    XX    XX    XX    XX |             xa (48)
+              |__________________________________|
+
+
+Now we need to add together `xa` and `xb` along with `c`, which was ignored in
+the multiplication step. Adding them directly, however, would exceed the 53-bit
+limit, so we split each number across the 32-bit "midline" and add the lower 32
+bits separately from the higher 32 bits. `xalow` has 16 bits of data in its
+highest 16 bits and zeros in its lowest 16 bits, with this separation indicated
+by the small notch in it in the graphic.
+                                       ______________________
+                                      |                      |
+                                      | XX    XX    XX    XX | c (32)
+                                      |______________________|
+                           __________  ______________________
+                          |          ||                      |
+                          | XX    XX || XX    XX    XX    XX | xbhigh, xblow
+                          |__________||______________________|  (16)   (32)
+       _       ______________________  __________  __________
+     _| |_    |                      ||          \/          |
+    |_   _|   | XX    XX    XX    XX || XX    XX    00    00 | xahigh, xalow
+      |_|     |______________________||__________/\__________|  (32)   (32)
+
+
+First, we add the low words and `c` together. The addition of three 32-bit
+integers will result in, at most, a 34-bit number. The lowest 32 bits are
+stored in `rlow` and the highest 2 bits, indicated by the _x, are saved in a
+byte called `carry`.
+                                       ______________________
+                                      |                      |
+                                      | XX    XX    XX    XX | c(32)
+                                      |______________________|
+                                       ______________________
+                                      |                      |
+                                      | XX    XX    XX    XX | xblow (32)
+                                      |______________________|
+       _                               __________  __________
+     _| |_                            |          \/          |
+    |_   _|                           | XX    XX    00    00 | xalow (32)
+      |_|                             |__________/\__________|
+ _______________________________________________________________
+|_______________________________________________________________|
+    ______                       ____  ______________________
+   |______|                     |    ||                      |
+    ______                      | _x || XX    XX    XX    XX | carry, rlow
+   |______|                     |____||______________________|  (2)    (32)
+
+
+Next, we add the rhighs and `carry` together. These numbers will always sum to
+a 32-bit integer. This is because of the maximum values of each variable.
+`carry` can be at most 0x2, `xbhigh` can be at most 0xfffe, and `xahigh` can be
+at most 0xfffeffff. Add those three and you get 0xffffffff. I can't explain the
+math right now, but trust that the multiplication of two 32-bit integers and
+the addition of a third results in at most a 64-bit integer. (For example,
+plugging in the maximum values for `x`, `ab`, and `c` results in
+0xffffffff * 0xffffffff + 0xffffffff = 0xffffffff00000000.)
+                                 ____
+                                |    |
+                                | _x |                         carry (2)
+                                |____|
+                           __________
+                          |          |
+                          | XX    XX |                         xbhigh (16)
+                          |__________|
+       _       ______________________
+     _| |_    |                      |
+    |_   _|   | XX    XX    XX    XX |                         xahigh (32)
+      |_|     |______________________|
+ _______________________________________________________________
+|_______________________________________________________________|
+    ______     ______________________
+   |______|   |                      |
+    ______    | XX    XX    XX    XX |                         rhigh (32)
+   |______|   |______________________|
+
+
+Now that we have `rhigh` and `rlow` we're done. The full 64-bit result is
+returned as a split long with `rhigh` and `rlow`. Altogether the addition looks
+like the following.
+                                 ____
+                                |    |
+                                | _x |                         carry (2)
+                                |____|
+                                       ______________________
+                                      |                      |
+                                      | XX    XX    XX    XX | c (32)
+                                      |______________________|
+                           __________  ______________________
+                          |          ||                      |
+                          | XX    XX || XX    XX    XX    XX | xbhigh, xblow
+                          |__________||______________________|  (16)   (32)
+       _       ______________________  __________  __________
+     _| |_    |                      ||          \/          |
+    |_   _|   | XX    XX    XX    XX || XX    XX    00    00 | xahigh, xalow
+      |_|     |______________________||__________/\__________|  (32)   (32)
+ _______________________________________________________________
+|_______________________________________________________________|
+    ______     ______________________  ______________________
+   |______|   |                      ||                      |
+    ______    | XX    XX    XX    XX || XX    XX    XX    XX | rhigh, rlow
+   |______|   |______________________||______________________|  (32)  (32)
+
+
+If we treated `rlow` and `rhigh` as one number we get the result, `r`, a 64-bit
+integer.
+               ______________________  ______________________
+              |                      \/                      |
+              | XX    XX    XX    XX    XX    XX    XX    XX | r (64)
+              |______________________/\______________________|
