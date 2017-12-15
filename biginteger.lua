@@ -71,13 +71,13 @@ _ENV = bi
 --[ Bitwise Functions ]
 --]===================]
 
-local bitand = (bit32 or bit).band
-local bitor  = (bit32 or bit).bor
-local bitnot = (bit32 or bit).bnot
-local bitxor = (bit32 or bit).bxor
+local bitand        = (bit32 or bit).band
+local bitor         = (bit32 or bit).bor
+local bitnot        = (bit32 or bit).bnot
+local bitxor        = (bit32 or bit).bxor
 local bitleftshift  = (bit32 and bit32.lshift) or (bit and bit.blshift)
 local bitrightshift = (bit32 and bit32.rshift) or (bit and bit.blogic_rshift)
-local bitandnot = function(x, y) return bitand(x, bitnot(y)) end
+local bitandnot     = function(x, y) return bitand(x, bitnot(y)) end
 
 
 
