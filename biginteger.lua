@@ -47,6 +47,7 @@ _ENV = bi
 
 
 
+
 --[==========================================================[
 --[   _____                     _                  _         ]
 --[  / ____|                   | |                | |        ]
@@ -155,13 +156,17 @@ local log2 = log(2)
 local karatsubasquarethreshold = 128
 local karatsubamultiplythreshold = 80
 
+
 local toomcooksquarethreshold = 216
 local toomcookmultiplythreshold = 240
+
 
 local burnikelzieglerthreshold = 80
 local burnikelziegleroffset = 40
 
+
 local schoenhagebaseconversionthreshold = 20
+
 
 
 --[===================[
@@ -282,6 +287,7 @@ local powercache = {
    {19 ^ 2}, {20 ^ 2}, {21 ^ 2}, {22 ^ 2}, {23 ^ 2}, {24 ^ 2},
    {25 ^ 2}, {26 ^ 2}, {27 ^ 2}, {28 ^ 2}, {29 ^ 2}, {30 ^ 2},
    {31 ^ 2}, {32 ^ 2}, {33 ^ 2}, {34 ^ 2}, {35 ^ 2}, {36 ^ 2}}
+
 
 
 
@@ -761,6 +767,7 @@ end
 
 
 
+
 --[=======================================================[
 --[          _    _        _                              ]
 --[         | |  | |      | |                             ]
@@ -1039,6 +1046,7 @@ end
 
 
 
+
 --[=======================================================[
 --[                                                       ]
 --[             /\                                        ]
@@ -1054,6 +1062,7 @@ end
 --[ |_|    \__,_||_| |_| \___| \__||_| \___/ |_| |_||___/ ]
 --[                                                       ]
 --]=======================================================]
+
 function copyarray(source)
    local destination = {}
    
