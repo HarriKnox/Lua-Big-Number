@@ -1,7 +1,7 @@
 local biginteger = require('biginteger')
 
 --[==[ isvalidinteger(int) ]==]
---[==[ isvalid32bitinteger(int) ]==]
+--[==[ isvalidint(int) ]==]
 --[==[ isvalidabsolute32bitinteger(int) ]==]
 --[==[ isvalidwordarray(array) ]==]
 --[==[ isvalidmagnitude(mag) ]==]

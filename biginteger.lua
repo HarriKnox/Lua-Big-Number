@@ -330,7 +330,7 @@ end
 --  * outside the range [0, 4294967295] (it's negative or larger than 32 bits)
 --  * a float
 --]==]
-function isvalid32bitinteger(int)
+function isvalidint(int)
    local r = "not a valid int: "
    
    
@@ -386,7 +386,7 @@ function isvalidabsolute32bitinteger(int)
    
    
    --[[ Now check if the absolute value is an int ]]
-   ok, reason = isvalid32bitinteger(abs(int))
+   ok, reason = isvalidint(abs(int))
    
    
    return ok, r .. reason
@@ -424,7 +424,7 @@ function isvalidwordarray(array)
    
    --[[ Now test every element from 1 to #array to ensure each is an int ]]
    for i = 1, #array do
-      ok, reason = isvalid32bitinteger(array[i])
+      ok, reason = isvalidint(array[i])
       
       
       if not ok then
@@ -3024,7 +3024,7 @@ function pow(value, exponent)
    local result
    
    assert(isvalidoperablevalue(value))
-   assert(isvalid32bitinteger(exponent))
+   assert(isvalidint(exponent))
    
    
    -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
@@ -3065,7 +3065,7 @@ function mutablepow(bigint, exponent)
    local parttosquare, result
    
    assert(isvalidbiginteger(bigint))
-   assert(isvalid32bitinteger(exponent))
+   assert(isvalidint(exponent))
    
    -- Test for special, easy math cases (e == 0, e == 1, x == 0, and x == 2^n)
    if exponent == 0 then
