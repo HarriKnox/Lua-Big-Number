@@ -96,7 +96,7 @@ byte called `carry`.
     |_____|                     |    ||                      |
      _____                      | _x || XX    XX    XX    XX | carry, rlow
     |_____|                     |____||______________________|  (2)    (32)
-    
+
 
 Next, we add the rhighs and `carry` together. These numbers will always sum to
 a 32-bit integer. This is because of the maximum values of each variable.
