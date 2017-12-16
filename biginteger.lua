@@ -801,6 +801,9 @@ end
 -- largest integer possible without losing precision is a 53-bit integer. Since
 -- the use of 64 bits is rather useful, this math allows us to multiply and add
 -- numbers without the fear of losing bits, at the cost of taking longer.
+--
+-- For more information on how the multiplication works, please read the
+-- appendix document "int_multiply_int".
 --]==]
 function intmultiplyint(x, ab, c)
    --[[ Split `ab` into `a` and `b` ]]
