@@ -845,7 +845,7 @@ end
 -- Like the previous function, this function is necessary to facilitate long
 -- arithmetic using ints.
 --]==]
-function divide64bitsby32bits(ah, al, b)
+function longdivideint(ah, al, b)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
    local q1 = floor(ahhl / b)
    local r1 = ahhl % b
@@ -3128,7 +3128,7 @@ function divideoneword(dividend, divisor)
    end
    
    for i = 2, dividendlength do
-      _, qhat, qrem = divide64bitsby32bits(qrem, dividend[i], divisor)
+      _, qhat, qrem = longdivideint(qrem, dividend[i], divisor)
       
       quotient[i] = qhat
    end
@@ -3223,7 +3223,7 @@ function destructivedivideknuth(dividend, divisor)
          --    qrem = (int) (tmp >>> 32);
          -- }
          --]]
-         _, qhat, qrem = divide64bitsby32bits(nh, nm, divhigh)
+         _, qhat, qrem = longdivideint(nh, nm, divhigh)
       end
       
       --[[
