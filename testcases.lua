@@ -15,7 +15,7 @@ local biginteger = require('biginteger')
 --[==[ arevalidbigintegerandoperablevalue(bigint, value, operation) ]==]
 --[==[ splitlong(number) ]==]
 --[==[ splitlongtowordsandbits(number) ]==]
---[==[ integermultiplyandaddtosplitlong(x, ab, c) ]==]
+--[==[ intmultiplyint(x, ab, c) ]==]
 --[==[ divide64bitsby32bits(ah, al, b) ]==]
 --[==[ numberofleadingzeros(int) ]==]
 --[==[ numberoftrailingzeros(int) ]==]

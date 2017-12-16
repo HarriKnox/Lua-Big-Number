@@ -802,7 +802,7 @@ end
 -- the use of 64 bits is rather useful, this math allows us to multiply and add
 -- numbers without the fear of losing bits, at the cost of taking longer.
 --]==]
-function integermultiplyandaddtosplitlong(x, ab, c)
+function intmultiplyint(x, ab, c)
    --[[ Split `ab` into `a` and `b` ]]
    local a = bitrightshift(ab, 16)
    local b = bitand(ab, 0xffff)
@@ -1607,7 +1607,7 @@ function destructivemultiplyandadd(mag, factor, addend)
    local index = maglength
    
    for i = maglength, 1, -1 do
-      carry, mag[i] = integermultiplyandaddtosplitlong(factor, mag[i], carry)
+      carry, mag[i] = intmultiplyint(factor, mag[i], carry)
    end
    
    carry = addend
@@ -1921,7 +1921,7 @@ function destructiveleftshift(mag, displacement)
    
    if numberofbits ~= 0 then
       for i = maglength, 1, -1 do
-         carry, mag[i] = integermultiplyandaddtosplitlong(mag[i], shiftmultiplier, carry)
+         carry, mag[i] = intmultiplyint(mag[i], shiftmultiplier, carry)
       end
    end
    
@@ -1962,7 +1962,7 @@ function destructiverightshift(mag, displacement)
    
    if numberofbits ~= 0 then
       for i = 1, maglength do
-         lowbits, carry = integermultiplyandaddtosplitlong(mag[i], shiftmultiplier, 0)
+         lowbits, carry = intmultiplyint(mag[i], shiftmultiplier, 0)
          mag[i] = lowbits + oldcarry
          oldcarry = carry
       end
@@ -2465,7 +2465,7 @@ function squarecolinplumb(mag)
       -- Multiply all squares on the diagonal and put them into diagonal
       piece = mag[#mag - i]
       index = resultlength - i - i
-      diagonal[index - 1], diagonal[index] = integermultiplyandaddtosplitlong(piece, piece, 0)
+      diagonal[index - 1], diagonal[index] = intmultiplyint(piece, piece, 0)
    end
    
    triangle = allocatearray(resultlength)
@@ -2473,7 +2473,7 @@ function squarecolinplumb(mag)
    for i = 1, maglength - 1 do
       for j = 0, i - 1 do
          index = resultlength - i - j
-         producthigh, productlow = integermultiplyandaddtosplitlong(mag[#mag - j],
+         producthigh, productlow = intmultiplyint(mag[#mag - j],
                                                                     mag[#mag - i],
                                                                     0)
          
@@ -2557,7 +2557,7 @@ function destructiveexactdividebythree(mag)
          borrow = 0
       end
       
-      _, productlow = integermultiplyandaddtosplitlong(w, 0xaaaaaaab, 0)
+      _, productlow = intmultiplyint(w, 0xaaaaaaab, 0)
       mag[maglength - i] = productlow
       
       if productlow >= 0xaaaaaaab then
@@ -2703,7 +2703,7 @@ function multiplycolinplumb(thismag, thatmag)
    for i = 0, thislength - 1 do
       for j = 0, thatlength - 1 do
          index = resultlength - i - j
-         producthigh, productlow = integermultiplyandaddtosplitlong(thismag[thislength - i],
+         producthigh, productlow = intmultiplyint(thismag[thislength - i],
                                                                     thatmag[thatlength - j],
                                                                     0)
          
@@ -3150,7 +3150,7 @@ function multiplythensubtract(remainder, div, qhat, offset)
    
    for i = divlength, 1, -1 do
       signint = getwordarraysignint(remainder)
-      producthigh, productlow = integermultiplyandaddtosplitlong(div[i], qhat, carry)
+      producthigh, productlow = intmultiplyint(div[i], qhat, carry)
       differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
       differencehigh = (bitnot(producthigh) + differencehigh + signint) % 0x100000000
       
@@ -3252,7 +3252,7 @@ function destructivedivideknuth(dividend, divisor)
          
          if not skipcorrection then
             nl = remainder[i + 2]
-            estproducthigh, estproductlow = integermultiplyandaddtosplitlong(divlow, qhat, 0)
+            estproducthigh, estproductlow = intmultiplyint(divlow, qhat, 0)
             
             if estproducthigh > qrem or (estproducthigh == qrem and estproductlow > nl) then
                qhat = qhat - 1
