@@ -173,8 +173,8 @@ local bitsperdigit = {
 
 --[==[
 -- A table, indexed by radix, of the number of digits of a given radix that can
--- fit in a 32-bit integer without overflowing or "going negative" (in Two's
--- complement form): that is, the largest number `n` for a radix `r` such that
+-- fit in an int without overflowing or "going negative" (in Two's complement
+-- form): that is, the largest number `n` for a radix `r` such that
 -- r^n < 2^31 (or 0x80000000).
 --
 -- digitsperinteger[r] = floor(log(2^31) / log(r))
@@ -198,8 +198,7 @@ local digitsperinteger = {
 
 --[==[
 -- A table, indexed by radix, of the maximum value of one digit grouping of a
--- given radix that can fit in a 32-bit integer without overflowing nor "going
--- negative".
+-- given radix that can fit in an int without overflowing nor "going negative".
 --
 -- intradix[r] = r ^ digitsperinteger[r]
 --]==]
@@ -325,14 +324,14 @@ end
 
 
 --[==[
--- Tests whether the passed value is a 32-bit integer that the library can use.
+-- Tests whether the passed value is an int that the library can use.
 -- This fails if the value is
 --  * not a number type (string, table, etc)
 --  * outside the range [0, 4294967295] (it's negative or larger than 32 bits)
 --  * a float
 --]==]
 function isvalid32bitinteger(int)
-   local r = "not a valid 32-bit integer: "
+   local r = "not a valid int: "
    
    
    --[[ First, check that it is a number ]]
@@ -386,7 +385,7 @@ function isvalidabsolute32bitinteger(int)
    end
    
    
-   --[[ Now check if the absolute value is a 32-bit integer ]]
+   --[[ Now check if the absolute value is an int ]]
    ok, reason = isvalid32bitinteger(abs(int))
    
    
@@ -399,7 +398,7 @@ end
 -- This fails if the value is
 --  * not a table (string, number, etc)
 --  * a biginteger (in which it won't be treated as a word-array)
---  * an array that contains a value that is not a 32-bit integer
+--  * an array that contains a value that is not an int
 --
 -- Note, this function (and every other array function, for that matter) uses
 -- the length operator (#) in a `for i = 1, #array do` loop.
@@ -423,7 +422,7 @@ function isvalidwordarray(array)
    end
    
    
-   --[[ Now test every element from 1 to #array for 32-bit integerness ]]
+   --[[ Now test every element from 1 to #array to ensure each is an int ]]
    for i = 1, #array do
       ok, reason = isvalid32bitinteger(array[i])
       
@@ -773,8 +772,8 @@ end
 --]=======================================================]
 
 --[==[
--- Takes a long and splits it into two 32-bit integers so the lowest 32-bits
--- are in the second return value and all bits higher than 32 bits are
+-- Takes a long and splits it into two ints so the lowest 32 bits of the long
+-- are in the second return value and all bits higher than the 32 bits are
 -- bit-shifted to the right and returned in the first value.
 --]==]
 function splitlong(number)
@@ -793,9 +792,9 @@ end
 
 
 --[==[
--- A helper function to do 64-bit multiplication using 32-bit integers. Takes
--- two 32-bit integers `x` and `ab` and multiplies them together, then adds a
--- third value `c`. Returns the result of `x * ab + c = r` as a split long.
+-- A helper function to do long multiplication using ints. Takes two ints (`x`
+-- and `ab`) and multiplies them together, then adds a third value `c`. Returns
+-- the result of `x * ab + c = r` as a split long.
 --
 -- All of this math is done since 64-bit floats (the default size/type of Lua
 -- numbers until Lua 5.3) allow for at most 53 bits of mantissa, thus the
@@ -835,13 +834,13 @@ end
 
 
 --[==[
--- Another helper function to do 64-bit division using 32-bit integers. Takes
--- two 32-bit integers `ah` and `al` and pretends they're one big 64-bit
--- integer `a` and divides that by `b`. Returns the quotient and remainder of
--- `a / b` as a split long and 32-bit integer (respectively).
+-- Another helper function to do long division using ints. Takes a split-long
+-- disguised as two ints (`ah` and `al`) and pretends they're one long `a` and
+-- divides that by `b`. Returns the quotient and remainder of `a / b` as a
+-- split-long and int (respectively).
 --
--- Like the previous function, this function is necessary to facilitate 64-bit
--- arithmetic using 32-bit integers.
+-- Like the previous function, this function is necessary to facilitate long
+-- arithmetic using ints.
 --]==]
 function divide64bitsby32bits(ah, al, b)
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
@@ -861,8 +860,8 @@ end
 
 
 --[==[
--- Returns the number of leading zeros in the 32-bit integer. This uses one of
--- the Hacker's Delight algorithms featured in HD Figure 5-6. Some optimizing
+-- Returns the number of leading zeros in the int. This uses one of the
+-- Hacker's Delight algorithms featured in HD Figure 5-6. Some optimizing
 -- modifications were made (switching the bit-shifts to multiplications) for
 -- speed.
 --]==]
@@ -915,8 +914,8 @@ end
 
 
 --[==[
--- Returns the number of trailing zeros in the 32-bit integer. This uses one of
--- the Hacker's Delight algorithms featured in (HD Figure 5-14).
+-- Returns the number of trailing zeros in the int. This uses one of the
+-- Hacker's Delight algorithms featured in (HD Figure 5-14).
 --
 -- This uses the algorithm selected by the Java Integer class and is slow
 -- because of all the calls to the bit-shifting function. Unlike the function
@@ -978,10 +977,10 @@ end
 
 
 --[==[
--- Returns the number of leading zeros in a 64-bit integer. Because this
--- function uses only the most significant bits, the least significant aren't
--- looked at so a full 64-bit integer can be used without the fear of the loss
--- of the lowest bits.
+-- Returns the number of leading zeros in a long. Because this function uses
+-- only the most significant bits, the least significant aren't looked at so
+-- the full 64 bits can be used without the fear of the loss of the lowest
+-- bits.
 --]==]
 function numberofleadingzeroslong(long)
    --[[ Split the long ]]
@@ -1003,10 +1002,10 @@ end
 
 
 --[==[
--- Returns the number of trailing zeros in a 64-bit integer. Because this
--- function uses the least significant bits, the results of it are undefined if
--- passed an integer too large for the 64-bit floating-point number (a 54-bit
--- integer or larger).
+-- Returns the number of trailing zeros in a long. Because this function uses
+-- the least significant bits, the results of it are undefined if passed an
+-- integer too large for the 64-bit floating-point number (a 54-bit integer or
+-- larger).
 --]==]
 function numberoftrailingzeroslong(long)
    --[[ Split the long ]]
