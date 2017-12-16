@@ -21,24 +21,6 @@
 --]===========================================================================]
 
 
---[====[
--- To-do list:
---  * GCD
---  * modulus
---  * quick increment and decrement
---  * prime number stuff
---  * serializable magnitude/wordarray string
---  * string/file reading ("Harrison is cool" ->
---                         {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
---  * metatable
---  * ratio module
---  * complex number module
---  * proper encapsulation (surprisingly, not all functions
---                          are supposed to be public)
---  * make fast (functional overhead for bitwise operations is high,
---               but Lua 5.2 doesn't support bitwise sigils)
---]====]
-
 
 --[[ Sandbox for testing purposes ]]
 local bi = {}
