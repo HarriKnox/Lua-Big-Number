@@ -15,18 +15,20 @@ Integer
    an integer (duck-typng, yay!).
 
 
-Int
+Int, Word
    An unsigned 32-bit integer; in the range [0, 4294967295].
    
    Negative numbers can be treated as 32-bit integers if their positive value
    fits in 32-bits, but generally ints are treated as unsigned.
 
 
-Long
+Long, Split-Long
    An unsigned integer that can be larger than 32 bits.
    
    Longs are usually 64-bits, but in this project they are any integer too
-   large to fit in 32-bits. Because Lua's use of 64-bit floats
+   large to fit in 32-bits. Because Lua's use of 64-bit floats, the largest
+   integer you can get is 53-bits, so longs are often handled as two ints,
+   called a "split long".
 
 
 Word-Array
