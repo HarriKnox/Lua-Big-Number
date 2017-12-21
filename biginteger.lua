@@ -1133,41 +1133,50 @@ function allocatearray(length)
 end
 
 
-function splitarrayatwordfromend(mag, pivot)
-   -- Will split an array into two smaller arrays, upper and lower such that
-   --  * upper will contain all elements from 1 to #mag - pivot
-   --  * lower will contain all elements from (#mag - pivot + 1) to #mag
-   --
-   -- `pivot` indexes from end of magnitude (0 is last element)
-   --     (in other words, lower will contain `pivot` elements)
-   -- It will always return two new arrays, even if the array isn't split
+--[==[
+-- Splits an array into two sub-arrays, 'upper' and 'lower', such that 'lower'
+-- contains `length` elements and 'upper' contains the remaining elements.
+--
+-- If `length` is zero/negative ('lower' is empty) or equal-to/larger-than the
+-- length of the array ('upper' is empty) this will return a copy of the array
+-- with an empty array in the appropriate spot. This function always returns
+-- two arrays, even in the cases where the array isn't split.
+--]==]
+function splitarrayatwordfromend(mag, length)
    local maglength = #mag
-   local upper, lower
-   local upperlength
+   local upperlength = maglength - length
    
-   if pivot <= 0 then
-      -- if the pivot extends to the right of the array (is negative pivot)
-      -- or includes the last element (zero pivot) for upper
+   local upper, lower
+   
+   
+   --[[ If the length is zero/negative, 'lower' is empty ]]
+   if length <= 0 then
       return copyarray(mag), {}
    end
    
-   if pivot >= maglength then
-      -- if the pivot extends to the left of the array
-      -- pivot == #mag means upper is from 1 to 0, so empty array
+   
+   --[[ If the length is the entire array or more, 'upper' is empty ]]
+   if length >= maglength then
       return {}, copyarray(mag)
    end
    
-   upperlength = maglength - pivot
+   
+   --[[ Initialize the sub-arrays ]]
    upper = {}
    lower = {}
    
+   
+   --[[ Copy the first values into 'upper' ]]
    for i = 1, upperlength do
       upper[i] = mag[i]
    end
    
+   
+   --[[ Copy the second set of values into 'lower' ]]
    for i = upperlength + 1, maglength do
       lower[i - upperlength] = mag[i]
    end
+   
    
    return upper, lower
 end
