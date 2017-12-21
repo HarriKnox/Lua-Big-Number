@@ -1100,7 +1100,7 @@ function allocatearray(length)
    return array
 end
 
-function splitmagnitudeintoblocks(mag, blocklength)
+function splitarrayintoblocks(mag, blocklength)
    local maglength, numberofblocks
    local blocks, index
    
@@ -3439,7 +3439,7 @@ function destructivedivideburnikelziegler(dividend, divisor)
    destructiveleftshift(divisor, sigma)
    t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
    
-   blocks = splitmagnitudeintoblocks(dividend, n)
+   blocks = splitarrayintoblocks(dividend, n)
    blocklength = #blocks
    
    a1 = blocks[1]
