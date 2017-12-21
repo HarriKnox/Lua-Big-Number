@@ -1133,6 +1133,46 @@ function allocatearray(length)
 end
 
 
+function splitarrayatwordfromend(mag, pivot)
+   -- Will split an array into two smaller arrays, upper and lower such that
+   --  * upper will contain all elements from 1 to #mag - pivot
+   --  * lower will contain all elements from (#mag - pivot + 1) to #mag
+   --
+   -- `pivot` indexes from end of magnitude (0 is last element)
+   --     (in other words, lower will contain `pivot` elements)
+   -- It will always return two new arrays, even if the array isn't split
+   local maglength = #mag
+   local upper, lower
+   local upperlength
+   
+   if pivot <= 0 then
+      -- if the pivot extends to the right of the array (is negative pivot)
+      -- or includes the last element (zero pivot) for upper
+      return copyarray(mag), {}
+   end
+   
+   if pivot >= maglength then
+      -- if the pivot extends to the left of the array
+      -- pivot == #mag means upper is from 1 to 0, so empty array
+      return {}, copyarray(mag)
+   end
+   
+   upperlength = maglength - pivot
+   upper = {}
+   lower = {}
+   
+   for i = 1, upperlength do
+      upper[i] = mag[i]
+   end
+   
+   for i = upperlength + 1, maglength do
+      lower[i - upperlength] = mag[i]
+   end
+   
+   return upper, lower
+end
+
+
 --[==[
 -- Split the array into right-justified blocks.
 --
@@ -1204,45 +1244,6 @@ end
 --[ |_|    \__,_||_| |_| \___| \__||_| \___/ |_| |_||___/ ]
 --[                                                       ]
 --]=======================================================]
-
-function splitarrayatwordfromend(mag, pivot)
-   -- Will split an array into two smaller arrays, upper and lower such that
-   --  * upper will contain all elements from 1 to #mag - pivot
-   --  * lower will contain all elements from (#mag - pivot + 1) to #mag
-   --
-   -- `pivot` indexes from end of magnitude (0 is last element)
-   --     (in other words, lower will contain `pivot` elements)
-   -- It will always return two new arrays, even if the array isn't split
-   local maglength = #mag
-   local upper, lower
-   local upperlength
-   
-   if pivot <= 0 then
-      -- if the pivot extends to the right of the array (is negative pivot)
-      -- or includes the last element (zero pivot) for upper
-      return copyarray(mag), {}
-   end
-   
-   if pivot >= maglength then
-      -- if the pivot extends to the left of the array
-      -- pivot == #mag means upper is from 1 to 0, so empty array
-      return {}, copyarray(mag)
-   end
-   
-   upperlength = maglength - pivot
-   upper = {}
-   lower = {}
-   
-   for i = 1, upperlength do
-      upper[i] = mag[i]
-   end
-   
-   for i = upperlength + 1, maglength do
-      lower[i - upperlength] = mag[i]
-   end
-   
-   return upper, lower
-end
 
 function gettoomcookslices(mag, fullsize)
    -- fullsize is used when multiplying two magnitudes of different sizes
