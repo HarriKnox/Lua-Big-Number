@@ -15,8 +15,8 @@
 --[  |/___________________________________________________________________\|  ]
 --[                                                                           ]
 --[ A big-integer library for Lua, written in pure Lua, and designed to work. ]
---[                                                                           ]
---[ by Harrison Knox (HarriKnox)                                              ]
+--[                                                        ^                  ]
+--[ by Harrison Knox (HarriKnox)                 (will eventually be)         ]
 --[                                                                           ]
 --]===========================================================================]
 
