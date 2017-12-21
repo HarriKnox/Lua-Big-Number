@@ -1051,6 +1051,9 @@ end
 --[                                                       ]
 --]=======================================================]
 
+--[==[
+-- Returns a new array that is a shallow copy of the array passed in.
+--]==]
 function copyarray(source)
    local destination = {}
    
@@ -1061,6 +1064,10 @@ function copyarray(source)
    return destination
 end
 
+
+--[==[
+-- Clears the selected array in-place by setting all entries to `nil`.
+--]==]
 function cleararray(array)
    for i = 1, #array do
       array[i] = nil
@@ -1069,6 +1076,10 @@ function cleararray(array)
    return array
 end
 
+
+--[==[
+-- Clears `array` and copies into it the entries of `newvalues`.
+--]==]
 function clearandcopyintoarray(array, newvalues)
    local arraylength = #array
    local newvalueslength = #newvalues
@@ -1084,12 +1095,20 @@ function clearandcopyintoarray(array, newvalues)
    return array
 end
 
+
+--[==[
+-- Swaps the entries of both passed arrays).
+--]==]
 function swaparrays(thisarray, thatarray)
    for i = 1, max(#thisarray, #thatarray) do
       thisarray[i], thatarray[i] = thatarray[i], thisarray[i]
    end
 end
 
+
+--[==[
+-- Creates a new array of the specified length filled with zeros.
+--]==]
 function allocatearray(length)
    local array = {}
    
@@ -1100,6 +1119,19 @@ function allocatearray(length)
    return array
 end
 
+
+--[==[
+-- Split the array into right-justified blocks.
+--
+-- A block is a sub-array. The length of the blocks (in words) are at most the
+-- specified block length. The most-significant block is the only one that may
+-- be shorter than the given length; all the lesser-significant blocks are
+-- filled to the brim.
+--
+-- For example, pretend these X's are a 35-long array, split with blocksize 8;
+-- these would be the resulting blocks.
+--       XXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+--]==]
 function splitarrayintoblocks(mag, blocklength)
    local maglength, numberofblocks
    local blocks, index
