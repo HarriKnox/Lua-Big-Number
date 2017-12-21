@@ -1183,7 +1183,7 @@ end
 
 
 --[==[
--- Split the array into right-justified blocks.
+-- Splits the array into right-justified blocks and returns an array of blocks.
 --
 -- A block is a sub-array. The length of the blocks (in words) are at most the
 -- specified block length. The most-significant block is the only one that may
