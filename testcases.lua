@@ -27,7 +27,7 @@ local biginteger = require('biginteger')
 --[==[ swaparrays(thisarray, thatarray) ]==]
 --[==[ allocatearray(length) ]==]
 --[==[ splitarrayintoblocks(mag, blocklength) ]==]
---[==[ splitarrayatwordfromend(mag, pivot) ]==]
+--[==[ splitarray(mag, pivot) ]==]
 --[==[ gettoomcookslices(mag, fullsize) ]==]
 --[==[ signextendwordarrayto(source, destination, newlength) ]==]
 --[==[ copyandsignextendwordarray(array, newlength) ]==]

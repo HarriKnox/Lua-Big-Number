@@ -1142,7 +1142,7 @@ end
 -- with an empty array in the appropriate spot. This function always returns
 -- two arrays, even in the cases where the array isn't split.
 --]==]
-function splitarrayatwordfromend(mag, length)
+function splitarray(mag, length)
    local maglength = #mag
    local upperlength = maglength - length
    
@@ -2596,7 +2596,7 @@ function squarekaratsuba(mag)
    halfway = floor((#mag + 1) / 2)
    shiftup = halfway * 32
    
-   upper, lower = splitarrayatwordfromend(mag, halfway)
+   upper, lower = splitarray(mag, halfway)
    
    uppersquared = squaremagnitude(upper)
    lowersquared = squaremagnitude(lower)
@@ -2814,8 +2814,8 @@ function multiplykaratsuba(thismag, thatmag)
    halfway = floor((max(#thismag, #thatmag) + 1) / 2)
    shiftup = halfway * 32
    
-   thisupper, thislower = splitarrayatwordfromend(thismag, halfway)
-   thatupper, thatlower = splitarrayatwordfromend(thatmag, halfway)
+   thisupper, thislower = splitarray(thismag, halfway)
+   thatupper, thatlower = splitarray(thatmag, halfway)
    
    uppers = multiplymagnitudes(thisupper, thatupper)
    lowers = multiplymagnitudes(thislower, thatlower)
@@ -3405,7 +3405,7 @@ function divide2n1n(a, b)
    -- step 2: split A and B
    -- A = [a1,a2,a3,a4], a123 = [a1,a2,a3], each ai has up to n/2 words
    -- B = [b1,b2], but they're kept together in all calculations, so don't split
-   a123, a4 = splitarrayatwordfromend(a, halfn)
+   a123, a4 = splitarray(a, halfn)
    
    -- step 3:   q1 = a123 / b,   R = [r1,r2] = a123 % b
    q1, r = divide3n2n(a123, b, halfn)
@@ -3431,11 +3431,11 @@ function divide3n2n(a, b, halfn)
    local one = {1}
    
    -- step 1: A = [a1,a2,a3], let a12 = [a1,a2]
-   a12, a3 = splitarrayatwordfromend(a, halfn)
-   a1, _ = splitarrayatwordfromend(a12, halfn)
+   a12, a3 = splitarray(a, halfn)
+   a1, _ = splitarray(a12, halfn)
    
    -- step 2: B = [b1,b2]
-   b1, b2 = splitarrayatwordfromend(b, halfn)
+   b1, b2 = splitarray(b, halfn)
    
    if comparemagnitudes(a1, b1) < 0 then
       -- step 3a: a1<b1,   Q = a12 / b1,   R = a12 % b1
