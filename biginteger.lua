@@ -1057,9 +1057,12 @@ end
 function copyarray(source)
    local destination = {}
    
+   
+   --[[ Copy each entry individually ]]
    for i = 1, #source do
       destination[i] = source[i]
    end
+   
    
    return destination
 end
@@ -1069,9 +1072,11 @@ end
 -- Clears the selected array in-place by setting all entries to `nil`.
 --]==]
 function cleararray(array)
+   --[[ One-by-one, set each entry to `nil` ]]
    for i = 1, #array do
       array[i] = nil
    end
+   
    
    return array
 end
@@ -1084,13 +1089,18 @@ function clearandcopyintoarray(array, newvalues)
    local arraylength = #array
    local newvalueslength = #newvalues
    
+   
+   --[[ Copy the values in from the start ]]
    for i = 1, newvalueslength do
       array[i] = newvalues[i]
    end
    
+   
+   --[[ If `array` was longer, clear the remaining entries ]]
    for i = newvalueslength + 1, arraylength do
       array[i] = nil
    end
+   
    
    return array
 end
@@ -1112,9 +1122,12 @@ end
 function allocatearray(length)
    local array = {}
    
+   
+   --[[ Make a ton of zeros ]]
    for i = 1, length do
       array[i] = 0
    end
+   
    
    return array
 end
@@ -1136,6 +1149,8 @@ function splitarrayintoblocks(mag, blocklength)
    local maglength, numberofblocks
    local blocks, index
    
+   
+   --[[ Calculate the number of blocks and make room for them in a big list ]]
    maglength = #mag
    numberofblocks = ceil(maglength / blocklength)
    blocks = {}
@@ -1143,19 +1158,24 @@ function splitarrayintoblocks(mag, blocklength)
       blocks[i] = {}
    end
    
+   
+   --[[ Start at the least-significant word ]]
    index = maglength
    
-   -- copy the full blocks into the block array
+   
+   --[[ Copy the full blocks into the block array ]]
    for block = numberofblocks, 2, -1 do
       for blockindex = blocklength, 1, -1 do
          blocks[block][blockindex], index = mag[index], index - 1
       end
    end
    
-   --copy the most significant, possibly not full, block
+   
+   --[[ Copy the most significant, possibly not full, block ]]
    for blockindex = index, 1, -1 do
       blocks[1][blockindex], index = mag[index], index - 1
    end
+   
    
    return blocks
 end
