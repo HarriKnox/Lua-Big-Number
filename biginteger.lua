@@ -105,8 +105,8 @@ local tableinsert = table.insert
 --]===========]
 
 --[==[
--- The largest number bit32 can work with reliably
--- (despite being a 32-bit library)
+-- The largest number bit32 can work with reliably (despite being a 32-bit
+-- library).
 --
 -- maxinteger = 2^51 - 1
 --]==]
@@ -114,8 +114,8 @@ local maxinteger = 0x7ffffffffffff
 
 
 --[==[
--- The largest magnitude allowable because of 32 bits per word
--- (allows for up to `maxinteger` bits)
+-- The largest magnitude allowable because of 32 bits per word (allows for up
+-- to `maxinteger` bits).
 --
 -- maxmagnitudelength = 2^51 / 32 - 1
 --]==]
@@ -123,13 +123,13 @@ local maxmagnitudelength = 0x3fffffffffff
 
 
 --[==[
--- A mask used for 32-bit integers to get the sign
+-- A mask used for 32-bit integers to get the sign.
 --]==]
 local negativemask = 0x80000000
 
 
 --[==[
--- A constant for the log of 2, used primarily in radix conversion
+-- A constant for the log of 2, used primarily in radix conversion.
 --]==]
 local log2 = log(2)
 
