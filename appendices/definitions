@@ -52,6 +52,9 @@ Array
    Since an array is a table, it may have keys and values that are not in the
    sequence (such as t.name = 'Harri'). These will be treated as arrays looking
    at only the integer indices.
+   
+   A sub-array of an array is an array that contains a shallow copy of a
+   contiguous range of elements of the parent array.
 
 
 Word-Array
