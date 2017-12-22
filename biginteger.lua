@@ -1259,16 +1259,14 @@ end
 --[==[
 -- Splits the magnitude into three blocks used for Toom-Cook multiplication.
 --
--- The parameter 'fullsize' may not be equal to the length of the magnitude.
--- When multiplying two magnitudes together 'fullsize' is the length of the
--- longer magnitude.
+-- The parameter 'size' is the max size of the slice.
 --
--- It is possible that the lengths of the resulting slices do not add up to the
--- length of the magnitude.
+-- This function effectively does the same thing as `splitarrayblocks` except
+-- this one always returns three blocks and it strips the leading zeros off
+-- each slice.
 --]==]
-function splitmagtoomcook(mag, fullsize)
+function splitmagtoomcook(mag, size)
    local maglength = #mag
-   local size = floor((fullsize + 2) / 3)
    local lowersize = min(size, maglength)
    local middlesize = min(size, maglength - lowersize)
    local uppersize = min(size, maglength - lowersize - middlesize)
@@ -1298,11 +1296,10 @@ function splitmagtoomcook(mag, fullsize)
    end
    
    
-   --[[ Strip the leading zeros off the slices and return them and the offset]]
+   --[[ Strip the leading zeros off the slices and return them ]]
    return destructivestripleadingzeros(upperslice),
           destructivestripleadingzeros(middleslice),
-          destructivestripleadingzeros(lowerslice),
-          size * 32
+          destructivestripleadingzeros(lowerslice)
 end
 
 
@@ -2666,7 +2663,9 @@ function squaretoomcook(mag)
    local a2, a1, a0, ss
    local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1
    
-   a2, a1, a0, ss = splitmagtoomcook(mag, #mag)
+   ss = floor((#mag + 2) / 3)
+   
+   a2, a1, a0 = splitmagtoomcook(mag, ss)
    
    
    -- v0 = a0.square();
@@ -2860,9 +2859,11 @@ function multiplytoomcook(thismag, thatmag)
    
    local longerlength = max(#thismag, #thatmag)
    
+   ss = floor((longerlength + 2) / 3)
+   
    -- All slices here are non-negative values
-   a2, a1, a0, ss = splitmagtoomcook(thismag, longerlength)
-   b2, b1, b0, _  = splitmagtoomcook(thatmag, longerlength)
+   a2, a1, a0 = splitmagtoomcook(thismag, ss)
+   b2, b1, b0 = splitmagtoomcook(thatmag, ss)
    
    -- v0 = a0.multiply(b0);
    v0 = multiplymagnitudes(a0, b0)
