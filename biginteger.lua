@@ -1310,41 +1310,34 @@ function splitmagtoomcook(mag, size)
 end
 
 
-function signextendwordarrayto(source, destination, newlength)
-   local length = #source
+--[==[
+-- Destructively sign extends the provided word-array.
+--]==]
+function signextendwordarray(array, newlength)
+   local length = #array
    local signwords = newlength - length
-   local signint = getwordarraysignint(source[1])
+   local signint = getwordarraysignint(array[1])
    
+   
+   --[[ If no extra words, then exit ]]
    if signwords <= 0 then
-      if source ~= destination then
-         -- if no sign words are being added and the source and destination are
-         -- different, then copy the values from source to destination and
-         -- return. If the source and destination are the same table, then do
-         -- nothing and return.
-         for i = 1, length do
-            destination[i] = source[i]
-         end
-      end
-      return destination
+      return array
    end
    
+   
+   --[[ Shift up all the existing data words ]]
    for i = newlength, signwords + 1, -1 do
-      destination[i] = source[i - signwords]
+      array[i] = array[i - signwords]
    end
    
+   
+   --[[ Prepend the sign-words at the beginning ]]
    for i = 1, signwords do
-      destination[i] = signint
+      array[i] = signint
    end
    
-   return destination
-end
-
-function copyandsignextendwordarray(array, newlength)
-   return signextendwordarrayto(array, {}, newlength)
-end
-
-function destructivesignextendwordarray(array, newlength)
-   return signextendwordarrayto(array, array, newlength)
+   
+   return array
 end
 
 
@@ -2159,7 +2152,7 @@ function destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
    
    length = max(#wordarray, word + 1)
    
-   destructivesignextendwordarray(wordarray, length)
+   signextendwordarray(wordarray, length)
    wordarray[length - word] = bitwisefunction(wordarray[length - word], bitleftshift(1, bit))
    
    return wordarray
