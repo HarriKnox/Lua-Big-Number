@@ -873,13 +873,17 @@ end
 -- speed.
 --]==]
 function numberofleadingzeros(int)
-   local n = 0
+   local n
    
    
    --[[ Special case that is easy to check ]]
    if int == 0 then
       return 32
    end
+   
+   
+   --[[ Initialize 'n' to 0 ]]
+   n = 0
    
    
    --[[ Check if the highest 16 bits are zeros ]]
@@ -931,14 +935,17 @@ end
 -- because this function is rarely called in comparison to its counterpart.
 --]==]
 function numberoftrailingzeros(int)
-   local y
-   local n = 32
+   local y, n
    
    
    --[[ Quick check for zero ]]
    if int == 0 then
       return 32
    end
+   
+   
+   --[[ Initialize 'n' ]]
+   n = 32
    
    
    --[[ Check if lowest 16 bits are zeros ]]
