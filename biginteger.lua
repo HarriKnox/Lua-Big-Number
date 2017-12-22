@@ -1231,7 +1231,7 @@ function splitarrayintoblocks(mag, blocklength)
 end
 
 
-function gettoomcookslices(mag, fullsize)
+function splitarraytoomcook(mag, fullsize)
    -- fullsize is used when multiplying two magnitudes of different sizes
    local lowersize, middlesize, uppersize, size, maglength, offset
    local lowerslice, middleslice, upperslice
@@ -2649,7 +2649,7 @@ function squaretoomcook(mag)
    local a2, a1, a0, ss
    local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1
    
-   a2, a1, a0, ss = gettoomcookslices(mag, #mag)
+   a2, a1, a0, ss = splitarraytoomcook(mag, #mag)
    
    
    -- v0 = a0.square();
@@ -2844,8 +2844,8 @@ function multiplytoomcook(thismag, thatmag)
    local longerlength = max(#thismag, #thatmag)
    
    -- All slices here are non-negative values
-   a2, a1, a0, ss = gettoomcookslices(thismag, longerlength)
-   b2, b1, b0, _  = gettoomcookslices(thatmag, longerlength)
+   a2, a1, a0, ss = splitarraytoomcook(thismag, longerlength)
+   b2, b1, b0, _  = splitarraytoomcook(thatmag, longerlength)
    
    -- v0 = a0.multiply(b0);
    v0 = multiplymagnitudes(a0, b0)
