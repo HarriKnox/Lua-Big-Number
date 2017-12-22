@@ -1231,6 +1231,31 @@ function splitarrayintoblocks(mag, blocklength)
 end
 
 
+
+
+
+--[=======================================================[
+--[         _       _                   _                 ]
+--[        | |     | |                 | |                ]
+--[        | |  _  | |  ___   _ __   __| | ______         ]
+--[        | | | | | | / _ \ | '__| / _` ||______|        ]
+--[        | |_| |_| || (_) || |   | (_| |                ]
+--[         \___.___/  \___/ |_|    \__,_|                ]
+--[             ___                                       ]
+--[            / _ \                                      ]
+--[           | |_| | _ __  _ __   __ _  _   _            ]
+--[           |  _  || '__|| '__| / _` || | | |           ]
+--[           | | | || |   | |   | (_| || |_| |           ]
+--[           |_| |_||_|   |_|    \__,_| \__, |           ]
+--[  ______                    _    _     __/ |           ]
+--[ |  ____|                  | |  (_)   |___/            ]
+--[ | |__  _   _  _ __    ___ | |_  _   ___   _ __   ___  ]
+--[ |  __|| | | || '_ \  / __|| __|| | / _ \ | '_ \ / __| ]
+--[ | |   | |_| || | | || (__ | |_ | || (_) || | | |\__ \ ]
+--[ |_|    \__,_||_| |_| \___| \__||_| \___/ |_| |_||___/ ]
+--[                                                       ]
+--]=======================================================]
+
 --[==[
 -- Splits the magnitude into three blocks used for Toom-Cook multiplication.
 --
@@ -1241,7 +1266,7 @@ end
 -- It is possible that the lengths of the resulting slices do not add up to the
 -- length of the magnitude.
 --]==]
-function splitarraytoomcook(mag, fullsize)
+function splitmagtoomcook(mag, fullsize)
    local maglength = #mag
    local size = floor((fullsize + 2) / 3)
    local lowersize = min(size, maglength)
@@ -1280,31 +1305,6 @@ function splitarraytoomcook(mag, fullsize)
           size * 32
 end
 
-
-
-
-
---[=======================================================[
---[         _       _                   _                 ]
---[        | |     | |                 | |                ]
---[        | |  _  | |  ___   _ __   __| | ______         ]
---[        | | | | | | / _ \ | '__| / _` ||______|        ]
---[        | |_| |_| || (_) || |   | (_| |                ]
---[         \___.___/  \___/ |_|    \__,_|                ]
---[             ___                                       ]
---[            / _ \                                      ]
---[           | |_| | _ __  _ __   __ _  _   _            ]
---[           |  _  || '__|| '__| / _` || | | |           ]
---[           | | | || |   | |   | (_| || |_| |           ]
---[           |_| |_||_|   |_|    \__,_| \__, |           ]
---[  ______                    _    _     __/ |           ]
---[ |  ____|                  | |  (_)   |___/            ]
---[ | |__  _   _  _ __    ___ | |_  _   ___   _ __   ___  ]
---[ |  __|| | | || '_ \  / __|| __|| | / _ \ | '_ \ / __| ]
---[ | |   | |_| || | | || (__ | |_ | || (_) || | | |\__ \ ]
---[ |_|    \__,_||_| |_| \___| \__||_| \___/ |_| |_||___/ ]
---[                                                       ]
---]=======================================================]
 
 function signextendwordarrayto(source, destination, newlength)
    local length = #source
@@ -2666,7 +2666,7 @@ function squaretoomcook(mag)
    local a2, a1, a0, ss
    local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1
    
-   a2, a1, a0, ss = splitarraytoomcook(mag, #mag)
+   a2, a1, a0, ss = splitmagtoomcook(mag, #mag)
    
    
    -- v0 = a0.square();
@@ -2861,8 +2861,8 @@ function multiplytoomcook(thismag, thatmag)
    local longerlength = max(#thismag, #thatmag)
    
    -- All slices here are non-negative values
-   a2, a1, a0, ss = splitarraytoomcook(thismag, longerlength)
-   b2, b1, b0, _  = splitarraytoomcook(thatmag, longerlength)
+   a2, a1, a0, ss = splitmagtoomcook(thismag, longerlength)
+   b2, b1, b0, _  = splitmagtoomcook(thatmag, longerlength)
    
    -- v0 = a0.multiply(b0);
    v0 = multiplymagnitudes(a0, b0)
