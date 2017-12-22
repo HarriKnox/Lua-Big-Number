@@ -96,7 +96,7 @@ Word-Array
    where they may have been interpreted as word-arrays.
 
 
-Magnitude
+Magnitude, Mag
    A type of word-array with the following exceptions:
 
    1. All numbers are treated as unsigned (ignores negatives in Two's
@@ -113,9 +113,12 @@ Magnitude
       completely internally used: all public functions that interpret arrays of
       words will interpret those arrays of words as word-arrays, not
       magnitudes.
+   
+   A slice is a like a sub-array of the magnitude, but it will have its leading
+   zeros stripped off.
 
 
-Biginteger
+Biginteger, Bigint
    A table with (at minimum) two fields (sign and magnitude).
    
    1. Sign is an integer that is either -1, 0, or +1. Sign determines whether
