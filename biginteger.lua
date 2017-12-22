@@ -1233,14 +1233,14 @@ end
 
 function splitarraytoomcook(mag, fullsize)
    -- fullsize is used when multiplying two magnitudes of different sizes
-   local lowersize, middlesize, uppersize, size, maglength, offset
+   local maglength = #mag
+   local size = floor((fullsize + 2) / 3)
+   local lowersize = min(size, maglength)
+   local middlesize = min(size, maglength - lowersize)
+   local uppersize = min(size, maglength - lowersize - middlesize)
+   
    local lowerslice, middleslice, upperslice
    
-   maglength = #mag
-   size = floor((fullsize + 2) / 3)
-   lowersize = min(size, maglength)
-   middlesize = min(size, maglength - lowersize)
-   uppersize = min(size, maglength - lowersize - middlesize)
    
    lowerslice = {}
    middleslice = {}
