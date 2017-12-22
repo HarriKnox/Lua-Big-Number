@@ -147,3 +147,11 @@ Biginteger, Bigint
       equivalent to 0 (zero). A non-zero magnitude with no sign is an
       illegal number.
 
+
+
+Destructive
+   An operation that modifies the array in-place.
+   
+   Destructive operations are usually more efficient than copying in space and
+   speed and are used internally so the end-users don't need to worry about
+   them.
