@@ -2,6 +2,7 @@ This appendix lists out the definitions of words frequently used in the
 library.
 
 
+
 Integer
    A Lua value of type 'number' that has no decimal part (x % 1 == 0).
    
@@ -15,8 +16,10 @@ Integer
    an integer (duck-typng, yay!).
 
 
+
 Byte
    An 8-bit integer.
+
 
 
 Int, Word
@@ -26,6 +29,7 @@ Int, Word
    fits in 32-bits, but generally ints are treated as unsigned.
 
 
+
 Long, Split-Long
    An unsigned integer that can be larger than 32 bits.
    
@@ -33,6 +37,7 @@ Long, Split-Long
    large to fit in 32-bits. Because Lua's use of 64-bit floats, the largest
    integer you can get is 53-bits, so longs are often handled as two ints,
    called a "split long".
+
 
 
 Array
@@ -55,6 +60,7 @@ Array
    
    A sub-array of an array is an array that contains a shallow copy of a
    contiguous range of elements of the parent array.
+
 
 
 Word-Array
@@ -96,6 +102,7 @@ Word-Array
    where they may have been interpreted as word-arrays.
 
 
+
 Magnitude, Mag
    A type of word-array with the following exceptions:
 
@@ -116,6 +123,7 @@ Magnitude, Mag
    
    A slice is a like a sub-array of the magnitude, but it will have its leading
    zeros stripped off.
+
 
 
 Biginteger, Bigint
