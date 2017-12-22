@@ -912,7 +912,7 @@ function numberofleadingzeros(int)
    
    --[[ Check if the highest bit is a zero ]]
    if int <= 0x7fffffff then
-      n = n = 1
+      n = n + 1
    end
    
    
