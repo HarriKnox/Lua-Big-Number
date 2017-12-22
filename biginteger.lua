@@ -1231,8 +1231,17 @@ function splitarrayintoblocks(mag, blocklength)
 end
 
 
+--[==[
+-- Splits the magnitude into three blocks used for Toom-Cook multiplication.
+--
+-- The parameter 'fullsize' may not be equal to the length of the magnitude.
+-- When multiplying two magnitudes together 'fullsize' is the length of the
+-- longer magnitude.
+--
+-- It is possible that the lengths of the resulting slices do not add up to the
+-- length of the magnitude.
+--]==]
 function splitarraytoomcook(mag, fullsize)
-   -- fullsize is used when multiplying two magnitudes of different sizes
    local maglength = #mag
    local size = floor((fullsize + 2) / 3)
    local lowersize = min(size, maglength)
@@ -1242,25 +1251,33 @@ function splitarraytoomcook(mag, fullsize)
    local lowerslice, middleslice, upperslice
    
    
+   --[[ Copy the least-significant slice ]]
    lowerslice = {}
-   middleslice = {}
-   upperslice = {}
    
    for i = 0, lowersize - 1 do
       lowerslice[lowersize - i] = mag[maglength - i]
    end
    
+   
+   --[[ Copy the middle slice ]]
+   middleslice = {}
    for i = 0, middlesize - 1 do
       middleslice[middlesize - i] = mag[maglength - lowersize - i]
    end
    
+   
+   --[[ Copy the most significant slice ]]
+   upperslice = {}
    for i = 0, uppersize - 1 do
       upperslice[uppersize - i] = mag[maglength - lowersize - middlesize - i]
    end
    
+   
+   --[[ Strip the leading zeros off the slices and return them and the offset]]
    return destructivestripleadingzeros(upperslice),
           destructivestripleadingzeros(middleslice),
-          destructivestripleadingzeros(lowerslice), size * 32
+          destructivestripleadingzeros(lowerslice),
+          size * 32
 end
 
 
