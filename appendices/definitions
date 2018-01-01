@@ -150,8 +150,8 @@ Biginteger, Bigint
 
 
 Destructive
-   An operation that modifies the array in-place.
+   An operation that modifies the passed array in-place.
    
-   Destructive operations are usually more efficient than copying in space and
-   speed and are used internally so the end-users don't need to worry about
-   them.
+   Destructive operations are usually more efficient than copying in terms of
+   space and time and are used internally so the end-users don't need to worry
+   about misusing them.
