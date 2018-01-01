@@ -1341,11 +1341,25 @@ function signextendwordarray(array, newlength)
 end
 
 
+--[==[
+-- Copies the entries of `source` into `destination` without any leading zeros.
+--
+-- If no leading zeros are being stripped, then it reduces to a copy function.
+-- This is the "work" function; it does the work for the two entry functions.
+-- It isn't called directly except by the entry functions.
+--]==]
 function stripleadingzerosto(source, destination)
    local length = #source
    local difference = length
    local endpoint
    
+   
+   --[[
+   -- Find the number of leading zeros. If the entire array was zeros, the 'if'
+   -- inside the 'for' will never run and `difference` will never be set, thus
+   -- `difference` is initialized to `length` for this case where the whole
+   -- array needs to be stripped.
+   --]]
    for i = 1, length do
       if source[i] ~= 0 then
          difference = i - 1
@@ -1353,12 +1367,11 @@ function stripleadingzerosto(source, destination)
       end
    end
    
+   
+   --[[ If no zeros are being stripped then copy the array ]]
    if difference == 0 then
+      --[[ If the source and destination arrays are the same, don't copy ]]
       if source ~= destination then
-         -- if no zeros are being stripped and the source and destination are
-         -- different, then copy the values from source to destination and
-         -- return. If the source and destination are the same table, then do
-         -- nothing and return.
          for i = 1, length do
             destination[i] = source[i]
          end
@@ -1366,12 +1379,18 @@ function stripleadingzerosto(source, destination)
       return destination
    end
    
+   
+   --[[ Calculate the endpoint of the destination array ]]
    endpoint = length - difference
    
+   
+   --[[ Copy all the non-leading-zero words shifted up ]]
    for i = 1, endpoint do
       destination[i] = source[i + difference]
    end
    
+   
+   --[[ If the arrays are the same then nullify the remaining entries ]]
    if destination == source then
       for i = endpoint + 1, length do
          destination[i] = nil
@@ -1381,69 +1400,117 @@ function stripleadingzerosto(source, destination)
    return destination
 end
 
+
+--[==[
+-- Strips the leading zeros of the array and puts the results in a new array.
+--
+-- If no zeros are to be stripped this returns a copy of the original array.
+-- This is one of the entry functions.
+--]==]
 function copyandstripleadingzeros(array)
    return stripleadingzerosto(array, {})
 end
 
+
+--[==[
+-- Destructively strips the leading zeros of the array.
+--
+-- If no zeros are to be stripped this does nothing and just returns the array.
+-- This is one of the entry functions.
+--]==]
 function destructivestripleadingzeros(array)
    return stripleadingzerosto(array, array)
 end
 
 
+--[==[
+-- Performs a Two's complement negation on the word-array in `source` and
+-- copies the result into `destination`.
+--
+-- This is the "work" function; it does the work for the two entry functions.
+-- It isn't called directly except by the entry functions.
+--]==]
 function negatewordarrayto(source, destination)
-   --[[
-   -- This function is correct, even though it seems it should do something with
-   -- `addend` after the loop. The only number that would cause an overflow when
-   -- added to 1 is 0b1111111111111111 (-1). The bitnot of that is 0. Thus the
-   -- only number that would cause `addend` to still be 1 after the loop is 0,
-   -- and the negation of 0 is 0.
-   --]]
    local length = #source
    local addend = 1
    
+   --[[ Loop through each word, flip the bits, and add 1 ]]
    for i = length, 1, -1 do
       addend, destination[i] = splitlong(bitnot(source[i]) + addend)
    end
    
+   
+   --[[ Clean the number up and return ]]
    destructivestripleadingzeros(destination)
    
    return destination
 end
 
+
+--[==[
+-- Arithmetically negates the word-array and puts the results in a new array.
+--
+-- This is one of the entry functions.
+--]==]
 function copyandnegatewordarray(array)
    return negatewordarrayto(array, {})
 end
 
+
+--[==[
+-- Destructively arithmetically negates the word-array.
+--
+-- This is one of the entry functions.
+--]==]
 function destructivenegatewordarray(array)
    return negatewordarrayto(array, array)
 end
 
 
+--[==[
+-- Finds the most-significantly set bit and returns the position as a
+-- zero-indexed, little-endian index (that is to say the least-significant bit
+-- is bit 0), or `-1` if the array is equal to 0.
+--]==]
 function gethighestsetbit(mag)
-   -- Will return the zero-index, little-endian index of the highset set bit,
-   -- or -1 if array is equal to zero
    local length = #mag
    
+   
+   --[[ Loop through each word from the most-significant ]]
    for i = 1, length do
+      --[[ If the word has set bits (is non-zero) ... ]]
       if mag[i] ~= 0 then
+         --[[ ... get the highest bit and return its index (using math) ]]
          return (length - i + 1) * 32 - numberofleadingzeros(mag[i]) - 1
       end
    end
    
+   
+   --[[ If length is 0 or the whole array is all zero-words, return -1 ]]
    return -1
 end
 
+
+--[==[
+-- Finds the least-significantly set bit and returns the position as a
+-- zero-indexed, little-endian index (that is to say the least-significant bit
+-- is bit 0), or `-1` if the array is equal to 0.
+--]==]
 function getlowestsetbit(array)
-   -- Will return the zero-index, little-endian index of the lowset set bit,
-   -- or -1 if array is equal to zero
    local length = #array
    
+   
+   --[[ Loop through each word from the least-significant ]]
    for i = length, 1, -1 do
+      --[[ If the word has set bits (is non-zero) ... ]]
       if mag[i] ~= 0 then
+         --[[ ... get the lowest bit and return its index (using math) ]]
          return (length - i) * 32 + numberoftrailingzeros(mag[i])
       end
    end
    
+   
+   --[[ If length is 0 or the whole array is all zero-words, return -1 ]]
    return -1
 end
 
