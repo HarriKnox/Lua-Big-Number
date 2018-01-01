@@ -950,6 +950,7 @@ function numberoftrailingzeros(int)
    
    --[[ Check if lowest 16 bits are zeros ]]
    y = bitleftshift(int, 16)
+   
    if y ~= 0 then
       n = n - 16
       int = y
@@ -958,6 +959,7 @@ function numberoftrailingzeros(int)
    
    --[[ Check if lowest 8 bits are zeros ]]
    y = bitleftshift(int, 8)
+   
    if y ~= 0 then
       n = n - 8
       int = y
@@ -966,6 +968,7 @@ function numberoftrailingzeros(int)
    
    --[[ Check if lowest 4 bits are zeros ]]
    y = bitleftshift(int, 4)
+   
    if y ~= 0 then
       n = n - 4
       int = y
@@ -974,6 +977,7 @@ function numberoftrailingzeros(int)
    
    --[[ Check if lowest 2 bits are zeros ]]
    y = bitleftshift(int, 2)
+   
    if y ~= 0 then
       n = n - 2
       int = y
@@ -1291,6 +1295,7 @@ function splitmagtoomcook(mag, size)
    
    --[[ Copy the middle slice ]]
    middleslice = {}
+   
    for i = 0, middlesize - 1 do
       middleslice[middlesize - i] = mag[maglength - lowersize - i]
    end
@@ -1298,6 +1303,7 @@ function splitmagtoomcook(mag, size)
    
    --[[ Copy the most significant slice ]]
    upperslice = {}
+   
    for i = 0, uppersize - 1 do
       upperslice[uppersize - i] = mag[maglength - lowersize - middlesize - i]
    end
@@ -1350,7 +1356,8 @@ end
 --]==]
 function stripleadingzerosto(source, destination)
    local length = #source
-   local difference = length
+   
+   local difference
    local endpoint
    
    
@@ -1360,6 +1367,9 @@ function stripleadingzerosto(source, destination)
    -- `difference` is initialized to `length` for this case where the whole
    -- array needs to be stripped.
    --]]
+   difference = length
+   
+   
    for i = 1, length do
       if source[i] ~= 0 then
          difference = i - 1
@@ -1376,6 +1386,8 @@ function stripleadingzerosto(source, destination)
             destination[i] = source[i]
          end
       end
+      
+      
       return destination
    end
    
@@ -1396,6 +1408,7 @@ function stripleadingzerosto(source, destination)
          destination[i] = nil
       end
    end
+   
    
    return destination
 end
@@ -1432,7 +1445,12 @@ end
 --]==]
 function negatewordarrayto(source, destination)
    local length = #source
-   local addend = 1
+   local addend
+   
+   
+   --[[ Initialize `addend` as the 1 to add after flipping the bits ]]
+   addend = 1
+   
    
    --[[ Loop through each word, flip the bits, and add 1 ]]
    for i = length, 1, -1 do
@@ -1442,6 +1460,7 @@ function negatewordarrayto(source, destination)
    
    --[[ Clean the number up and return ]]
    destructivestripleadingzeros(destination)
+   
    
    return destination
 end
