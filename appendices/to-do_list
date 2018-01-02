@@ -1,31 +1,29 @@
 GCD
 
-modulus
+Modulus
 
-quick increment and decrement
+Quick increment and decrement
 
-prime number stuff
+Prime number stuff
 
-serializable magnitude/wordarray string
+Serializable magnitude/wordarray string
 
-string/file reading
+String and file reading
    "Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
                              H a r r     i s o n       i s       c o o l
 
-metatable
+Metatable
 
-ratio module
+Ratio and complex number module
 
-complex number module
-
-proper encapsulation
+Proper encapsulation
    surprisingly, not all functions are supposed to be public
 
-make fast
+Make it fast
    functional overhead for bitwise operations is high, but Lua 5.2 doesn't
    support bitwise sigils
 
-avoid checking validity of operable values twice in entry functions
+Avoid checking validity of operable values twice in entry functions
    values are type checked twice in various entry functions: once in
       `assert(isvalidoperablevalue(value))`
    and the second time in
