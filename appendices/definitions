@@ -185,6 +185,13 @@ Biginteger, Bigint
 
 
 
+Operable Value
+   Values that represent integers and can be used in arithmetic operations in
+   the library; values of the either of the following types: integer,
+   word-array, or biginteger.
+
+
+
 Destructive
    An operation that modifies the passed array in-place.
    
