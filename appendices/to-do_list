@@ -28,3 +28,5 @@ Avoid checking validity of operable values twice in entry functions
       `assert(isvalidoperablevalue(value))`
    and the second time in
       `sign, mag = getsignandmagnitude(value)`
+
+Immutability

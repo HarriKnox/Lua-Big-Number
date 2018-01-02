@@ -1,0 +1,46 @@
+Immutability, one of the principles of function programming, makes things work
+and makes things work fast. The beauty of immutability is the ability to trust
+what you are giving to the client and to trust what the client is returning
+back to you, allowing you to make a number of safe assumptions and
+optimizations.
+
+
+The library somewhat alludes to treating values as immutable by returning new
+objects from functions instead of mutating them in-place (you need to opt-in to
+use the mutable functions). This library does not enforce immutability,
+however.
+
+Since we can't trust the types of the values passed in to the entry functions,
+we need to check the types of the values every time to be sure we can operate
+on them. This slows us down since we're wasting time checking whether a value
+is valid, regardless of if we checked that already a half-second ago. This is
+especially bad when checking word-arrays if the word-array gets particularly
+long.
+
+If we implemented immutability, verifications for type validity need to occur
+only once, if ever. If we have implemented immutability, we will most likely
+have implemented the biginteger metatable. By using the metatable we can
+immediately identify what is a biginteger, and by enforcing immutability we can
+be sure that the biginteger is actually a biginteger without needing to check
+its sign and magnitude for correctness (those would be checked on creation of
+the biginteger).
+
+
+Another optimization is in copying word-arrays. Copying would run in constant
+time instead of linear because you need to copy only the reference and not
+every element individually. This makes doing arithmetic quicker since we can
+create a "transparent array" (an array whose empty (nil) elements point to the
+values in another array) and set only the elements in the trasparent array that
+are affected. It also makes stripping sign-words quicker since we could just
+create a "transparent array" that directly references the elements of the
+original but offset. The possibilities are endless when you mix together
+immutability, metatables, and a mad scientist.
+
+
+Total immutability is great, but some mutability is nice too. For example,
+suppose I had a huge biginteger (say, a million words in the magnitude) and I
+needed to increment it twice and throw away the old values. There's no reason
+for me to need to copy the whole magnitude twice, each time changing only one
+element, especially if it's going to be thrown away afterwards. On the issue of
+implementing this, allowing controlled mutability in this part is a big plus,
+but the switching overhead gets complicated.
