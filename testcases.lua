@@ -39,7 +39,7 @@ local biginteger = require('biginteger')
 --[==[ gethighestsetbit(mag) ]==]
 --[==[ getlowestsetbit(array) ]==]
 --[==[ gettype(thing) ]==]
---[==[ getwordarraysignint(array) ]==]
+--[==[ getwordarraysignword(array) ]==]
 --[==[ getwordarraysign(array) ]==]
 --[==[ getwordarraymagnitude(array) ]==]
 --[==[ getwordarraysignandmagnitude(array) ]==]

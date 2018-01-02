@@ -1322,7 +1322,7 @@ end
 function signextendwordarray(array, newlength)
    local length = #array
    local signwords = newlength - length
-   local signint = getwordarraysignint(array[1])
+   local signint = getwordarraysignword(array[1])
    
    
    --[[ If no extra words, then exit ]]
@@ -1560,7 +1560,7 @@ function gettype(thing)
 end
 
 
-function getwordarraysignint(array)
+function getwordarraysignword(array)
    if array[1] and array[1] >= negativemask then
       return 0xffffffff
    end
@@ -2009,8 +2009,8 @@ function bitwisewordarrays(thisarray, thatarray, mergefunction)
    thatlength = #thatarray
    longerlength = max(thislength, thatlength)
    
-   thissignint = getwordarraysignint(thisarray)
-   thatsignint = getwordarraysignint(thatarray)
+   thissignint = getwordarraysignword(thisarray)
+   thatsignint = getwordarraysignword(thatarray)
    
    for i = 0, longerlength - 1 do
       destination[longerlength - 1] = mergefunction(thisarray[thislength - i] or thissignint,
@@ -3326,7 +3326,7 @@ function multiplythensubtract(remainder, div, qhat, offset)
    offset = offset + divlength
    
    for i = divlength, 1, -1 do
-      signint = getwordarraysignint(remainder)
+      signint = getwordarraysignword(remainder)
       producthigh, productlow = intmultiplyint(div[i], qhat, carry)
       differencehigh, differencelow = splitlong(remainder[offset] + (bitnot(productlow) + 1))
       differencehigh = (bitnot(producthigh) + differencehigh + signint) % 0x100000000
