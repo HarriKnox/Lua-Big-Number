@@ -27,6 +27,21 @@ Int, Word
    
    Negative numbers can be treated as 32-bit integers if their positive value
    fits in 32-bits, but generally ints are treated as unsigned.
+   
+   Generally "word" is used more in the context of a word-array and "int" is
+   used elsewhere.
+
+
+
+XXXX-Word
+   A word (int) that represents whatever XXXX is.
+   
+   A "zero-word" is a word that equals `0`.
+   
+   A "sign-word" is a word where all bits have the same value and they
+   represent a sign-extention of a Two's complement number. Sign-words are
+   either `0x00000000` or `0xffffffff`; the former for positive and zero values
+   and the latter for negative values.
 
 
 
@@ -78,16 +93,37 @@ Word-Array
    word-array is determined by the sign the most significant word. If the first
    word is a negative Two's complement number, then the word-array will be
    considered negative. Likewise, if the first element is not negative, the
-   word-array will be considered not negative. Leading zeros or leading sign
-   bits [0xffffffff] will ensure the word-array is interpreted as non-negative
-   or negative, respectively.
+   word-array will be considered not negative.
    
-      {   0xffff0000} = -65'536 (negative)
-      {0, 0xffff0000} = 4'294'901'760 (positive)
+      {0x0000ffff} = 65'535 (positive)
+      {0xffff0000} = -65'536 (negative)
+   
+   
+   Leading sign-words can be used to ensure a particular sign if the sign-word
+   is of a different sign than the word-array.
+   
+      {            0x0000ffff} = 65'535         (positive because number)
+      {0xffffffff, 0x0000ffff} = -4'294'901'761 (negative because sign-word)
       
-      {            0x0000ffff} = 65'535 (positive)
-      {0xffffffff, 0x0000ffff} = -4'294'901'761 (negative)
-
+      {            0xffff0000} = -65'536       (negative because number)
+      {0x00000000, 0xffff0000} = 4'294'901'760 (positive because sign-word)
+   
+   
+   If the leading sign-word is the same sign as the word-array, then any number
+   of leading sign-words can be prepended without changing the value of the
+   number.
+   
+                                                  {0x0000ffff} = 65'535
+                                      {0x00000000, 0x0000ffff} = 65'535
+                          {0x00000000, 0x00000000, 0x0000ffff} = 65'535
+      {0x00000000, ...ad infinitum..., 0x00000000, 0x0000ffff} = 65'535
+      
+                                                  {0xffff0000} = -65'536
+                                      {0xffffffff, 0xffff0000} = -65'536
+                          {0xffffffff, 0xffffffff, 0xffff0000} = -65'536
+      {0xffffffff, ...ad infinitum..., 0xffffffff, 0xffff0000} = -65'536
+   
+   
    To be more space-efficient with large word-arrays you could use custom __len
    and __index metamethods. Suppose you needed a `76` followed by a million
    zero-words. Modify the __len to just return 1000001 (#array == 1000001).
