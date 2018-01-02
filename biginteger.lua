@@ -1599,11 +1599,11 @@ function getwordarraysignandmagnitude(array)
 end
 
 
-function getnumbersign(int)
+function getintegersign(int)
    return (int < 0 and -1) or (int > 0 and 1) or 0
 end
 
-function getnumbermagnitude(int)
+function getintegermagnitude(int)
    local highword, lowword = splitlong(abs(int))
    
    if highword == 0 then
@@ -1615,8 +1615,8 @@ function getnumbermagnitude(int)
    return {highword, lowword}
 end
 
-function getnumbersignandmagnitude(int)
-   return getnumbersign(int), getnumbermagnitude(int)
+function getintegersignandmagnitude(int)
+   return getintegersign(int), getintegermagnitude(int)
 end
 
 
@@ -1628,7 +1628,7 @@ function getsign(value)
       return getwordarraysign(value)
       
    elseif isvalidinteger(value) then
-      return getnumbersign(value)
+      return getintegersign(value)
    end
    
    -- precautionary error that should not run unless I missed a check somewhere
@@ -1643,7 +1643,7 @@ function getmagnitude(value)
       return getwordarraymagnitude(value)
       
    elseif isvalidinteger(value) then
-      return getnumbermagnitude(value)
+      return getintegermagnitude(value)
    end
    
    -- precautionary error that should not run unless I missed a check somewhere
@@ -1658,7 +1658,7 @@ function getsignandmagnitude(value)
       return getwordarraysignandmagnitude(value)
       
    elseif isvalidinteger(value) then
-      return getnumbersignandmagnitude(value)
+      return getintegersignandmagnitude(value)
    end
    
    -- precautionary error that should not run unless I missed a check somewhere
@@ -1714,7 +1714,7 @@ end
 function constructorinteger(int)
    assert(isvalidinteger(int))
    
-   return createbiginteger(getnumbersignandmagnitude(int))
+   return createbiginteger(getintegersignandmagnitude(int))
 end
 
 function constructorsignmagnitudetrusted(sign, mag)
@@ -3791,7 +3791,7 @@ function getpowercache(radix, exponent)
          if sq > maxinteger then
             -- If using an int is possible, then use an int.
             -- Use bigintegers only when number is too big for an int.
-            sq = squaremagnitude(getnumbermagnitude(radixcache[i - 1]))
+            sq = squaremagnitude(getintegermagnitude(radixcache[i - 1]))
          end
       else
          sq = squaremagnitude(radixcache[i - 1])
@@ -3802,7 +3802,7 @@ function getpowercache(radix, exponent)
    pc = radixcache[exponent]
    
    if type(pc) == 'number' then
-      return getnumbermagnitude(pc)
+      return getintegermagnitude(pc)
    end
    
    return copyarray(pc)
