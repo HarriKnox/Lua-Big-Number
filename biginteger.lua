@@ -1244,7 +1244,6 @@ end
 
 
 
-
 --[=======================================================[
 --[         _       _                   _                 ]
 --[        | |     | |                 | |                ]
@@ -1552,6 +1551,10 @@ end
 --[                                                       ]
 --]=======================================================]
 
+--[==[
+-- Returns the type of the object based on their validity using the testing
+-- functions.
+--]==]
 function gettype(thing)
    return (isvalidinteger(thing) and 'integer') or
           (isvalidbiginteger(thing) and 'biginteger') or
@@ -1560,14 +1563,27 @@ function gettype(thing)
 end
 
 
+--[==[
+-- Returns the sign-word of the word-array.
+--]==]
 function getwordarraysignword(array)
+   --[[ If the array is negative, return the negative sign-word ]]
    if array[1] and array[1] >= negativemask then
       return 0xffffffff
    end
    
+   
+   --[[
+   -- Otherwise, if the length is zero or the most significant word isn't
+   -- negative, then return the non-negative sign-word (zero).
+   --]]
    return 0
 end
 
+
+--[==[
+-- Returns the sign of the word-array.
+--]==]
 function getwordarraysign(array)
    if #array == 0 then
       return 0
@@ -1583,6 +1599,13 @@ function getwordarraysign(array)
    return 0
 end
 
+
+--[==[
+-- Returns a copy of the magnitude of the word-array.
+--
+-- This returns a copy every single time it's called, so don't call it more
+-- than you need to.
+--]==]
 function getwordarraymagnitude(array)
    if getwordarraysign(array) == -1 then
       return copyandnegatewordarray(array)
@@ -1590,6 +1613,10 @@ function getwordarraymagnitude(array)
    return copyandstripleadingzeros(array)
 end
 
+
+--[==[
+-- Returns both the sign and a copy of the magnitude of the word array.
+--]==]
 function getwordarraysignandmagnitude(array)
    local sign = getwordarraysign(array)
    if sign == -1 then
@@ -1599,10 +1626,20 @@ function getwordarraysignandmagnitude(array)
 end
 
 
+--[==[
+-- Returns the sign of the integer.
+--]==]
 function getintegersign(int)
    return (int < 0 and -1) or (int > 0 and 1) or 0
 end
 
+
+--[==[
+-- Returns a magnitude for the integer.
+--
+-- This generates a magnitude on-the-fly every time it's called without
+-- memoization, so don't call it more than you need to.
+--]==]
 function getintegermagnitude(int)
    local highword, lowword = splitlong(abs(int))
    
@@ -1615,11 +1652,21 @@ function getintegermagnitude(int)
    return {highword, lowword}
 end
 
+
+--[==[
+-- Returns both the sign and a magnitude for the integer.
+--]==]
 function getintegersignandmagnitude(int)
    return getintegersign(int), getintegermagnitude(int)
 end
 
 
+--[==[
+-- Returns the sign of any operable value.
+--
+-- Don't use this function if you know the type of the value being passed in or
+-- if you're also getting the magnitude at the same time.
+--]==]
 function getsign(value)
    if isvalidbiginteger(value) then
       return value.sign
@@ -1631,10 +1678,18 @@ function getsign(value)
       return getintegersign(value)
    end
    
-   -- precautionary error that should not run unless I missed a check somewhere
+   --[[ Precautionary error that should not run ]]
    error("cannot obtain sign of " .. gettype(value))
 end
 
+
+--[==[
+-- Returns a copy of the magnitude of any operable value.
+--
+-- This returns a copy of the magnitude every time it's run. Don't use this
+-- function if you know the type of the value being passed in or if you're also
+-- getting the sign at the same time.
+--]==]
 function getmagnitude(value)
    if isvalidbiginteger(value) then
       return copyarray(value.magnitude)
@@ -1646,10 +1701,16 @@ function getmagnitude(value)
       return getintegermagnitude(value)
    end
    
-   -- precautionary error that should not run unless I missed a check somewhere
+   --[[ Precautionary error that should not run ]]
    error("cannot obtain magnitude of " .. gettype(value))
 end
 
+
+--[==[
+-- Returns both the sign and magnitude of any operable value.
+--
+-- Don't use this function if you know the type of the value being passed in.
+--]==]
 function getsignandmagnitude(value)
    if isvalidbiginteger(value) then
       return value.sign, copyarray(value.magnitude)
@@ -1661,11 +1722,17 @@ function getsignandmagnitude(value)
       return getintegersignandmagnitude(value)
    end
    
-   -- precautionary error that should not run unless I missed a check somewhere
+   --[[ Precautionary error that should not run ]]
    error("cannot obtain sign and magnitude of " .. gettype(value))
 end
 
 
+--[==[
+-- Destructively converts the magnitude to a word-array with the given sign.
+--
+-- This is for internal use only and is really only here to avoid repeated
+-- code.
+--]==]
 function gettrustedsignmagnitudewordarray(sign, mag)
    if sign == -1 then
       destructivenegatewordarray(mag)
@@ -1682,10 +1749,20 @@ function gettrustedsignmagnitudewordarray(sign, mag)
    return mag
 end
 
+
+--[==[
+-- Returns a word array with the value of the magnitude and the passed sign.
+--]==]
 function getsignmagnitudewordarray(sign, mag)
    return gettrustedsignmagnitudewordarray(sign, copyarray(mag))
 end
 
+
+--[==[
+-- Returns a word-array that equals the value of the passed thing.
+--
+-- If the thing is already a word-array then this returns a copy of it.
+--]==]
 function getwordarray(thing)
    if isvalidwordarray(thing) then
       return copyarray(thing)
