@@ -217,8 +217,10 @@ local intradix = {
 
 --[==[
 -- The list of ASCII characters used for each digit value, with the index as
--- the value. Lowercase is used to increase variety in the heights of numbers.
--- In the following example, the number on the left has a varied and more
+-- the value.
+--
+-- Lowercase is used to increase variety in the heights of numbers. In the
+-- following example, the number on the left has a varied and more
 -- aesthetically-pleasing look, whereas the number on the right looks like a
 -- big rectangle.
 --
@@ -254,7 +256,9 @@ local radixlogs = {
 
 --[==[
 -- The cache of powers r^2^n for each radix r, for large string base
--- conversion. There are three layers of tables: this is an array of lists of
+-- conversion.
+--
+-- There are three layers of tables: this is an array of lists of
 -- integers/magnitudes.
 --  * `powercache` is an array with radix indices of lists
 --  * `powercache[r]` is a list with exponent indices of magnitudes
@@ -697,7 +701,9 @@ end
 
 --[==[
 -- Tests if the passed values are both operable values and fails if either are
--- not. The second return value (the reason it failed) will incorporate the
+-- not.
+--
+-- The second return value (the reason it failed) will incorporate the
 -- operation attempted, thus the `operation` parameter is a string of what the
 -- operation was (such as "addition" or "multiplication").
 --]==]
@@ -715,9 +721,11 @@ end
 
 --[==[
 -- Tests if the first value is a biginteger and the second value is an operable
--- value. This fails if the first value is not a biginteger or the second value
--- is not operable. Like the previous function, this incorporates the name of
--- the operation being attempted into the returned reason.
+-- value.
+--
+-- The second return value (the reason it failed) will incorporate the
+-- operation attempted, thus the `operation` parameter is a string of what the
+-- operation was (such as "addition" or "multiplication").
 --]==]
 function arevalidbigintegerandoperablevalue(bigint, value, operation)
    local ok, reason
@@ -916,8 +924,8 @@ end
 
 
 --[==[
--- Returns the number of trailing zeros in the int. This uses one of the
--- Hacker's Delight algorithms featured in (HD Figure 5-14).
+-- Returns the number of trailing zeros in the int. Uses one of the Hacker's
+-- Delight algorithms featured in (HD Figure 5-14).
 --
 -- This uses the algorithm selected by the Java Integer class and is slow
 -- because of all the calls to the bit-shifting function. Unlike the function
@@ -986,10 +994,11 @@ end
 
 
 --[==[
--- Returns the number of leading zeros in a long. Because this function uses
--- only the most significant bits, the least significant aren't looked at so
--- the full 64 bits can be used without the fear of the loss of the lowest
--- bits.
+-- Returns the number of leading zeros in a long.
+--
+-- Because this function uses only the most significant bits, the least
+-- significant aren't looked at so the full 64 bits can be used without the
+-- fear of the loss of the lowest bits.
 --]==]
 function numberofleadingzeroslong(long)
    --[[ Split the long ]]
@@ -1011,10 +1020,11 @@ end
 
 
 --[==[
--- Returns the number of trailing zeros in a long. Because this function uses
--- the least significant bits, the results of it are undefined if passed an
--- integer too large for the 64-bit floating-point number (a 54-bit integer or
--- larger).
+-- Returns the number of trailing zeros in a long.
+--
+-- Because this function uses the least significant bits, the results of it are
+-- undefined if passed an integer too large for the 64-bit floating-point
+-- number (a 54-bit integer or larger).
 --]==]
 function numberoftrailingzeroslong(long)
    --[[ Split the long ]]
