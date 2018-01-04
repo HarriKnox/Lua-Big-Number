@@ -295,11 +295,10 @@ local powercache = {
 --]========================================================================]
 
 --[==[
--- Tests whether the passed value is an integer that the library can use. This
--- fails if the value is
---  * not an number type (string, table, etc)
---  * outside the range of [-maxinteger, maxinteger]
---  * a float
+-- Tests whether the passed value is an integer that the library can use:
+--  * A Lua number type
+--  * Inside the range of [-maxinteger, maxinteger]
+--  * Not a float
 --]==]
 function isvalidinteger(int)
    local r = "not a valid integer: "
@@ -328,11 +327,10 @@ end
 
 
 --[==[
--- Tests whether the passed value is an int that the library can use.
--- This fails if the value is
---  * not a number type (string, table, etc)
---  * outside the range [0, 4294967295] (it's negative or larger than 32 bits)
---  * a float
+-- Tests whether the passed value is an int that the library can use:
+--  * A Lua number type
+--  * Inside the range [0, 4294967295] (not negative nor larger than 32 bits)
+--  * Not a float
 --]==]
 function isvalidint(int)
    local r = "not a valid int: "
@@ -368,9 +366,9 @@ end
 
 --[==[
 -- Tests whether the passed value is a 32-bit integer that, when made positive,
--- the library can use. This fails if the value is
---  * not a number
---  * not a 32-bit integer when made positive
+-- the library can use:
+--  * A Lua number type
+--  * A 32-bit integer when made positive
 --
 -- Note, this is not looking at the Two's complement form of the number (that
 -- would be redundant since the number would need to be a 32-bit number
@@ -398,11 +396,10 @@ end
 
 
 --[==[
--- Tests whether the passed value is a word-array that the library can use.
--- This fails if the value is
---  * not a table (string, number, etc)
---  * a biginteger (in which it won't be treated as a word-array)
---  * an array that contains a value that is not an int
+-- Tests whether the passed value is a word-array that the library can use:
+--  * A Lua table type
+--  * Not a biginteger (in which it won't be treated as a word-array)
+--  * An array that contains only values that are ints
 --
 -- Note, this function (and every other array function, for that matter) uses
 -- the length operator (#) in a `for i = 1, #array do` loop.
@@ -441,11 +438,10 @@ end
 
 
 --[==[
--- Tests whether the passed value is a magnitude that the library can use. This
--- fails if the value is
---  * not a valid word array
---  * too large
---  * with leading zeros
+-- Tests whether the passed value is a magnitude that the library can use:
+--  * A valid word array
+--  * Not too large
+--  * No leading zeros
 --]==]
 function isvalidmagnitude(mag)
    local r = "not a valid magnitude: "
@@ -478,10 +474,9 @@ end
 
 
 --[==[
--- Tests whether the passed value is a sign that the library can use. This
--- fails if the value is
---  * not a number
---  * not -1, 0, or 1
+-- Tests whether the passed value is a sign that the library can use:
+--  * A number
+--  * Either -1, 0, or 1
 --]==]
 function isvalidsign(sign)
    local r = "not a valid sign: "
@@ -505,11 +500,11 @@ end
 
 --[==[
 -- Tests whether the sign and magnitude given are a sign-magnitude pairing that
--- the library can use. This fails if
---  * `sign` isn't a sign
---  * `mag` isn't a magnitude
---  * a non-zero magnitude is paired with a zero-sign (ambiguous sign)
---  * a zere-magnitude is paired with a non-zero-sign (redundant zeros)
+-- the library can use:
+--  * `sign` is a sign
+--  * `mag` is a magnitude
+--  * A non-zero magnitude is not paired with a zero-sign (ambiguous sign)
+--  * A zero-magnitude is not paired with a non-zero-sign (redundant zeros)
 --
 -- Note, preventing redundant zeros are just to enforce that there aren't
 -- multiple notations for the same value, that is -0, 0, and +0. This isn't as
@@ -555,12 +550,11 @@ end
 
 
 --[==[
--- Tests whether the passed value is a biginteger that the library can use.
--- This fails if the value
---  * is not a table
---  * does not contain a valid sign
---  * does not contain a valid magnitude
---  * does not contain a valid sign-magnitude pair
+-- Tests whether the passed value is a biginteger that the library can use:
+--  * A Lua table type
+--  * Contains a valid sign
+--  * Contains a valid magnitude
+--  * Contains a valid sign-magnitude pair
 --]==]
 function isvalidbiginteger(bigint)
    local r = "not a valid biginteger: "
@@ -603,10 +597,9 @@ end
 
 
 --[==[
--- Tests whether the passed value is a radix that the library can use. This
--- fails if the value is
---  * not an integer
---  * not in the range [2, 36]
+-- Tests whether the passed value is a radix that the library can use:
+--  * An integer
+--  * In the range [2, 36]
 --]==]
 function isvalidradix(radix)
    local r = "not a valid radix: "
@@ -633,10 +626,9 @@ end
 
 
 --[==[
--- Tests whether the passed value is a string-number that the library can use.
--- This fails if the value
---  * is not a string
---  * contains a character that is not valid with the given radix
+-- Tests whether the passed value is a string-number that the library can use:
+--  * A string
+--  * Contains only characters that are valid with the given radix
 --]==]
 function isvalidstringnumber(str, radix)
    local r = "not a valid string-number: "
@@ -689,8 +681,7 @@ end
 
 --[==[
 -- Tests if the passed value is either a integer, word-array, or biginteger
--- that the library can use. This fails if the value is neither of those
--- things.
+-- that the library can use.
 --]==]
 function isvalidoperablevalue(value)
    --[[ Check if the value is either an integer, word-array, or biginteger ]]
