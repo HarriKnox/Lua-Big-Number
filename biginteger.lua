@@ -1874,11 +1874,11 @@ end
 --
 -- For every 32-bit word, this function calls the RNG function twice: once for
 -- the upper 16 bits, another for the lower 16 bits. This is because the
--- default `math.random()` function has a weird behavior in that it returns
--- 31-bit numbers. If you did `math.random() * 0xffffffff` you would get only
+-- default `math.random()` function has a weird behavior in that it randomizes
+-- only 31 bits. If you did `math.random() * 0x100000000` you would get only
 -- even numbers since the least-significant bit will never be set.
 --
--- If you need a randomly generated biginteger, I recommend declaring your own
+-- If you need a randomly generated biginteger, I recommend creating your own
 -- function. This function is here mainly to keep parallels to Java's
 -- BigInteger constructors.
 --]==]
