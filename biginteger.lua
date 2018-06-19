@@ -1813,8 +1813,10 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    local mag = {}
    local numberofwords, excesswords
    
-   assert(bitlength >= 0 and bitlength % 1 == 0, "bit length not valid: must be a non-negative integer")
-   assert(type(randomnumbergenerator()) == "number", "RNG function not valid: must return a number in the range [0, 1)")
+   assert(bitlength >= 0 and bitlength % 1 == 0,
+         "bit length not valid: must be a non-negative integer")
+   assert(type(randomnumbergenerator()) == "number",
+         "RNG function not valid: must return a number in the range [0, 1)")
    
    numberofwords = floor((bitlength + 31) / 32)
    for i = 1, numberofwords do
@@ -1898,7 +1900,8 @@ function constructorstringradix(str, radix)
    
    numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
    
-   assert(numberofbits + 31 <= 0xffffffff, "biginteger would overflow supported range")
+   assert(numberofbits + 31 <= 0xffffffff,
+         "biginteger would overflow supported range")
    
    numberofwords = bitrightshift(numberofbits + 31, 5)
    mag = allocatearray(numberofwords)
