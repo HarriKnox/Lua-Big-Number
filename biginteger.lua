@@ -1854,8 +1854,10 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    
    numberofwords = floor((bitlength + 31) / 32)
    for i = 1, numberofwords do
+      --[[
       -- This weird multiplication-addition is necessary since the default
       -- math.random would not operate on all 32 bits
+      --]]
       mag[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 +
                floor(randomnumbergenerator() * 0x10000)
    end
