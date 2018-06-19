@@ -192,7 +192,7 @@ Operable Value
 
 
 
-Destructive
+Destructive Operation
    An operation that modifies the passed array in-place.
    
    Destructive operations are usually more efficient than copying in terms of
