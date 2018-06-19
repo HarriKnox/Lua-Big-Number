@@ -1884,7 +1884,7 @@ end
 --]==]
 function constructorbitsrng(bitlength, randomnumbergenerator)
    local mag = {}
-   local numberofwords, excesswords
+   local numberofwords, excessbits
    
    
    assert(bitlength >= 0 and bitlength % 1 == 0,
@@ -1906,8 +1906,8 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    end
    
    
-   excesswords = 32 * numberofwords - bitlength
-   mag[1] = bitand(mag[1], 2 ^ (32 - excesswords) - 1)
+   excessbits = 32 * numberofwords - bitlength
+   mag[1] = bitand(mag[1], 2 ^ (32 - excessbits) - 1)
    
    destructivestripleadingzeros(mag)
    
