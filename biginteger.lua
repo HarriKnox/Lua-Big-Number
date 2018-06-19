@@ -1785,16 +1785,32 @@ end
 --[                                                                           ]
 --]===========================================================================]
 
+--[==[
+-- The one, central function that creates a valid biginteger.
+--
+-- Currently this function just makes a table with a sign and magnitude, but
+-- in the future it will use metatables and such in the construction of
+-- bigintegers.
+--]==]
 function createbiginteger(sign, mag)
    return {sign = sign, magnitude = mag}
 end
 
+
+--[==[
+-- Constructs a biginteger from a regular Lua integer.
+--]==]
 function constructorinteger(int)
    assert(isvalidinteger(int))
    
    return createbiginteger(getintegersignandmagnitude(int))
 end
 
+
+--[==[
+-- Constructs a biginteger from a sign and a trusted magnitude. Used internally
+-- only.
+--]==]
 function constructorsignmagnitudetrusted(sign, mag)
    assert(isvalidsign(sign))
    assert(isvalidmagnitude(mag))
@@ -1803,12 +1819,30 @@ function constructorsignmagnitudetrusted(sign, mag)
    return createbiginteger(sign, mag)
 end
 
+
+--[==[
+-- Constructs a biginteger from a sign and a user-specified magnitude.
+--]==]
 function constructorsignmagnitude(sign, mag)
    assert(isvalidwordarray(mag))
    
    return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
 end
 
+
+--[==[
+-- Constructs a biginteger of a given bitlength and RNG function.
+--
+-- For every 32-bit word, this function calls the RNG function twice: once for
+-- the upper 16 bits, another for the lower 16 bits. This is because the
+-- default `math.random()` function has a weird behavior in that it returns
+-- 31-bit numbers. If you did `math.random() * 0xffffffff` you would get only
+-- even numbers since the least-significant bit will never be set.
+--
+-- If you need a randomly generated biginteger, I recommend declaring your own
+-- function. This function is here mainly to keep parallels to Java's
+-- BigInteger constructors.
+--]==]
 function constructorbitsrng(bitlength, randomnumbergenerator)
    local mag = {}
    local numberofwords, excesswords
@@ -1834,6 +1868,10 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    return createbiginteger(1, mag)
 end
 
+
+--[==[
+-- Constructs a biginteger from a trusted word-array. Used internally only.
+--]==]
 function constructorwordarraytrusted(array)
    local sign
    
@@ -1848,6 +1886,10 @@ function constructorwordarraytrusted(array)
    return constructorsignmagnitudetrusted(sign, array)
 end
 
+
+--[==[
+-- Constructs a biginteger from a user-specified word-array.
+--]==]
 function constructorwordarray(array)
    return constructorwordarraytrusted(getwordarray(array))
 end
