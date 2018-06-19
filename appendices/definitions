@@ -1,5 +1,5 @@
 This appendix lists out the definitions of words frequently used in the
-library.
+library and documentation.
 
 
 
@@ -9,11 +9,11 @@ Integer
    In Lua 5.2 and prior, all numbers were internally handled as 64-bit floats
    (often called doubles). Because of this, there was no "integer" type,
    per-se. Now in Lua 5.3 and beyond there are internal integer types, but to
-   maintain backwards-compatibility, the `type` function does not distinguish
-   between them (both floats and integers are type 'number'). As a result there
-   is no explicit "integer" type; most integers are just floats masquerading
-   around as such. So long as we can treat it like an integer, then it must be
-   an integer (duck-typng, yay!).
+   maintain backwards-compatibility, the built-in `type` function does not
+   distinguish between them (both floats and integers are type 'number'). As a
+   result there is no explicit "integer" type; most integers are just floats
+   masquerading around as integers. So long as we can treat it like an integer,
+   then it must be an integer (duck-typing, yay!).
 
 
 
@@ -49,7 +49,7 @@ Long, Split-Long
    An unsigned integer that can be larger than 32 bits.
    
    Longs are usually 64-bits, but in this project they are any integer too
-   large to fit in 32-bits. Because Lua's use of 64-bit floats, the largest
+   large to fit in 32-bits. Because of Lua's use of 64-bit floats, the largest
    integer you can get is 53-bits, so longs are often handled as two ints,
    called a "split long".
 
