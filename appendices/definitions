@@ -198,3 +198,23 @@ Destructive Operation
    Destructive operations are usually more efficient than copying in terms of
    space and time and are used internally so the end-users don't need to worry
    about misusing them.
+
+
+
+Trusted Value
+   A value that has had no contact with the outside world and has existed
+   solely within the scope of the library.
+   
+   
+   Trusted values can make some operations more efficient. For example, there
+   are two sign-magnitude constructors, one for trusted magnitude and one for
+   not. If a user passes in an array we want to be sure that the array won't be
+   changed by something else during its use, so we need to copy all the values
+   into a new array so we can return a array that won't be side-affected.
+   However, if the array came from an internal function, then no other
+   third-parties will have access to it until that point, so we can trust that
+   the value is kosher.
+   
+   Trusted values can be returned, at which point they are no longer trusted.
+   A user may make modifications, or allow a third-party to make modifications,
+   but that voids the warranty.
