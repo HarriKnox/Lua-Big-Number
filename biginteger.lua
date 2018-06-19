@@ -443,7 +443,7 @@ end
 
 --[==[
 -- Tests whether the passed value is a magnitude that the library can use:
---  * A valid word array
+--  * A valid word-array
 --  * Not too large
 --  * No leading zeros
 --]==]
@@ -1589,14 +1589,20 @@ function getwordarraysign(array)
    if #array == 0 then
       return 0
    end
+   
+   
    if array[1] >= negativemask then
       return -1
    end
+   
+   
    for i = 1, #array do
       if array[i] ~= 0 then
          return 1
       end
    end
+   
+   
    return 0
 end
 
@@ -1611,18 +1617,24 @@ function getwordarraymagnitude(array)
    if getwordarraysign(array) == -1 then
       return copyandnegatewordarray(array)
    end
+   
+   
    return copyandstripleadingzeros(array)
 end
 
 
 --[==[
--- Returns both the sign and a copy of the magnitude of the word array.
+-- Returns both the sign and a copy of the magnitude of the word-array.
 --]==]
 function getwordarraysignandmagnitude(array)
    local sign = getwordarraysign(array)
+   
+   
    if sign == -1 then
       return sign, copyandnegatewordarray(array)
    end
+   
+   
    return sign, copyandstripleadingzeros(array)
 end
 
@@ -1644,12 +1656,17 @@ end
 function getintegermagnitude(int)
    local highword, lowword = splitlong(abs(int))
    
+   
    if highword == 0 then
       if lowword == 0 then
          return {}
       end
+      
+      
       return {lowword}
    end
+   
+   
    return {highword, lowword}
 end
 
@@ -1679,6 +1696,7 @@ function getsign(value)
       return getintegersign(value)
    end
    
+   
    --[[ Precautionary error that should not run ]]
    error("cannot obtain sign of " .. gettype(value))
 end
@@ -1702,6 +1720,7 @@ function getmagnitude(value)
       return getintegermagnitude(value)
    end
    
+   
    --[[ Precautionary error that should not run ]]
    error("cannot obtain magnitude of " .. gettype(value))
 end
@@ -1723,6 +1742,7 @@ function getsignandmagnitude(value)
       return getintegersignandmagnitude(value)
    end
    
+   
    --[[ Precautionary error that should not run ]]
    error("cannot obtain sign and magnitude of " .. gettype(value))
 end
@@ -1738,21 +1758,24 @@ function gettrustedsignmagnitudewordarray(sign, mag)
    if sign == -1 then
       destructivenegatewordarray(mag)
       
+      
       if mag[1] < negativemask then
          tableinsert(mag, 1, 0xffffffff)
       end
+   
    elseif sign == 1 then
       if mag[1] >= negativemask then
          tableinsert(mag, 1, 0)
       end
    end
    
+   
    return mag
 end
 
 
 --[==[
--- Returns a word array with the value of the magnitude and the passed sign.
+-- Returns a word-array with the value of the magnitude and the passed sign.
 --]==]
 function getsignmagnitudewordarray(sign, mag)
    return gettrustedsignmagnitudewordarray(sign, copyarray(mag))
@@ -1768,6 +1791,7 @@ function getwordarray(thing)
    if isvalidwordarray(thing) then
       return copyarray(thing)
    end
+   
    
    return gettrustedsignmagnitudewordarray(getsignandmagnitude(thing))
 end
@@ -1847,12 +1871,16 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    local mag = {}
    local numberofwords, excesswords
    
+   
    assert(bitlength >= 0 and bitlength % 1 == 0,
          "bit length not valid: must be a non-negative integer")
+   
    assert(type(randomnumbergenerator()) == "number",
          "RNG function not valid: must return a number in the range [0, 1)")
    
+   
    numberofwords = floor((bitlength + 31) / 32)
+   
    for i = 1, numberofwords do
       --[[
       -- This weird multiplication-addition is necessary since the default
@@ -1861,6 +1889,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
       mag[i] = floor(randomnumbergenerator() * 0x10000) * 0x10000 +
                floor(randomnumbergenerator() * 0x10000)
    end
+   
    
    excesswords = 32 * numberofwords - bitlength
    mag[1] = bitand(mag[1], 2 ^ (32 - excesswords) - 1)
