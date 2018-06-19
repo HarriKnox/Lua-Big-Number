@@ -1586,16 +1586,22 @@ end
 -- Returns the sign of the word-array.
 --]==]
 function getwordarraysign(array)
+   --[[ Shortcut return ]]
    if #array == 0 then
       return 0
    end
    
    
+   --[[ Only the first word (the sign-word) can indicate if it's negative ]]
    if array[1] >= negativemask then
       return -1
    end
    
    
+   --[[
+   -- At this point, the word-array is non-negative, so if any word is non-zero
+   -- then the word-array must be positive. Otherwise it's all zeros.
+   --]]
    for i = 1, #array do
       if array[i] ~= 0 then
          return 1
@@ -1659,14 +1665,17 @@ function getintegermagnitude(int)
    
    if highword == 0 then
       if lowword == 0 then
+         --[[ int == 0 ]]
          return {}
       end
       
       
+      --[[ 0 < int < 2^32 ]]
       return {lowword}
    end
    
    
+   --[[ int >= 2^32 ]]
    return {highword, lowword}
 end
 
@@ -1686,6 +1695,7 @@ end
 -- if you're also getting the magnitude at the same time.
 --]==]
 function getsign(value)
+   --[[ Figure out what type the value is and call the associated function ]]
    if isvalidbiginteger(value) then
       return value.sign
       
@@ -1710,6 +1720,7 @@ end
 -- getting the sign at the same time.
 --]==]
 function getmagnitude(value)
+   --[[ Figure out what type the value is and call the associated function ]]
    if isvalidbiginteger(value) then
       return copyarray(value.magnitude)
       
@@ -1732,6 +1743,7 @@ end
 -- Don't use this function if you know the type of the value being passed in.
 --]==]
 function getsignandmagnitude(value)
+   --[[ Figure out what type the value is and call the associated function ]]
    if isvalidbiginteger(value) then
       return value.sign, copyarray(value.magnitude)
       
@@ -1756,14 +1768,17 @@ end
 --]==]
 function gettrustedsignmagnitudewordarray(sign, mag)
    if sign == -1 then
+      --[[ Word-array needs to be negative, so negate `mag` ]]
       destructivenegatewordarray(mag)
       
       
+      --[[ Ensure the word-array is negative ]]
       if mag[1] < negativemask then
          tableinsert(mag, 1, 0xffffffff)
       end
    
    elseif sign == 1 then
+      --[[ Ensure the word-array is positive ]]
       if mag[1] >= negativemask then
          tableinsert(mag, 1, 0)
       end
