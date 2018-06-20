@@ -315,7 +315,7 @@ function isvalidinteger(int)
    
    
    --[[ Now check that it's in range ]]
-   if int > maxinteger or int < -maxinteger then
+   if int >= maxinteger or int <= -maxinteger then
       return false, r .. "outside allowable range"
    end
    
