@@ -331,6 +331,38 @@ end
 
 
 --[==[
+-- Tests whether the passed value is a bit-index that the library can use:
+--  * A Lua number type
+--  * Inside the range of [0, maxinteger]
+--  * Not a float
+--]==]
+function isvalidbitindex(int)
+   local r = "not a valid bit-index: "
+   
+   
+   --[[ Check that the value is actually a number ]]
+   if type(int) ~= 'number' then
+      return false, r .. "it's a " .. type(int)
+   end
+   
+   
+   --[[ Now check that it's in range ]]
+   if int >= 0 or int <= -maxinteger then
+      return false, r .. "outside allowable range"
+   end
+   
+   
+   --[[ Now check that it's not a float ]]
+   if int % 1 ~= 0 then
+      return false, r .. "it's a float"
+   end
+   
+   
+   return true
+end
+
+
+--[==[
 -- Tests whether the passed value is an int that the library can use:
 --  * A Lua number type
 --  * Inside the range [0, 4294967295] (not negative nor larger than 32 bits)
@@ -2421,8 +2453,7 @@ function bitwiseatbit(value, bitfromend, bitwisefunction)
    local wordarray
    
    assert(isvalidoperablevalue(value))
-   assert(isvalidinteger(bitfromend))
-   assert(bitfromend >= 0, "not valid integer: negative")
+   assert(isvalidbitindex(bitfromend))
    
    wordarray = getwordarray(value)
    destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
@@ -2432,8 +2463,7 @@ end
 
 function mutablebitwiseatbit(bigint, bitfromend, bitwisefunction)
    assert(isvalidbiginteger(bigint))
-   assert(isvalidinteger(bitfromend))
-   assert(bitfromend >= 0, "not valid integer: negative")
+   assert(isvalidbitindex(bitfromend))
    
    destructiveconvertsignmagnitudetowordarray(bigint.sign, bigint.magnitude)
    destructivebitwiseatbit(bigint.magnitude, bitfromend, bitwisefunction)
@@ -2473,8 +2503,7 @@ function testbit(value, bitfromend)
    local word, bit
    
    assert(isvalidoperablevalue(value))
-   assert(isvalidinteger(bitfromend))
-   assert(bitfromend >= 0, "not valid integer: negative")
+   assert(isvalidbitindex(bitfromend))
    
    word, bit = splitlongtowordsandbits(bitfromend)
    wordarray = getwordarray(value)
