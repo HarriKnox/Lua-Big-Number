@@ -1906,8 +1906,12 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    end
    
    
-   excessbits = 32 * numberofwords - bitlength
-   mag[1] = bitand(mag[1], 2 ^ (32 - excessbits) - 1)
+   excessbits = bitlength % 32
+   
+   if excessbits ~= 0 then
+      mag[1] = bitand(mag[1], 2 ^ excessbits - 1)
+   end
+   
    
    destructivestripleadingzeros(mag)
    
