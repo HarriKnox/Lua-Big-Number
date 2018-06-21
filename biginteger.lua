@@ -1992,6 +1992,10 @@ function destructivemultiplyandadd(mag, factor, addend)
    
    for i = maglength, 1, -1 do
       carry, mag[i] = splitlong(mag[i] + carry)
+      
+      if carry == 0 then
+         break
+      end
    end
    
    return mag
