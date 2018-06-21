@@ -1982,7 +1982,6 @@ function destructivemultiplyandadd(mag, factor, addend)
    local maglength = #mag
    local product = 0
    local carry = 0
-   local index = maglength
    
    for i = maglength, 1, -1 do
       carry, mag[i] = intmultiplyint(factor, mag[i], carry)
