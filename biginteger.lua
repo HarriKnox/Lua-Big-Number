@@ -721,7 +721,8 @@ end
 --]==]
 function isvalidoperablevalue(value)
    --[[ Check if the value is either an integer, word-array, or biginteger ]]
-   if isvalidinteger(value) or isvalidwordarray(value)
+   if isvalidinteger(value)
+         or isvalidwordarray(value)
          or isvalidbiginteger(value) then
       return true
    end
