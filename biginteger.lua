@@ -176,10 +176,10 @@ local bitsperdigit = {
 
 
 --[==[
--- A table, indexed by radix, of the number of digits of a given radix that can
--- fit in an int without overflowing or "going negative" (in Two's complement
--- form): that is, the largest number `n` for a radix `r` such that
--- r^n < 2^31 (or 0x80000000).
+-- A table, indexed by radix, of the number of digits in a string-number of a
+-- given radix that can fit in an int without overflowing or "going negative"
+-- (in Two's complement form): that is, the largest number `n` for a radix `r`
+-- such that r^n < 2^31 (or 0x80000000).
 --
 -- digitsperinteger[r] = floor(log(2^31) / log(r))
 --]==]
@@ -710,7 +710,7 @@ function isvalidstringnumber(str, radix)
    _, index, c = stringfind(str, '^[-+]?[' .. set .. ']*([^' .. set .. '])')
    
    return false,
-         "not a valid string number: contains non-digit character at index "
+         "not a valid string-number: contains non-digit character at index "
          .. tostring(index) .. ": '" .. char .. "'"
 end
 
@@ -1235,8 +1235,8 @@ end
 -- be shorter than the given length; all the lesser-significant blocks are
 -- filled to the brim.
 --
--- For example, pretend these X's are a 35-long array, split with blocksize 8;
--- these would be the resulting blocks.
+-- For example, pretend each X is a word in this 35-word long array, split with
+-- blocksize 8; these would be the resulting blocks.
 --       XXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
 --]==]
 function splitarrayintoblocks(mag, blocklength)
