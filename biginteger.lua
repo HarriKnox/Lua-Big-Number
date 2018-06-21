@@ -2011,14 +2011,15 @@ function constructorstringradix(str, radix)
    assert(isvalidradix(radix))
    assert(isvalidstringnumber(str, radix))
    
+   if stringmatch(str, '^[-+]?0+$') then
+      return createbiginteger({}, 0)
+   end
+   
    strsign = stringmatch(str, '^[-+]')
    
    sign = strsign == '-' and -1 or 1
    cursor = strsign and 2 or 1
    
-   if stringmatch(str, '^[-+]?0+$') then
-      return createbiginteger({}, 0)
-   end
    
    while cursor <= strlength and stringsub(str, cursor, cursor) == '0' do
       cursor = cursor + 1
