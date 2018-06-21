@@ -1987,6 +1987,12 @@ function destructivemultiplyandadd(mag, factor, addend)
       carry, mag[i] = intmultiplyint(factor, mag[i], carry)
    end
    
+   
+   if carry ~= 0 then
+      table.insert(mag, 1, carry)
+   end
+   
+   
    carry = addend
    
    for i = maglength, 1, -1 do
@@ -1996,6 +2002,12 @@ function destructivemultiplyandadd(mag, factor, addend)
       
       carry, mag[i] = splitlong(mag[i] + carry)
    end
+   
+   
+   if carry ~= 0 then
+      table.insert(mag, 1, carry)
+   end
+   
    
    return mag
 end
