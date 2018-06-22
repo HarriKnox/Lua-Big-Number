@@ -1939,6 +1939,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    end
    
    
+   --[[ Truncate the highest word to the number of extra bits needed ]]
    excessbits = bitlength % 32
    
    if excessbits ~= 0 then
@@ -1960,6 +1961,7 @@ function constructorwordarraytrusted(array)
    
    assert(isvalidwordarray(array))
    
+   --[[ Use the word-array as the magnitude object ]]
    sign = getwordarraysign(array)
    
    if sign == -1 then
@@ -1988,16 +1990,19 @@ function destructivemultiplyandadd(mag, factor, addend)
    local product = 0
    local carry = 0
    
+   --[[ Run the multiplication on the magnitude ]]
    for i = maglength, 1, -1 do
       carry, mag[i] = intmultiplyint(factor, mag[i], carry)
    end
    
    
+   --[[ If the multiplication overflows, add the overflow ]]
    if carry ~= 0 then
       table.insert(mag, 1, carry)
    end
    
    
+   --[[ Add the addend and carry until we're not carrying anything anymore ]]
    carry = addend
    
    for i = maglength, 1, -1 do
@@ -2009,6 +2014,7 @@ function destructivemultiplyandadd(mag, factor, addend)
    end
    
    
+   --[[ If the addition overflows, add the overflow ]]
    if carry ~= 0 then
       table.insert(mag, 1, carry)
    end
@@ -2040,56 +2046,83 @@ function constructorstringradix(str, radix)
    local _, cursor, endcursor
    
    
-   -- Some edits and changes occurred here
    assert(isvalidradix(radix))
    assert(isvalidstringnumber(str, radix))
    
+   --[[ Shortcut return if the string is all zeros ]]
    if stringmatch(str, '^[-+]?0+$') then
       return createbiginteger(mag, 0)
    end
    
    
+   --[[ Get the sign of the integer in the string ]]
    sign = stringmatch(str, '^-') and -1 or 1
    
    
+   --[[ Skip all leading zeros and get the starting index of the rest ]]
    _, cursor = stringfind(str, '^[-+]?0*')
    cursor = cursor + 1
    
+   --[[ Calculate the number of remaining digits of the string ]]
    numberofdigits = strlength - cursor + 1
    
+   --[[ Allocate a word-array of the expected size ]]
    numberofbits = floor(numberofdigits * bitsperdigit[radix] / 1024) + 1
    
    assert(numberofbits + 31 <= 0xffffffff,
          "biginteger would overflow supported range")
    
    
-   -- a small deviation but here to prevent numerous calls to digitsperinteger
+   --[[ Cache the values for quick access later ]]
    digitsperintegerradix = digitsperinteger[radix]
    superradix = intradix[radix]
    
    
+   --[[
+   -- Get the number of digits in the first group, which may be short.
+   --
+   -- For example, suppose the string is "luabiginteger":
+   -- If the radix is 36, `digitsperinteger[36]` = 5
+   --
+   --     lua'bigin'teger
+   --     ^^^
+   --     first group
+   --
+   -- If the radix is 30, `digitsperinteger[30]` = 6
+   --
+   --     l'uabigi'nteger
+   --     ^
+   --     first group
+   --]]
    firstgrouplength = numberofdigits % digitsperintegerradix
    
-   -- Process first group
+   --[[ Process first group if there's an uneven number of digits ]]
    if firstgrouplength ~= 0 then
+      --[[ Get the end index of the group ]]
       endcursor = cursor + firstgrouplength
       
+      --[[ Grab the substring, get the number value, and store it ]]
       mag[1] = tonumber(stringsub(str, cursor, endcursor - 1), radix)
       
+      --[[ Shift the cursor up ]]
       cursor = endcursor
    end
    
    
-   -- Process remaining groups
+   --[[ Process remaining groups ]]
    while cursor <= strlength do
+      --[[ Get the end index of the group ]]
       endcursor = cursor + digitsperintegerradix
       
+      --[[ Grab the substring, get the number value, and add it ]]
       destructivemultiplyandadd(mag, superradix,
             tonumber(stringsub(str, cursor, endcursor - 1), radix))
       
+      --[[ Shift the cursor up ]]
       cursor = endcursor
    end
    
+   --[[ Clean up the magnitude and return a newly constructed biginteger ]]
    destructivestripleadingzeros(mag)
    
    return constructorsignmagnitudetrusted(sign, mag)
