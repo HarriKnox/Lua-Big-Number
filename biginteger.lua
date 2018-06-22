@@ -2013,64 +2013,62 @@ function destructivemultiplyandadd(mag, factor, addend)
 end
 
 function constructorstringradix(str, radix)
-   local mag
+   local mag = {}
    local strlength = #str
-   local sign, strsign, numberofdigits, digitsperintegerradix
+   local sign, numberofdigits, digitsperintegerradix
    local numberofbits, numberofwords
-   local firstgrouplength, superradix, group, groupvalue, cursor, ncursor
+   local firstgrouplength, superradix, group, groupvalue
+   local _, cursor, endcursor
+   
    
    -- Some edits and changes occurred here
    assert(isvalidradix(radix))
    assert(isvalidstringnumber(str, radix))
    
    if stringmatch(str, '^[-+]?0+$') then
-      return createbiginteger({}, 0)
+      return createbiginteger(mag, 0)
    end
    
-   strsign = stringmatch(str, '^[-+]')
    
-   sign = strsign == '-' and -1 or 1
-   cursor = strsign and 2 or 1
+   sign = stringmatch(str, '^-') and -1 or 1
    
    
-   while cursor <= strlength and stringsub(str, cursor, cursor) == '0' do
-      cursor = cursor + 1
-   end
-   -- Back to Java-faithful code
+   _, cursor = stringfind(str, '^[-+]?0*')
+   cursor = cursor + 1
+   
    numberofdigits = strlength - cursor + 1
    
-   numberofbits = bitrightshift(numberofdigits * bitsperdigit[radix], 10) + 1
+   numberofbits = floor(numberofdigits * bitsperdigit[radix] / 1024) + 1
    
    assert(numberofbits + 31 <= 0xffffffff,
          "biginteger would overflow supported range")
    
-   numberofwords = bitrightshift(numberofbits + 31, 5)
-   mag = allocatearray(numberofwords)
    
    -- a small deviation but here to prevent numerous calls to digitsperinteger
    digitsperintegerradix = digitsperinteger[radix]
+   superradix = intradix[radix]
+   
    
    firstgrouplength = numberofdigits % digitsperintegerradix
-   if firstgrouplength == 0 then
-      firstgrouplength = digitsperintegerradix
-   end
    
    -- Process first group
-   group = stringsub(str, cursor, cursor + firstgrouplength - 1)
-   cursor = cursor + firstgrouplength
-   groupvalue = tonumber(group, radix)
+   if firstgrouplength ~= 0 then
+      endcursor = cursor + firstgrouplength
+      
+      mag[1] = tonumber(stringsub(str, cursor, endcursor - 1), radix)
+      
+      cursor = endcursor
+   end
    
-   mag[numberofwords] = groupvalue
    
    -- Process remaining groups
-   superradix = intradix[radix]
    while cursor <= strlength do
-      ncursor = cursor + digitsperintegerradix
-      group = stringsub(str, cursor, ncursor - 1)
-      cursor = ncursor
-      groupvalue = tonumber(group, radix)
+      endcursor = cursor + digitsperintegerradix
       
-      destructivemultiplyandadd(mag, superradix, groupvalue)
+      destructivemultiplyandadd(mag, superradix,
+            tonumber(stringsub(str, cursor, endcursor - 1), radix))
+      
+      cursor = endcursor
    end
    
    destructivestripleadingzeros(mag)
