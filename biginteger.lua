@@ -1978,6 +1978,11 @@ function constructorwordarray(array)
 end
 
 
+--[==[
+-- Destructively multiplies the magnitude by the factor and adds the addend.
+--
+-- Used internally only for construction with strings.
+--]==]
 function destructivemultiplyandadd(mag, factor, addend)
    local maglength = #mag
    local product = 0
@@ -2012,6 +2017,20 @@ function destructivemultiplyandadd(mag, factor, addend)
    return mag
 end
 
+
+--[==[
+-- Constructs a biginteger from a string encoding an integer and a provided
+-- radix.
+--
+-- This function is based on the constructor in the Java implementation of
+-- BigInteger. There are some changes made in the startup logic and the
+-- implementation details, but the rest of the algorithm remains the same.
+--
+-- The algorithm works by first dividing the string into groups of digits
+-- (similar to how a magnitude or word-array is divided into words). Then, with
+-- an accumulator, for each group from most to least significant, multiply the
+-- value in the accumulator by the base and add the value of the group.
+--]==]
 function constructorstringradix(str, radix)
    local mag = {}
    local strlength = #str
@@ -2076,14 +2095,46 @@ function constructorstringradix(str, radix)
    return constructorsignmagnitudetrusted(sign, mag)
 end
 
+
+--[==[
+-- Creates a deep copy of the passed biginteger object, in which the magnitudes
+-- are different objects in memory but have the same values.
+--
+-- Once immutability is implemented and a smarter metatable system is in use,
+-- this function will go away as it will be useless.
+--]==]
 function clone(bigint)
    assert(isvalidbiginteger(bigint))
    
    return constructorsignmangitude(bigint.sign, bigint.magnitude)
 end
 
--- Main Constructor
--- will interpret passed arguments to call appropriate constructor
+
+--[==[
+-- This is the Main Constructor
+--
+-- This will determine which constructor to call depending on the types of the
+-- arguments passed in. The arguments are order-sensitive. Any other orders are
+-- undefined and will result in an error.
+--
+-- Interpretation          First Type      Second Type
+--    integer                 integer         nil
+--    sign-magnitude          integer         word-array
+--    bit-length and RNG      integer         function
+--    clone                   biginteger      nil
+--    word-array              word-array      nil
+--    string (radix 10)       string          nil
+--    string-radix            string          integer
+--
+-- On the order-sensitivity of the arguments. For example, a string cannot
+-- follow an integer for the string-radix interpretation: it must be string
+-- then integer.  There is nothing preventing us from allowing the order of
+-- integer then string since it's not taken by a different interpretation;
+-- however, only one combination is provided to ensure unambiguity and a
+-- parallelism to the parameters of the constructor `constructorstringradix`.
+--
+-- Perhaps in the future I'll add the other combinations.
+--]==]
 function biginteger(a, b)
    local typea = gettype(a)
    local typeb = gettype(b)
