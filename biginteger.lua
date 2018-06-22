@@ -2092,16 +2092,16 @@ function constructorstringradix(str, radix)
    --[[
    -- Get the number of digits in the first group, which may be short.
    --
-   -- For example, suppose the string is "luabiginteger":
+   -- For example, suppose the string is "mlkjihgfedcba":
    -- If the radix is 36, `digitsperinteger[36]` = 5
    --
-   --     lua'bigin'teger
+   --     mlk jihgf edcba
    --     ^^^
    --     first group
    --
-   -- If the radix is 30, `digitsperinteger[30]` = 6
+   -- If the radix is 25, `digitsperinteger[25]` = 6
    --
-   --     l'uabigi'nteger
+   --     m lkjihg fedcba
    --     ^
    --     first group
    --]]
