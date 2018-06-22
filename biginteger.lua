@@ -1875,6 +1875,7 @@ end
 function constructorinteger(int)
    assert(isvalidinteger(int))
    
+   
    return createbiginteger(getintegersignandmagnitude(int))
 end
 
@@ -1888,6 +1889,7 @@ function constructorsignmagnitudetrusted(sign, mag)
    assert(isvalidmagnitude(mag))
    assert(isvalidsignmagnitudecombination(sign, mag))
    
+   
    return createbiginteger(sign, mag)
 end
 
@@ -1897,6 +1899,7 @@ end
 --]==]
 function constructorsignmagnitude(sign, mag)
    assert(isvalidwordarray(mag))
+   
    
    return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
 end
@@ -1949,6 +1952,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    
    destructivestripleadingzeros(mag)
    
+   
    return createbiginteger(1, mag)
 end
 
@@ -1959,7 +1963,9 @@ end
 function constructorwordarraytrusted(array)
    local sign
    
+   
    assert(isvalidwordarray(array))
+   
    
    --[[ Use the word-array as the magnitude object ]]
    sign = getwordarraysign(array)
@@ -1967,6 +1973,7 @@ function constructorwordarraytrusted(array)
    if sign == -1 then
       destructivenegatewordarray(array)
    end
+   
    
    return constructorsignmagnitudetrusted(sign, array)
 end
@@ -1989,6 +1996,7 @@ function destructivemultiplyandadd(mag, factor, addend)
    local maglength = #mag
    local product = 0
    local carry = 0
+   
    
    --[[ Run the multiplication on the magnitude ]]
    for i = maglength, 1, -1 do
@@ -2049,6 +2057,7 @@ function constructorstringradix(str, radix)
    assert(isvalidradix(radix))
    assert(isvalidstringnumber(str, radix))
    
+   
    --[[ Shortcut return if the string is all zeros ]]
    if stringmatch(str, '^[-+]?0+$') then
       return createbiginteger(mag, 0)
@@ -2063,8 +2072,10 @@ function constructorstringradix(str, radix)
    _, cursor = stringfind(str, '^[-+]?0*')
    cursor = cursor + 1
    
+   
    --[[ Calculate the number of remaining digits of the string ]]
    numberofdigits = strlength - cursor + 1
+   
    
    --[[ Allocate a word-array of the expected size ]]
    numberofbits = floor(numberofdigits * bitsperdigit[radix] / 1024) + 1
@@ -2096,13 +2107,16 @@ function constructorstringradix(str, radix)
    --]]
    firstgrouplength = numberofdigits % digitsperintegerradix
    
+   
    --[[ Process first group if there's an uneven number of digits ]]
    if firstgrouplength ~= 0 then
       --[[ Get the end index of the group ]]
       endcursor = cursor + firstgrouplength
       
+      
       --[[ Grab the substring, get the number value, and store it ]]
       mag[1] = tonumber(stringsub(str, cursor, endcursor - 1), radix)
+      
       
       --[[ Shift the cursor up ]]
       cursor = endcursor
@@ -2114,16 +2128,20 @@ function constructorstringradix(str, radix)
       --[[ Get the end index of the group ]]
       endcursor = cursor + digitsperintegerradix
       
+      
       --[[ Grab the substring, get the number value, and add it ]]
       destructivemultiplyandadd(mag, superradix,
             tonumber(stringsub(str, cursor, endcursor - 1), radix))
+      
       
       --[[ Shift the cursor up ]]
       cursor = endcursor
    end
    
+   
    --[[ Clean up the magnitude and return a newly constructed biginteger ]]
    destructivestripleadingzeros(mag)
+   
    
    return constructorsignmagnitudetrusted(sign, mag)
 end
@@ -2175,18 +2193,24 @@ function biginteger(a, b)
    if typea == 'integer' then
       if typeb == 'nil' then
          return constructorinteger(a)
+      
       elseif typeb == 'word-array' then
          return constructorsignmagnitude(a, b)
+      
       elseif typeb == 'function' then
          return constructorbitsrng(a, b)
+      
       end
    elseif typea == 'biginteger' and typeb == 'nil' then
       return clone(a)
+      
    elseif typea == 'word-array' and typeb == 'nil' then
       return constructorwordarray(a)
+      
    elseif typea == 'string' then
       if typeb == 'nil' then
          return constructorstringradix(a, 10)
+      
       elseif typeb == 'integer' then
          return constructorstringradix(a, b)
       end
