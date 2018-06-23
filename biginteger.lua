@@ -4056,29 +4056,6 @@ end
 
 
 --[[ String Functions ]]
-function makestring(thisval, radix)
-   local thissign, thismag
-   local str
-   
-   assert(isvalidoperablevalue(thisval))
-   
-   if radix then
-      assert(isvalidradix(radix))
-   else
-      radix = 10
-   end
-   
-   thissign, thismag = getsignandmagnitude(thisval)
-   
-   if thissign == 0 then
-      return "0"
-   end
-   
-   str = stringbuildrecursive(thismag, radix, 0)
-   
-   return (thissign == -1 and '-' or '') .. str
-end
-
 function intstringofradix(i, radix)
     local t = {}
     
@@ -4170,6 +4147,28 @@ function stringbuildrecursive(thismag, radix, digits)
           stringbuildrecursive(r, radix, x)
 end
 
+function makestring(thisval, radix)
+   local thissign, thismag
+   local str
+   
+   assert(isvalidoperablevalue(thisval))
+   
+   if radix then
+      assert(isvalidradix(radix))
+   else
+      radix = 10
+   end
+   
+   thissign, thismag = getsignandmagnitude(thisval)
+   
+   if thissign == 0 then
+      return "0"
+   end
+   
+   str = stringbuildrecursive(thismag, radix, 0)
+   
+   return (thissign == -1 and '-' or '') .. str
+end
 
 -- Temp stuff
 function reload()
