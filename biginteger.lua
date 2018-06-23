@@ -1657,6 +1657,10 @@ end
 --[                                                       ]
 --]=======================================================]
 
+--[======[
+--[ Type ]
+--]======]
+
 --[==[
 -- Returns the type of the object based on their validity using the testing
 -- functions.
@@ -1668,6 +1672,11 @@ function gettype(thing)
           type(thing)
 end
 
+
+
+--[======[
+--[ Sign ]
+--]======]
 
 --[==[
 -- Returns the sign-word of the word-array.
@@ -1719,6 +1728,43 @@ end
 
 
 --[==[
+-- Returns the sign of the integer.
+--]==]
+function getintegersign(int)
+   return (int < 0 and -1) or (int > 0 and 1) or 0
+end
+
+
+--[==[
+-- Returns the sign of any operable value.
+--
+-- Don't use this function if you know the type of the value being passed in or
+-- if you're also getting the magnitude at the same time.
+--]==]
+function getsign(value)
+   --[[ Figure out what type the value is and call the associated function ]]
+   if isvalidbiginteger(value) then
+      return value.sign
+      
+   elseif isvalidwordarray(value) then
+      return getwordarraysign(value)
+      
+   elseif isvalidinteger(value) then
+      return getintegersign(value)
+   end
+   
+   
+   --[[ Precautionary error that should not run ]]
+   error("cannot obtain sign of " .. gettype(value))
+end
+
+
+
+--[===========[
+--[ Magnitude ]
+--]===========]
+
+--[==[
 -- Returns a copy of the magnitude of the word-array.
 --
 -- This returns a copy every single time it's called, so don't call it more
@@ -1731,30 +1777,6 @@ function getwordarraymagnitude(array)
    
    
    return copyandstripleadingzeros(array)
-end
-
-
---[==[
--- Returns both the sign and a copy of the magnitude of the word-array.
---]==]
-function getwordarraysignandmagnitude(array)
-   local sign = getwordarraysign(array)
-   
-   
-   if sign == -1 then
-      return sign, copyandnegatewordarray(array)
-   end
-   
-   
-   return sign, copyandstripleadingzeros(array)
-end
-
-
---[==[
--- Returns the sign of the integer.
---]==]
-function getintegersign(int)
-   return (int < 0 and -1) or (int > 0 and 1) or 0
 end
 
 
@@ -1786,38 +1808,6 @@ end
 
 
 --[==[
--- Returns both the sign and a magnitude for the integer.
---]==]
-function getintegersignandmagnitude(int)
-   return getintegersign(int), getintegermagnitude(int)
-end
-
-
---[==[
--- Returns the sign of any operable value.
---
--- Don't use this function if you know the type of the value being passed in or
--- if you're also getting the magnitude at the same time.
---]==]
-function getsign(value)
-   --[[ Figure out what type the value is and call the associated function ]]
-   if isvalidbiginteger(value) then
-      return value.sign
-      
-   elseif isvalidwordarray(value) then
-      return getwordarraysign(value)
-      
-   elseif isvalidinteger(value) then
-      return getintegersign(value)
-   end
-   
-   
-   --[[ Precautionary error that should not run ]]
-   error("cannot obtain sign of " .. gettype(value))
-end
-
-
---[==[
 -- Returns a copy of the magnitude of any operable value.
 --
 -- This returns a copy of the magnitude every time it's run. Don't use this
@@ -1839,6 +1829,35 @@ function getmagnitude(value)
    
    --[[ Precautionary error that should not run ]]
    error("cannot obtain magnitude of " .. gettype(value))
+end
+
+
+
+--[====================[
+--[ Sign and Magnitude ]
+--]====================]
+
+--[==[
+-- Returns both the sign and a copy of the magnitude of the word-array.
+--]==]
+function getwordarraysignandmagnitude(array)
+   local sign = getwordarraysign(array)
+   
+   
+   if sign == -1 then
+      return sign, copyandnegatewordarray(array)
+   end
+   
+   
+   return sign, copyandstripleadingzeros(array)
+end
+
+
+--[==[
+-- Returns both the sign and a magnitude for the integer.
+--]==]
+function getintegersignandmagnitude(int)
+   return getintegersign(int), getintegermagnitude(int)
 end
 
 
@@ -1864,6 +1883,11 @@ function getsignandmagnitude(value)
    error("cannot obtain sign and magnitude of " .. gettype(value))
 end
 
+
+
+--[============[
+--[ Word-Array ]
+--]============]
 
 --[==[
 -- Destructively converts the magnitude to a word-array with the given sign.
@@ -2287,6 +2311,7 @@ function biginteger(a, b)
          return constructorstringradix(a, b)
       end
    end
+   
    
    error("could not understand passed parameters: " ..
       typea .. " and " .. typeb)
