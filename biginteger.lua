@@ -553,7 +553,7 @@ function isvalidsignmagnitudecombination(sign, mag)
    local ok, reason
    
    
-   --[[ CCheck that the sign is a proper sign ]]
+   --[[ Check that the sign is a proper sign ]]
    ok, reason = isvalidsign(sign)
    
    if not ok then
