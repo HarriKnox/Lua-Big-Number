@@ -1567,6 +1567,84 @@ function getlowestsetbit(array)
 end
 
 
+function destructiveaddmagnitudes(thismag, thatmag)
+   local thislength, thatlength, longerlength
+   local carry
+   
+   thislength = #thismag
+   thatlength = #thatmag
+   
+   longerlength = max(thislength, thatlength)
+   carry = 0
+   
+   for i = 0, longerlength - 1 do
+      carry, thismag[longerlength - i] = splitlong((thismag[thislength - i] or 0) +
+                                                   (thatmag[thatlength - i] or 0) +
+                                                   carry)
+   end
+   
+   if carry ~= 0 then
+      -- If the carry amount exceeds the size of both magnitudes, then insert
+      -- the value of the carry in front of everything.
+      tableinsert(thismag, 1, carry)
+   end
+   
+   destructivestripleadingzeros(thismag)
+   
+   return thismag
+end
+
+function copyandaddmagnitudes(thismag, thatmag)
+   return destructiveaddmagnitudes(copyarray(thismag), thatmag)
+end
+
+function destructivesubtractmagnitudes(minuend, subtrahend)
+   -- Will calculate the absolute difference between the magnitudes
+   -- Will destructively write value into minuend
+   local borrow, difference
+   local larger, largerlength
+   local smaller, smallerlength
+   
+   if comparemagnitudes(minuend, subtrahend) < 0 then
+      -- minuend < subtrahend
+      smaller = copyarray(minuend)
+      larger = subtrahend
+   else
+      -- minuend >= subtrahend
+      smaller = subtrahend
+      larger = minuend
+   end
+   
+   largerlength = #larger
+   smallerlength = #smaller
+   
+   borrow = 0
+   difference = 0
+   
+   for i = 0, largerlength - 1 do
+      difference = (larger[largerlength - i] or 0) -
+                   (smaller[smallerlength - i] or 0) -
+                   borrow
+      
+      if difference < 0 then
+         borrow = 1
+      else
+         borrow = 0
+      end
+      
+      minuend[largerlength - i] = difference % 0x100000000
+   end
+   
+   destructivestripleadingzeros(minuend)
+   
+   return minuend
+end
+
+function copyandsubtractmagnitudes(minuend, subtrahend)
+   return destructivesubtractmagnitudes(copyarray(minuend), subtrahend)
+end
+
+
 
 
 --[=======================================================[
@@ -2637,85 +2715,6 @@ function testbit(value, bitfromend)
    end
    
    return bitand(wordarray[length - word], bitleftshift(1, bit)) ~= 0
-end
-
-
---[[ Private Magnitude Functions ]]
-function destructiveaddmagnitudes(thismag, thatmag)
-   local thislength, thatlength, longerlength
-   local carry
-   
-   thislength = #thismag
-   thatlength = #thatmag
-   
-   longerlength = max(thislength, thatlength)
-   carry = 0
-   
-   for i = 0, longerlength - 1 do
-      carry, thismag[longerlength - i] = splitlong((thismag[thislength - i] or 0) +
-                                                   (thatmag[thatlength - i] or 0) +
-                                                   carry)
-   end
-   
-   if carry ~= 0 then
-      -- If the carry amount exceeds the size of both magnitudes, then insert
-      -- the value of the carry in front of everything.
-      tableinsert(thismag, 1, carry)
-   end
-   
-   destructivestripleadingzeros(thismag)
-   
-   return thismag
-end
-
-function copyandaddmagnitudes(thismag, thatmag)
-   return destructiveaddmagnitudes(copyarray(thismag), thatmag)
-end
-
-function destructivesubtractmagnitudes(minuend, subtrahend)
-   -- Will calculate the absolute difference between the magnitudes
-   -- Will destructively write value into minuend
-   local borrow, difference
-   local larger, largerlength
-   local smaller, smallerlength
-   
-   if comparemagnitudes(minuend, subtrahend) < 0 then
-      -- minuend < subtrahend
-      smaller = copyarray(minuend)
-      larger = subtrahend
-   else
-      -- minuend >= subtrahend
-      smaller = subtrahend
-      larger = minuend
-   end
-   
-   largerlength = #larger
-   smallerlength = #smaller
-   
-   borrow = 0
-   difference = 0
-   
-   for i = 0, largerlength - 1 do
-      difference = (larger[largerlength - i] or 0) -
-                   (smaller[smallerlength - i] or 0) -
-                   borrow
-      
-      if difference < 0 then
-         borrow = 1
-      else
-         borrow = 0
-      end
-      
-      minuend[largerlength - i] = difference % 0x100000000
-   end
-   
-   destructivestripleadingzeros(minuend)
-   
-   return minuend
-end
-
-function copyandsubtractmagnitudes(minuend, subtrahend)
-   return destructivesubtractmagnitudes(copyarray(minuend), subtrahend)
 end
 
 
