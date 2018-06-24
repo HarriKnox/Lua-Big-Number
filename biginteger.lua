@@ -1607,7 +1607,7 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
       return cleararray(minuend)
    elseif cmp < 0 then
       -- minuend < subtrahend
-      smaller = copyarray(minuend)
+      smaller = minuend
       larger = subtrahend
    else
       -- minuend >= subtrahend
