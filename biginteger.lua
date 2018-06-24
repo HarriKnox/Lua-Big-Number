@@ -1374,6 +1374,11 @@ function signextendwordarray(array, newlength)
 end
 
 
+
+--[=====================[
+--[ Strip Leading Zeros ]
+--]=====================]
+
 --[==[
 -- Copies the entries of `source` into `destination` without any leading zeros.
 --
@@ -1463,6 +1468,11 @@ function destructivestripleadingzeros(array)
 end
 
 
+
+--[==========[
+--[ Negation ]
+--]==========]
+
 --[==[
 -- Performs a Two's complement negation on the word-array in `source` and
 -- copies the result into `destination`.
@@ -1513,6 +1523,11 @@ function destructivenegatewordarray(array)
 end
 
 
+
+--[============[
+--[ Bit Bounds ]
+--]============]
+
 --[==[
 -- Finds the most-significantly set bit and returns the position as a
 -- zero-indexed, little-endian index (that is to say the least-significant bit
@@ -1560,6 +1575,11 @@ function getlowestsetbit(array)
    return -1
 end
 
+
+
+--[=====[
+--[ Add ]
+--]=====]
 
 --[==[
 -- Destructively adds the contents of the two magnitudes and puts the result in
@@ -1610,6 +1630,11 @@ function copyandaddmagnitudes(thismag, thatmag)
    return destructiveaddmagnitudes(copyarray(thismag), thatmag)
 end
 
+
+
+--[==========[
+--[ Subtract ]
+--]==========]
 
 --[==[
 -- Destructively finds the absolute difference between `thatmag` and
