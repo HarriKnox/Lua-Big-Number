@@ -1496,10 +1496,7 @@ function negatewordarrayto(source, destination)
    
    
    --[[ Clean the number up and return ]]
-   destructivestripleadingzeros(destination)
-   
-   
-   return destination
+   return destructivestripleadingzeros(destination)
 end
 
 
@@ -1621,10 +1618,7 @@ function destructiveaddmagnitudes(thismag, thatmag)
    
    
    --[[ Clean up and return ]]
-   destructivestripleadingzeros(thismag)
-   
-   
-   return thismag
+   return destructivestripleadingzeros(thismag)
 end
 
 
@@ -1708,10 +1702,7 @@ function destructivesubtractmagnitudes(thismag, thatmag)
    
    
    --[[ Clean up and return ]]
-   destructivestripleadingzeros(thismag)
-   
-   
-   return thismag
+   return destructivestripleadingzeros(thismag)
 end
 
 
@@ -2705,9 +2696,7 @@ function destructiverightshift(mag, displacement)
       mag[maglength - i] = nil
    end
    
-   destructivestripleadingzeros(mag)
-   
-   return mag
+   return destructivestripleadingzeros(mag)
 end
 
 function copyandleftshift(mag, displacement)
@@ -3212,9 +3201,8 @@ function squarecolinplumb(mag)
    end
    
    destructiveaddmagnitudes(triangle, diagonal)
-   destructivestripleadingzeros(triangle)
    
-   return triangle
+   return destructivestripleadingzeros(triangle)
 end
 
 function squarekaratsuba(mag)
@@ -3280,9 +3268,7 @@ function destructiveexactdividebythree(mag)
       end
    end
    
-   destructivestripleadingzeros(mag)
-   
-   return mag
+   return destructivestripleadingzeros(mag)
 end
 
 function squaretoomcook(mag)
@@ -3455,9 +3441,7 @@ function multiplycolinplumb(thismag, thatmag)
       end
    end
    
-   destructivestripleadingzeros(result)
-   
-   return result
+   return destructivestripleadingzeros(result)
 end
 
 function multiplykaratsuba(thismag, thatmag)
@@ -3885,9 +3869,7 @@ function divideoneword(dividend, divisor)
       qrem = qrem % divisor
    end
    
-   destructivestripleadingzeros(quotient)
-   
-   return quotient, qrem
+   return destructivestripleadingzeros(quotient), qrem
 end
 
 function multiplythensubtract(remainder, div, qhat, offset)
@@ -4037,10 +4019,8 @@ function destructivedivideknuth(dividend, divisor)
    
    destructiverightshift(remainder, shift)
    
-   destructivestripleadingzeros(quotient)
-   destructivestripleadingzeros(remainder)
-   
-   return quotient, remainder
+   return destructivestripleadingzeros(quotient),
+         destructivestripleadingzeros(remainder)
 end
 
 function destructiveadddisjoint(mag, add, blocklength)
@@ -4064,9 +4044,7 @@ function destructiveadddisjoint(mag, add, blocklength)
       mag[i] = add[i]
    end
    
-   destructivestripleadingzeros(mag)
-   
-   return mag
+   return destructivestripleadingzeros(mag)
 end
 
 function divide2n1n(a, b)
@@ -4097,10 +4075,8 @@ function divide2n1n(a, b)
    -- step 5:   Q = [q1,q2]
    destructiveadddisjoint(quotient, q1, halfn)
    
-   destructivestripleadingzeros(quotient)
-   destructivestripleadingzeros(s)
-   
-   return quotient, s
+   return destructivestripleadingzeros(quotient),
+         destructivestripleadingzeros(s)
 end
 
 function divide3n2n(a, b, halfn)
