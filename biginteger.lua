@@ -1589,12 +1589,15 @@ function destructiveaddmagnitudes(thismag, thatmag)
    local thislength, thatlength, longerlength
    local carry
    
+   
    --[[ Cache the lengths of the inputs; output will be the longest length ]]
    thislength = #thismag
    thatlength = #thatmag
-   
    longerlength = max(thislength, thatlength)
+   
+   
    carry = 0
+   
    
    --[[
    -- Starting at the least significant word for each input magnitude, add the
@@ -1610,13 +1613,16 @@ function destructiveaddmagnitudes(thismag, thatmag)
                   + carry)
    end
    
+   
    --[[ If the addition overflows, add the overflow ]]
    if carry ~= 0 then
       tableinsert(thismag, 1, carry)
    end
    
+   
    --[[ Clean up and return ]]
    destructivestripleadingzeros(thismag)
+   
    
    return thismag
 end
@@ -1649,12 +1655,14 @@ function destructivesubtractmagnitudes(thismag, thatmag)
    local smaller, smallerlength
    local cmp
    
+   
    --[[ Get the larger and smaller of the two magnitudes ]]
    cmp = comparemagnitudes(thismag, thatmag)
    
    if cmp == 0 then
       --[[ Shortcut return if they equal ]]
       return cleararray(thismag)
+   
    elseif cmp < 0 then
       --[[ thismag < thatmag ]]
       smaller = thismag
@@ -1666,12 +1674,15 @@ function destructivesubtractmagnitudes(thismag, thatmag)
       larger = thismag
    end
    
+   
    --[[ Cache the lengths ]]
    largerlength = #larger
    smallerlength = #smaller
    
+   
    borrow = 0
    difference = 0
+   
    
    --[[
    -- Word-by-word, from the least significant, find the difference between
@@ -1682,6 +1693,7 @@ function destructivesubtractmagnitudes(thismag, thatmag)
                    (smaller[smallerlength - i] or 0) -
                    borrow
       
+      
       --[[ If the subtraction requires borrowing, borrow from the next word ]]
       if difference < 0 then
          borrow = 1
@@ -1689,12 +1701,15 @@ function destructivesubtractmagnitudes(thismag, thatmag)
          borrow = 0
       end
       
+      
       --[[ Store the positive, 32-bit constrained value of the difference ]]
       thismag[largerlength - i] = difference % 0x100000000
    end
    
+   
    --[[ Clean up and return ]]
    destructivestripleadingzeros(thismag)
+   
    
    return thismag
 end
@@ -2504,11 +2519,13 @@ function bitwisenotwordarray(wordarray)
    return destination
 end
 
+
 function bitwisenot(value)
    assert(isvalidoperablevalue(value))
    
    return constructorwordarraytrusted(bitwisenotwordarray(getwordarray(value)))
 end
+
 
 function mutablebitwisenot(bigint)
    assert(isvalidbiginteger(bigint))
@@ -2539,6 +2556,7 @@ function bitwisewordarrays(thisarray, thatarray, mergefunction)
    return destination
 end
 
+
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise " .. opname))
    
@@ -2546,6 +2564,7 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
                                                         getwordarray(thatvalue),
                                                         bitwisefunction))
 end
+
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "bitwise " .. opname))
@@ -2562,6 +2581,7 @@ function bitwiseand(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitand, "and")
 end
 
+
 function mutablebitwiseand(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitand, "and")
 end
@@ -2570,6 +2590,7 @@ end
 function bitwiseandnot(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitandnot, "and-not")
 end
+
 
 function mutablebitwiseandnot(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitandnot, "and-not")
@@ -2580,6 +2601,7 @@ function bitwiseor(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitor, "or")
 end
 
+
 function mutablebitwiseor(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitor, "or")
 end
@@ -2588,6 +2610,7 @@ end
 function bitwisexor(thisvalue, thatbigint)
    return binarybitwise(thisvalue, thatvalue, bitxor, "xor")
 end
+
 
 function mutablebitwisexor(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitxor, "xor")
@@ -2890,6 +2913,7 @@ function negate(bigint)
    return constructorsignmagnitudetrusted(-bigint.sign, copyarray(bigint))
 end
 
+
 function mutablenegate(bigint)
    assert(isvalidbiginteger(bigint))
    
@@ -2904,6 +2928,7 @@ function absolutevalue(bigint)
    
    return bigint.sign < 0 and negate(bigint) or bigint
 end
+
 
 function mutableabsolutevalue(bigint)
    assert(isvalidbiginteger(bigint))
