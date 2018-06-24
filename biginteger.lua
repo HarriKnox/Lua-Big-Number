@@ -1593,7 +1593,7 @@ function copyandaddmagnitudes(thismag, thatmag)
    return destructiveaddmagnitudes(copyarray(thismag), thatmag)
 end
 
-function destructivesubtractmagnitudes(minuend, subtrahend)
+function destructivesubtractmagnitudes(thismag, thatmag)
    -- Will calculate the absolute difference between the magnitudes
    -- Will destructively write value into minuend
    local borrow, difference
@@ -1601,18 +1601,19 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    local smaller, smallerlength
    local cmp
    
-   cmp = comparemagnitudes(minuend, subtrahend)
+   cmp = comparemagnitudes(thismag, thatmag)
    
    if cmp == 0 then
-      return cleararray(minuend)
+      return cleararray(thismag)
    elseif cmp < 0 then
-      -- minuend < subtrahend
-      smaller = minuend
-      larger = subtrahend
+      -- thismag < thatmag
+      smaller = thismag
+      larger = thatmag
+   
    else
-      -- minuend >= subtrahend
-      smaller = subtrahend
-      larger = minuend
+      -- thismag >= thatmag
+      smaller = thatmag
+      larger = thismag
    end
    
    largerlength = #larger
@@ -1632,16 +1633,16 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
          borrow = 0
       end
       
-      minuend[largerlength - i] = difference % 0x100000000
+      thismag[largerlength - i] = difference % 0x100000000
    end
    
-   destructivestripleadingzeros(minuend)
+   destructivestripleadingzeros(thismag)
    
-   return minuend
+   return thismag
 end
 
-function copyandsubtractmagnitudes(minuend, subtrahend)
-   return destructivesubtractmagnitudes(copyarray(minuend), subtrahend)
+function copyandsubtractmagnitudes(thismag, thatmag)
+   return destructivesubtractmagnitudes(copyarray(thismag), thatmag)
 end
 
 
