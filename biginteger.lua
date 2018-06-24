@@ -2243,10 +2243,10 @@ function constructorstringradix(str, radix)
    numberofdigits = strlength - cursor + 1
    
    
-   --[[ Allocate a word-array of the expected size ]]
+   --[[ Estimate whether the number would cause the biginteger to overflow ]]
    numberofbits = floor(numberofdigits * bitsperdigit[radix] / 1024) + 1
    
-   assert(numberofbits + 31 <= 0xffffffff,
+   assert(numberofbits + 31 <= maxinteger,
          "biginteger would overflow supported range")
    
    
