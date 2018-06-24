@@ -1606,12 +1606,12 @@ function destructivesubtractmagnitudes(thismag, thatmag)
    if cmp == 0 then
       return cleararray(thismag)
    elseif cmp < 0 then
-      -- thismag < thatmag
+      --[[ thismag < thatmag ]]
       smaller = thismag
       larger = thatmag
    
    else
-      -- thismag >= thatmag
+      --[[ thismag >= thatmag ]]
       smaller = thatmag
       larger = thismag
    end
