@@ -136,6 +136,11 @@ Word-Array
    test (word-array iff array of words and not biginteger): this is so tables
    that could be interpreted as bigintegers would be interpreted as bigintegers
    where they may have been interpreted as word-arrays.
+   
+   One other assumption to word-arrays that is not easily testable is that all
+   negative indices are mapped to `nil`. This becomes prevalent when adding two
+   word-arrays (or two magnitudes) together and the index of the words to add
+   exceeds the most significant word.
 
 
 
