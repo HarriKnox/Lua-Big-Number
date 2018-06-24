@@ -1599,8 +1599,13 @@ function destructivesubtractmagnitudes(minuend, subtrahend)
    local borrow, difference
    local larger, largerlength
    local smaller, smallerlength
+   local cmp
    
-   if comparemagnitudes(minuend, subtrahend) < 0 then
+   cmp = comparemagnitudes(minuend, subtrahend)
+   
+   if cmp == 0 then
+      return cleararray(minuend)
+   elseif cmp < 0 then
       -- minuend < subtrahend
       smaller = copyarray(minuend)
       larger = subtrahend
