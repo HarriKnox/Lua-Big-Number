@@ -1561,49 +1561,74 @@ function getlowestsetbit(array)
 end
 
 
+--[==[
+-- Destructively adds the contents of the two magnitudes and puts the result in
+-- the first one (`thismag`).
+--]==]
 function destructiveaddmagnitudes(thismag, thatmag)
    local thislength, thatlength, longerlength
    local carry
    
+   --[[ Cache the lengths of the inputs; output will be the longest length ]]
    thislength = #thismag
    thatlength = #thatmag
    
    longerlength = max(thislength, thatlength)
    carry = 0
    
+   --[[
+   -- Starting at the least significant word for each input magnitude, add the
+   -- corresponding words from both magnitudes with any leftover carry value
+   -- and put the resulting word in `thismag` at the index with respect to the
+   -- longer length.
+   --]]
    for i = 0, longerlength - 1 do
       carry, thismag[longerlength - i] = splitlong(
+            --[[ If the word is above the most significant word, say it's 0 ]]
             (thismag[thislength - i] or 0)
                   + (thatmag[thatlength - i] or 0)
                   + carry)
    end
    
+   --[[ If the addition overflows, add the overflow ]]
    if carry ~= 0 then
-      -- If the carry amount exceeds the size of both magnitudes, then insert
-      -- the value of the carry in front of everything.
       tableinsert(thismag, 1, carry)
    end
    
+   --[[ Clean up and return ]]
    destructivestripleadingzeros(thismag)
    
    return thismag
 end
 
+
+--[==[
+-- Adds the contents of the two magnitudes and returns a new magnitude with the
+-- sum.
+--]==]
 function copyandaddmagnitudes(thismag, thatmag)
    return destructiveaddmagnitudes(copyarray(thismag), thatmag)
 end
 
+
+--[==[
+-- Destructively finds the absolute difference between `thatmag` and
+-- `thismag` and puts the result in `thismag`.
+--
+-- This uses the Austrian Method fo calculting the difference:
+-- https://en.wikipedia.org/wiki/Subtraction#Austrian_method
+--]==]
 function destructivesubtractmagnitudes(thismag, thatmag)
-   -- Will calculate the absolute difference between the magnitudes
-   -- Will destructively write value into minuend
    local borrow, difference
    local larger, largerlength
    local smaller, smallerlength
    local cmp
    
+   --[[ Get the larger and smaller of the two magnitudes ]]
    cmp = comparemagnitudes(thismag, thatmag)
    
    if cmp == 0 then
+      --[[ Shortcut return if they equal ]]
       return cleararray(thismag)
    elseif cmp < 0 then
       --[[ thismag < thatmag ]]
@@ -1616,31 +1641,44 @@ function destructivesubtractmagnitudes(thismag, thatmag)
       larger = thismag
    end
    
+   --[[ Cache the lengths ]]
    largerlength = #larger
    smallerlength = #smaller
    
    borrow = 0
    difference = 0
    
+   --[[
+   -- Word-by-word, from the least significant, find the difference between
+   -- corresponding words of the two magnitudes and put the result in thismag
+   --]]
    for i = 0, largerlength - 1 do
       difference = (larger[largerlength - i] or 0) -
                    (smaller[smallerlength - i] or 0) -
                    borrow
       
+      --[[ If the subtraction requires borrowing, borrow from the next word ]]
       if difference < 0 then
          borrow = 1
       else
          borrow = 0
       end
       
+      --[[ Store the positive, 32-bit constrained value of the difference ]]
       thismag[largerlength - i] = difference % 0x100000000
    end
    
+   --[[ Clean up and return ]]
    destructivestripleadingzeros(thismag)
    
    return thismag
 end
 
+
+--[==[
+-- Finds the absolute difference of the two magnitudes and returns a new
+-- magnitude with the difference.
+--]==]
 function copyandsubtractmagnitudes(thismag, thatmag)
    return destructivesubtractmagnitudes(copyarray(thismag), thatmag)
 end
