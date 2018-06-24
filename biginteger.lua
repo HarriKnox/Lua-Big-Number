@@ -2358,31 +2358,39 @@ function biginteger(a, b)
    
    if typea == 'integer' then
       if typeb == 'nil' then
+         --[[ integer, nil ]]
          return constructorinteger(a)
       
       elseif typeb == 'word-array' then
+         --[[ integer, word-array ]]
          return constructorsignmagnitude(a, b)
       
       elseif typeb == 'function' then
+         --[[ integer, function ]]
          return constructorbitsrng(a, b)
       
       end
    elseif typea == 'biginteger' and typeb == 'nil' then
+      --[[ biginteger, nil ]]
       return clone(a)
       
    elseif typea == 'word-array' and typeb == 'nil' then
+      --[[ word-array, nil ]]
       return constructorwordarray(a)
       
    elseif typea == 'string' then
       if typeb == 'nil' then
+         --[[ string, nil ]]
          return constructorstringradix(a, 10)
       
       elseif typeb == 'integer' then
+         --[[ string, integer ]]
          return constructorstringradix(a, b)
       end
    end
    
    
+   --[[ Anything other combination ]]
    error("could not understand passed parameters: " ..
       typea .. " and " .. typeb)
 end
