@@ -1572,9 +1572,10 @@ function destructiveaddmagnitudes(thismag, thatmag)
    carry = 0
    
    for i = 0, longerlength - 1 do
-      carry, thismag[longerlength - i] = splitlong((thismag[thislength - i] or 0) +
-                                                   (thatmag[thatlength - i] or 0) +
-                                                   carry)
+      carry, thismag[longerlength - i] = splitlong(
+            (thismag[thislength - i] or 0)
+                  + (thatmag[thatlength - i] or 0)
+                  + carry)
    end
    
    if carry ~= 0 then
