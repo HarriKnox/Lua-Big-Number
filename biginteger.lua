@@ -2172,7 +2172,7 @@ function destructivemultiplyandadd(mag, factor, addend)
    
    --[[ If the multiplication overflows, add the overflow ]]
    if carry ~= 0 then
-      table.insert(mag, 1, carry)
+      tableinsert(mag, 1, carry)
    end
    
    
@@ -2190,7 +2190,7 @@ function destructivemultiplyandadd(mag, factor, addend)
    
    --[[ If the addition overflows, add the overflow ]]
    if carry ~= 0 then
-      table.insert(mag, 1, carry)
+      tableinsert(mag, 1, carry)
    end
    
    
