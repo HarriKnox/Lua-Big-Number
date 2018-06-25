@@ -2432,11 +2432,13 @@ function compare(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    
+   
+   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "comparison"))
+   
    if rawequal(thisvalue, thatvalue) then
       return 0
    end
    
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "comparison"))
    
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
