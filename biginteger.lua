@@ -2690,28 +2690,64 @@ end
 --[ Bitwise Not ]
 --]=============]
 
-function bitwisenotwordarray(wordarray)
-   local destination = {}
-   
-   for i = 1, #wordarray do
-      destination[i] = bitnot(wordarray[i])
-   end
-   
-   return destination
-end
-
-
+--[==[
+-- Performs a bitwise not on the passed operable value and returns the result
+-- in a new biginteger object.
+--]==]
 function bitwisenot(value)
+   local wordarray
+   
+   
    assert(isvalidoperablevalue(value))
    
-   return constructorwordarraytrusted(bitwisenotwordarray(getwordarray(value)))
+   
+   --[[ Get the word-array and bitnot every word ]]
+   wordarray = getwordarray(value)
+
+   for i = 1, #wordarray do
+      wordarray[i] = bitnot(wordarray[i])
+   end
+   
+   
+   --[[ `getwordarray` produces a copy, so we can trust it ]]
+   return constructorwordarraytrusted(wordarray)
 end
 
 
+--[==[
+-- Performs a bitwise Not on the passed biginteger and mutates the biginteger
+-- object.
+--]==]
 function mutablebitwisenot(bigint)
    assert(isvalidbiginteger(bigint))
    
-   bigint.sign, bigint.magnitude = getwordarraysignandmagnitude(bitwisenot(getwordarray(bigint)))
+   
+   --[[ No need to perform a bitnot on the whole magnitude ]]
+   if bigint.sign == 0 then
+      --[[ ~0 == -1 ]]
+      bigint.sign = -1
+      bigint.magnitude[1] = 1
+   
+   else
+      if bigint.sign == 1 then
+         --[[ ~1 == -2 ]]
+         destructiveincrementmagnitude(bigint.magnitude)
+      
+      else
+         --[[ ~(-2) == 1 ]]
+         destructivedecrementmagnitude(bigint.magnitude)
+      end
+      
+      
+      --[[ Cover bitnotting from -1 to 0 ]]
+      if #bigint.magnitude == 0 then
+         bigint.sign = 0
+      
+      else
+         bigint.sign = -bigint.sign
+      end
+   end
+   
    
    return bigint
 end
