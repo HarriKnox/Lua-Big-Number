@@ -1853,8 +1853,8 @@ end
 --[==[
 -- Returns a magnitude for the integer.
 --
--- This generates a magnitude on-the-fly every time it's called without
--- memoization, so don't call it more than you need to.
+-- This generates a magnitude on-the-fly every time it's called (no
+-- memoization), so don't call it more than you need to.
 --]==]
 function getintegermagnitude(int)
    local highword, lowword = splitlong(abs(int))
@@ -2409,25 +2409,48 @@ end
 --[                           |_|                       ]
 --]=====================================================]
 
+--[==[
+-- Compares the values of `thismag` to `thatmag` and returns the sign of the
+-- difference. Assumes the values are magnitudes, not word-arrays, so leading
+-- sign-words will cause problems. For internal use only.
+--
+-- result < 0   ->   thismag < thatmag
+-- result > 0   ->   thismag > thatmag
+-- result = 0   ->   thismag = thatmag
+--]==]
 function comparemagnitudes(thismag, thatmag)
    local thislength = #thismag
    local thatlength = #thatmag
    
+   
+   --[[ If they're different lengths, they can't be equal ]]
    if thislength ~= thatlength then
-      -- If the magnitudes are different sizes, then they cannot be equal.
-      -- The function assumes magnitudes, so leading zeros will cause problems
       return thislength > thatlength and 1 or -1
    end
    
+   
+   --[[ They are the same size, so check word by word ]]
    for i = 1, thislength do
+      --[[ If corresponding words are not equal, see if `thismag` is less ]]
       if thismag[i] ~= thatmag[i] then
          return thismag[i] > thatmag[i] and 1 or -1
       end
    end
    
+   
+   --[[ If they're the same length and all words equal, then they're equal ]]
    return 0
 end
 
+
+--[==[
+-- Compares the values of the two operable values and returns the sign of the
+-- difference.
+--
+-- result < 0   ->   thisvalue < thatvalue
+-- result > 0   ->   thisvalue > thatvalue
+-- result = 0   ->   thisvalue = thatvalue
+--]==]
 function compare(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
@@ -2435,35 +2458,72 @@ function compare(thisvalue, thatvalue)
    
    assert(arebothvalidoperablevalues(thisvalue, thatvalue, "comparison"))
    
+   
+   --[[
+   -- Shortcut return
+   --
+   -- Note, we cannot use `thisvalue == thatvalue` or
+   -- `equals(thisvalue, thatvalue)` because those might use this function
+   -- underneath, which will cause circular recursion, which is bad. So, the
+   -- two values may be equal in value and we wouldn't need to check, but this
+   -- is the function to check that.
+   --]]
    if rawequal(thisvalue, thatvalue) then
       return 0
    end
    
    
+   --[[ Get the signs and magnitudes of each value ]]
    thissign, thismag = getsignandmagnitude(thisvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue)
    
+   
+   --[[ If the signs differ, then they can't be equal ]]
    if thissign ~= thatsign then
-      -- If the signs differ, then they cannot be equal
       return thissign > thatsign and 1 or -1
    end
    
+   
+   --[[ Otherwise, compare the magnitudes ]]
    return comparemagnitudes(thismag, thatmag)
 end
 
+
+--[==[
+-- Compares the two magnitudes and returns whether they are equal in value. For
+-- internal use only.
+--]==]
 function equalmagnitudes(thismag, thatmag)
    return comparemagnitudes(thismag, thatmag) == 0
 end
 
+
+--[==[
+-- Compares the two values and returns wheter they are equal. Returns `false`
+-- by default if either value is non-operable.
+--]==]
 function equals(thisbigint, thatbigint)
-   if not isvalidoperablevalue(thisbigint) or not isvalidoperablevalue(thatbigint) then
-      -- if I can't operate on it, then it's probably not equal to what I can operate on
+   --[[ If either are not operable, then I can't be sure they're equal ]]
+   if not arebothvalidoperablevalues(thisbigint, thatbigint, "") then
       return false
    end
+   
    
    return compare(thisbigint, thatbigint) == 0
 end
 
+
+--[==[
+-- Returns the smallest value (closest to negative infinity) of a bunch of
+-- operable values.
+--
+-- This function does not run the check of operability until it gets to the
+-- value in the list. If you have a long list of particularly large values then
+-- it will take longer to find that the value at the end is non-operable.
+--
+-- This function is also horribly inefficient: for example, in the comparison
+-- it checks that the smallest value is an operable value every time.
+--]==]
 function minimum(...)
    local list = {...}
    local smallest = list[1]
@@ -2477,6 +2537,18 @@ function minimum(...)
    return smallest
 end
 
+
+--[==[
+-- Returns the largest value (closest to positive infinity) of a bunch of
+-- operable values.
+--
+-- This function does not run the check of operability until it gets to the
+-- value in the list. If you have a long list of particularly large values then
+-- it will take longer to find that the value at the end is non-operable.
+--
+-- This function is also horribly inefficient: for example, in the comparison
+-- it checks that the largest value is an operable value every time.
+--]==]
 function maximum(...)
    local list = {...}
    local largest = list[1]
@@ -2491,6 +2563,18 @@ function maximum(...)
 end
 
 
+--[==[
+-- Returns both the smallest and largest values of a bunch of operable values.
+--
+-- This function does not run the check of operability until it gets to the
+-- value in the list. If you have a long list of particularly large values then
+-- it will take longer to find that the value at the end is non-operable.
+--
+-- This function is more inefficient than the last two. In addition to checking
+-- that the smallest value is operable at every loop, and that the largest
+-- value is operable at every loop, this also checks that the word being tested
+-- is operable twice per loop.
+--]==]
 function minmax(...)
    local list = {...}
    local smallest = list[1]
