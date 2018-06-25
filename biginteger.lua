@@ -1631,6 +1631,40 @@ function copyandaddmagnitudes(thismag, thatmag)
 end
 
 
+--[==[
+-- Destructively increments the magnitude.
+--]==]
+function destructiveincrementmagnitude(mag)
+   --[[ For each word, propagate the one until not adding it anymore ]]
+   for i = #mag, 1, -1 do
+      mag[i] = (mag[i] + 1) % 0x100000000
+      
+      
+      --[[ If the resulting word is 0, then the addition overflowed ]]
+      if mag[i] ~= 0 then
+         break
+      end
+   end
+   
+   
+   --[[ If mag[1] == 0 then every word overflowed ]]
+   if mag[1] == 0 then
+      tableinsert(mag, 1, 1)
+   end
+   
+   
+   return mag
+end
+
+
+--[==[
+-- Increments the magnitude and returns a new magnitude with the result.
+--]==]
+function copyandincrementmagnitude(thismag)
+   return destructiveincrementmagnitude(copyarray(thismag))
+end
+
+
 
 --[==========[
 --[ Subtract ]
@@ -1712,6 +1746,45 @@ end
 --]==]
 function copyandsubtractmagnitudes(thismag, thatmag)
    return destructivesubtractmagnitudes(copyarray(thismag), thatmag)
+end
+
+
+--[==[
+-- Destructively decrements the magnitude.
+--]==]
+function destructivedecrementmagnitude(mag)
+   --[[ Subtracting from zero, but negatives aren't allowed, so return 1 ]]
+   if #mag == 0 then
+      mag[1] = 1
+      
+      return mag
+   end
+   
+   
+   --[[ For each word, propagate the one until not adding it anymore ]]
+   for i = #mag, 1, -1 do
+      --[[ If we need to borrow, keep looping ]]
+      if mag[i] == 0 then
+         mag[i] = 0xffffffff
+      
+      --[[ Otherwise, subtract 1 and break out ]]
+      else
+         mag[i] = mag[i] - 1
+         break
+      end
+   end
+   
+   
+   --[[ Clean up and return ]]
+   return destructivestripleadingzeros(mag)
+end
+
+
+--[==[
+-- Decrements the magnitude and returns a new magnitude with the result.
+--]==]
+function copyanddecrementmagnitude(thismag)
+   return destructivedecrementmagnitude(copyarray(thismag))
 end
 
 
