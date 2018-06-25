@@ -2491,16 +2491,16 @@ end
 
 function minmax(...)
    local list = {...}
-   local largest = list[1]
    local smallest = list[1]
+   local largest = list[1]
    
    for i = 2, #list do
-      if compare(list[i], largest) > 0 then
-         largest = list[i]
-      end
-      
       if compare(list[i], smallest) < 0 then
          smallest = list[i]
+      end
+      
+      if compare(list[i], largest) > 0 then
+         largest = list[i]
       end
    end
    
