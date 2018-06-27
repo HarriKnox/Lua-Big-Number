@@ -882,18 +882,37 @@ end
 -- arithmetic using ints.
 --]==]
 function longdivideint(ah, al, b)
+   --[[ Get the 32 bits of `ah` concatenated to the top 16 bits of `al` ]]
    local ahhl = ah * 0x10000 + floor(al / 0x10000)
+   
+   
+   --[[ Get the first quotient and remainder ]]
    local q1 = floor(ahhl / b)
    local r1 = ahhl % b
+   
+   
+   --[[ Concatenate the first remainder to the lower 16 bits of `al` ]]
    local r1al = r1 * 0x10000 + (al % 0x10000)
+   
+   
+   --[[ Get the second quotient and remainder ]]
    local q2 = floor(r1al / b)
    local r2 = r1al % b
+   
+   
+   --[[ Get the final quotient by splitting `q1` and `q2` along 32 bits ]]
    local ql = ((q1 % 0x10000) * 0x10000) + (q2 % 0x100000000)
    local qh = floor(q1 / 0x10000) + floor(q2 / 0x100000000)
+   
+   
+   --[[ If the lower addition overflows, put the overflow into `qh` ]]
    if ql >= 0x100000000 then
       qh = qh + 1
       ql = ql - 0x100000000
    end
+   
+   
+   --[[ Return the quotient as a split long and the remainder ]]
    return qh, ql, r2
 end
 
