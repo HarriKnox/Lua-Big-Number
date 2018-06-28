@@ -764,22 +764,14 @@ function arevalidbigintegerandoperablevalue(bigint, value, operation)
    local ok, reason
    
    
-   --[[ If the first value is not a biginteger, fail ]]
-   ok, reason = isvalidbiginteger(bigint)
-   
-   if not ok then
-      return false, reason
+   --[[ Check first value is biginteger and second is operable ]]
+   if isvalidbiginteger(thisvalue) and isvalidoperablevalue(thatvalue) then
+      return true
    end
    
    
-   --[[ Check if the second value is a operable value ]]
-   if not isvalidoperablevalue(thatvalue) then
-      return false, "attempt to perform " .. operation .. " on biginteger and "
-            .. gettype(value)
-   end
-   
-   
-   return true
+   return false, "attempt to perform " .. operation .. " on "
+         .. gettype(bigint) .. " and " .. gettype(value)
 end
 
 
