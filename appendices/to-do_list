@@ -30,3 +30,9 @@ Avoid checking validity of operable values twice in entry functions
       `sign, mag = getsignandmagnitude(value)`
 
 Immutability
+
+Number Namer
+
+tostring to include separator and group size arguments
+
+Add word-arrays to mutable functions
