@@ -2740,8 +2740,10 @@ end
 
 
 --[==[
--- Performs a bitwise Not on the passed biginteger and mutates the biginteger
--- object.
+-- Performs a bitwise-not in-place on the passed biginteger.
+--
+-- This function uses the fact that Two's complement negation is flipping the
+-- bits and adding 1 to make bitwise-notting quick.
 --]==]
 function mutablebitwisenot(bigint)
    assert(isvalidbiginteger(bigint))
@@ -2755,11 +2757,11 @@ function mutablebitwisenot(bigint)
    
    else
       if bigint.sign == 1 then
-         --[[ ~1 == -2 ]]
+         --[[ positive -> negative, increment magnitude: ~1 == -2 ]]
          destructiveincrementmagnitude(bigint.magnitude)
       
       else
-         --[[ ~(-2) == 1 ]]
+         --[[ negative -> positive, decrement magnitude: ~(-2) == 1 ]]
          destructivedecrementmagnitude(bigint.magnitude)
       end
       
