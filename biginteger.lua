@@ -2823,11 +2823,87 @@ end
 
 
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
-   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "bitwise " .. opname))
+   local thissignint, thatsignint
+   local thismagnitude, thatwordarray
+   local thislen, thatlen
+   local finalsignint
    
-   thisbigint.sign, thisbigint.magnitude = bitwisewordarrays(getwordarray(thisvalue),
-                                                             getwordarray(thatvalue),
-                                                             bitwisefunction)
+   
+   assert(arevalidbigintegerandoperablevalue(
+         thisbigint,
+         thatvalue,
+         "bitwise " .. opname))
+   
+   
+   thismagnitude = thisbigint.magnitude
+   thatwordarray = getwordarray(thatvalue)
+   
+   thatlen = #thatwordarray
+   
+   
+   thissignint = getintegersignword(thisbigint.sign)
+   thatsignint = getwordarraysignword(thatwordarray)
+   
+   finalsignint = bitwisefunction(thissignint, thatsignint)
+   
+   
+   
+   
+   if thisbigint.sign == -1 then
+      destructiveincrementmagnitude(thismagnitude)
+      
+      thislen = #thismagnitude
+      
+      
+      if finalsignint == 0xffffffff then
+         for i = 0, longerlength - 1 do
+            thismagnitude[longerlength - i] = bittnot(bitwisefunction(
+                  bitnot(thismagnitude[thislen - i] or thissignint),
+                  thatwordarray[thatlen - i] or thatsignint))
+         end
+         
+         destructiveincrementmagnitude(thismagnitude)
+         
+      else
+         for i = 0, longerlength - 1 do
+            thismagnitude[longerlength - i] = bitwisefunction(
+                  bitnot(thismagnitude[thislen - i] or thissignint),
+                  thatwordarray[thatlen - i] or thatsignint)
+         end
+      end
+      
+   else
+      thislen = #thismagnitude
+      
+      if finalsignint == 0xffffffff then
+         for i = 0, longerlength - 1 do
+            thismagnitude[longerlength - i] = bittnot(bitwisefunction(
+                  thismagnitude[thislen - i] or thissignint,
+                  thatwordarray[thatlen - i] or thatsignint))
+         end
+         
+         destructiveincrementmagnitude(thismagnitude)
+      
+      else
+         for i = 0, longerlength - 1 do
+            thismagnitude[longerlength - i] = bitwisefunction(
+                  thismagnitude[thislen - i] or thissignint,
+                  thatwordarray[thatlen - i] or thatsignint)
+         end
+      end
+   end
+   
+   
+   destructivestripleadingzeros(thismagnitude)
+   
+   
+   if finalsignint == 0xffffffff then
+      thisbigint.sign = -1
+   
+   else
+      thisbigint.sign = #thismagnitude == 0 and 0 or 1
+   end
+   
    
    return thisbigint
 end
