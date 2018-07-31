@@ -1919,6 +1919,14 @@ function getwordarraysignword(array)
 end
 
 
+--[==[
+-- Returns the sign-word of the integer.
+--]==]
+function getintegersignword(int)
+   return (int < 0) and 0xffffffff or 0
+end
+
+
 
 --[===========[
 --[ Magnitude ]
