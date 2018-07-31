@@ -2798,20 +2798,27 @@ function bitwisewordarrays(thisarray, thatarray, mergefunction)
    thatsignint = getwordarraysignword(thatarray)
    
    for i = 0, longerlength - 1 do
-      destination[longerlength - 1] = mergefunction(thisarray[thislength - i] or thissignint,
-                                                    thatarray[thatlength - i] or thatsignint)
+      destination[longerlength - 1] = mergefunction(
+            thisarray[thislength - i] or thissignint,
+            thatarray[thatlength - i] or thatsignint)
    end
+   
    
    return destination
 end
 
 
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "bitwise " .. opname))
+   assert(arebothvalidoperablevalues(
+         thisvalue,
+         thatvalue,
+         "bitwise " .. opname))
    
-   return constructorwordarraytrusted(bitwisewordarrays(getwordarray(thisvalue),
-                                                        getwordarray(thatvalue),
-                                                        bitwisefunction))
+   return constructorwordarraytrusted(
+         bitwisewordarrays(
+               getwordarray(thisvalue),
+               getwordarray(thatvalue),
+               bitwisefunction))
 end
 
 
