@@ -1832,23 +1832,6 @@ end
 --[ Sign ]
 --]======]
 
---[==[
--- Returns the sign-word of the word-array.
---]==]
-function getwordarraysignword(array)
-   --[[ If the array is negative, return the negative sign-word ]]
-   if array[1] and array[1] >= negativemask then
-      return 0xffffffff
-   end
-   
-   
-   --[[
-   -- Otherwise, if the length is zero or the most significant word isn't
-   -- negative, then return the non-negative sign-word (zero).
-   --]]
-   return 0
-end
-
 
 --[==[
 -- Returns the sign of the word-array.
@@ -1910,6 +1893,29 @@ function getsign(value)
    
    --[[ Precautionary error that should not run ]]
    error("cannot obtain sign of " .. gettype(value))
+end
+
+
+
+--[===========[
+--[ Sign-Word ]
+--]===========]
+
+--[==[
+-- Returns the sign-word of the word-array.
+--]==]
+function getwordarraysignword(array)
+   --[[ If the array is negative, return the negative sign-word ]]
+   if array[1] and array[1] >= negativemask then
+      return 0xffffffff
+   end
+   
+   
+   --[[
+   -- Otherwise, if the length is zero or the most significant word isn't
+   -- negative, then return the non-negative sign-word (zero).
+   --]]
+   return 0
 end
 
 
