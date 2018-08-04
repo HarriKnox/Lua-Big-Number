@@ -2812,7 +2812,7 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    assert(arebothvalidoperablevalues(
          thisvalue,
          thatvalue,
-         "bitwise " .. opname))
+         "bitwise-" .. opname))
    
    return constructorwordarraytrusted(
          bitwisewordarrays(
@@ -2832,7 +2832,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    assert(arevalidbigintegerandoperablevalue(
          thisbigint,
          thatvalue,
-         "bitwise " .. opname))
+         "bitwise-" .. opname))
    
    
    thismagnitude = thisbigint.magnitude
