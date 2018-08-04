@@ -2853,6 +2853,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
       destructiveincrementmagnitude(thismagnitude)
       
       thislen = #thismagnitude
+      longerlength = max(thislen, thatlen)
       
       
       if finalsignint == 0xffffffff then
@@ -2874,6 +2875,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
       
    else
       thislen = #thismagnitude
+      longerlength = max(thislen, thatlen)
       
       if finalsignint == 0xffffffff then
          for i = 0, longerlength - 1 do
