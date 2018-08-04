@@ -765,7 +765,7 @@ function arevalidbigintegerandoperablevalue(bigint, value, operation)
    
    
    --[[ Check first value is biginteger and second is operable ]]
-   if isvalidbiginteger(thisvalue) and isvalidoperablevalue(thatvalue) then
+   if isvalidbiginteger(bigint) and isvalidoperablevalue(value) then
       return true
    end
    
