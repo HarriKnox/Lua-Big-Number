@@ -2798,7 +2798,7 @@ function bitwisewordarrays(thisarray, thatarray, mergefunction)
    thatsignint = getwordarraysignword(thatarray)
    
    for i = 0, longerlength - 1 do
-      destination[longerlength - 1] = mergefunction(
+      destination[longerlength - i] = mergefunction(
             thisarray[thislength - i] or thissignint,
             thatarray[thatlength - i] or thatsignint)
    end
