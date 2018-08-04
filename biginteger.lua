@@ -3268,10 +3268,16 @@ end
 --[                                                                      ]
 --]======================================================================]
 
-function negate(bigint)
-   assert(isvalidbiginteger(bigint))
+function negate(value)
+   local sign, magnitude
    
-   return constructorsignmagnitudetrusted(-bigint.sign, copyarray(bigint))
+   assert(isvalidoperablevalue(value))
+   
+   
+   sign, magnitude = getsignandmagnitude(value)
+   
+   
+   return constructorsignmagnitudetrusted(-sign, magnitude)
 end
 
 
@@ -3284,10 +3290,16 @@ function mutablenegate(bigint)
 end
 
 
-function absolutevalue(bigint)
-   assert(isvalidbiginteger(bigint))
+function absolutevalue(value)
+   local sign, magnitude
    
-   return bigint.sign < 0 and negate(bigint) or bigint
+   assert(isvalidoperablevalue(value))
+   
+   
+   sign, magnitude = getsignandmagnitude(value)
+   
+   
+   return constructorsignmagnitudetrusted(sign == -1 and 1 or sign, magnitude)
 end
 
 
