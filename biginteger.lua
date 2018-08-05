@@ -2964,7 +2964,7 @@ end
 --[ Bitwise Xor ]
 --]=============]
 
-function bitwisexor(thisvalue, thatbigint)
+function bitwisexor(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitxor, "xor")
 end
 
