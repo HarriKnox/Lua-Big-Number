@@ -2848,8 +2848,6 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    thismagnitude = thisbigint.magnitude
    thatwordarray = getwordarray(thatvalue)
    
-   thatlen = #thatwordarray
-   
    
    thissignint = getintegersignword(thisbigint.sign)
    thatsignint = getwordarraysignword(thatwordarray)
@@ -2863,6 +2861,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    
    
    thislen = #thismagnitude
+   thatlen = #thatwordarray
    longerlen = max(thislen, thatlen)
    
    
@@ -2903,8 +2902,8 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    
    
    if finalsignint == 0xffffffff then
-      destructiveincrementmagnitude(thismagnitude)
       thisbigint.sign = -1
+      destructiveincrementmagnitude(thismagnitude)
    
    else
       thisbigint.sign = thismagnitude[1] and 1 or 0
