@@ -2720,7 +2720,7 @@ end
 --]=============]
 
 --[==[
--- Performs a bitwise not on the passed operable value and returns the result
+-- Performs a bitwise-not on the passed operable value and returns the result
 -- in a new biginteger object.
 --]==]
 function bitwisenot(value)
@@ -2790,13 +2790,14 @@ end
 --]=================]
 
 --[==[
--- Performs the binary bitwise operation on the two word-arrays
+-- Performs the binary bitwise operation on the two operable values.
 --]==]
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    local thisarray, thatarray
    local thislength, thatlength, longerlength
    local thissignint, thatsignint
    local destination = {}
+   
    
    assert(arebothvalidoperablevalues(
          thisvalue,
@@ -2832,6 +2833,14 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
 end
 
 
+
+--[==[
+-- Performs a binary bitwise operation in-place on the passed biginteger and
+-- operable value.
+--
+-- This function leverages Two's complement to perform an on-the-fly magnitude
+-- negation if this biginteger is negative, or if the result is negative.
+--]==]
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    local thissignint, thatsignint
    local thismagnitude, thatwordarray
@@ -2845,28 +2854,34 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
          "bitwise-" .. opname))
    
    
+   --[[ Get the word arrays ]]
    thismagnitude = thisbigint.magnitude
    thatwordarray = getwordarray(thatvalue)
    
    
+   --[[ Get the sign-words for the input and the result ]]
    thissignint = getintegersignword(thisbigint.sign)
    thatsignint = getwordarraysignword(thatwordarray)
    
    finalsignint = bitwisefunction(thissignint, thatsignint)
    
    
+   --[[ If the bigint is negative, decrement for two's complement ]]
    if thissignint == 0xffffffff then
       destructivedecrementmagnitude(thismagnitude)
    end
    
    
+   --[[ Get the word array lengths ]]
    thislen = #thismagnitude
    thatlen = #thatwordarray
    longerlen = max(thislen, thatlen)
    
    
+   --[[ Branch on whether we need to negate this magnitude or the result ]]
    if thissignint == 0xffffffff then
       if finalsignint == 0xffffffff then
+         --[[ Negate both this magnitude and the result ]]
          for i = 0, longerlen - 1 do
             thismagnitude[longerlen - i] = bitnot(bitwisefunction(
                   bitnot(thismagnitude[thislen - i] or 0),
@@ -2874,6 +2889,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
          end
          
       else
+         --[[ Negate just this magnitude ]]
          for i = 0, longerlen - 1 do
             thismagnitude[longerlen - i] = bitwisefunction(
                   bitnot(thismagnitude[thislen - i] or 0),
@@ -2883,6 +2899,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
       
    else
       if finalsignint == 0xffffffff then
+         --[[ Negate just the result ]]
          for i = 0, longerlen - 1 do
             thismagnitude[longerlen - i] = bitnot(bitwisefunction(
                   thismagnitude[thislen - i] or 0,
@@ -2890,6 +2907,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
          end
          
       else
+         --[[ Negate neither this magnitude nor the result ]]
          for i = 0, longerlen - 1 do
             thismagnitude[longerlen - i] = bitwisefunction(
                   thismagnitude[thislen - i] or 0,
@@ -2901,8 +2919,12 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    destructivestripleadingzeros(thismagnitude)
    
    
+   --[[ Update the bigint's sign ]]
    if finalsignint == 0xffffffff then
       thisbigint.sign = -1
+      
+      
+      --[[ If this magnitude is now negative, increment for two's complement ]]
       destructiveincrementmagnitude(thismagnitude)
    
    else
