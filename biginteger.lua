@@ -2787,10 +2787,19 @@ end
 --[ Generic Bitwise ]
 --]=================]
 
-function bitwisewordarrays(thisarray, thatarray, mergefunction)
+function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
+   local thisarray, thatarray
    local thislength, thatlength, longerlength
    local thissignint, thatsignint
    local destination = {}
+   
+   assert(arebothvalidoperablevalues(
+         thisvalue,
+         thatvalue,
+         "bitwise-" .. opname))
+   
+   thisarray = getwordarray(thisvalue)
+   thatarray = getwordarray(thatvalue)
    
    thislength = #thisarray
    thatlength = #thatarray
@@ -2800,27 +2809,13 @@ function bitwisewordarrays(thisarray, thatarray, mergefunction)
    thatsignint = getwordarraysignword(thatarray)
    
    for i = 0, longerlength - 1 do
-      destination[longerlength - i] = mergefunction(
+      destination[longerlength - i] = bitwisefunction(
             thisarray[thislength - i] or thissignint,
             thatarray[thatlength - i] or thatsignint)
    end
    
    
-   return destination
-end
-
-
-function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
-   assert(arebothvalidoperablevalues(
-         thisvalue,
-         thatvalue,
-         "bitwise-" .. opname))
-   
-   return constructorwordarraytrusted(
-         bitwisewordarrays(
-               getwordarray(thisvalue),
-               getwordarray(thatvalue),
-               bitwisefunction))
+   return constructorwordarraytrusted(destination)
 end
 
 
