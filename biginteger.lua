@@ -2849,9 +2849,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    finalsignint = bitwisefunction(thissignint, thatsignint)
    
    
-   
-   
-   if thisbigint.sign == -1 then
+   if thissignint == 0xffffffff then
       destructivedecrementmagnitude(thismagnitude)
       
       thislen = #thismagnitude
@@ -2909,7 +2907,7 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
       thisbigint.sign = -1
    
    else
-      thisbigint.sign = #thismagnitude == 0 and 0 or 1
+      thisbigint.sign = thismagnitude[1] and 1 or 0
    end
    
    
