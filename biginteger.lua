@@ -2825,7 +2825,7 @@ end
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    local thissignint, thatsignint
    local thismagnitude, thatwordarray
-   local thislen, thatlen
+   local thislen, thatlen, longerlen
    local finalsignint
    
    
@@ -2853,12 +2853,12 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
       destructiveincrementmagnitude(thismagnitude)
       
       thislen = #thismagnitude
-      longerlength = max(thislen, thatlen)
+      longerlen = max(thislen, thatlen)
       
       
       if finalsignint == 0xffffffff then
-         for i = 0, longerlength - 1 do
-            thismagnitude[longerlength - i] = bittnot(bitwisefunction(
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitnot(bitwisefunction(
                   bitnot(thismagnitude[thislen - i] or thissignint),
                   thatwordarray[thatlen - i] or thatsignint))
          end
@@ -2866,8 +2866,8 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
          destructiveincrementmagnitude(thismagnitude)
          
       else
-         for i = 0, longerlength - 1 do
-            thismagnitude[longerlength - i] = bitwisefunction(
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitwisefunction(
                   bitnot(thismagnitude[thislen - i] or thissignint),
                   thatwordarray[thatlen - i] or thatsignint)
          end
@@ -2875,11 +2875,12 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
       
    else
       thislen = #thismagnitude
-      longerlength = max(thislen, thatlen)
+      longerlen = max(thislen, thatlen)
+      
       
       if finalsignint == 0xffffffff then
-         for i = 0, longerlength - 1 do
-            thismagnitude[longerlength - i] = bittnot(bitwisefunction(
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitnot(bitwisefunction(
                   thismagnitude[thislen - i] or thissignint,
                   thatwordarray[thatlen - i] or thatsignint))
          end
@@ -2887,8 +2888,8 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
          destructiveincrementmagnitude(thismagnitude)
       
       else
-         for i = 0, longerlength - 1 do
-            thismagnitude[longerlength - i] = bitwisefunction(
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitwisefunction(
                   thismagnitude[thislen - i] or thissignint,
                   thatwordarray[thatlen - i] or thatsignint)
          end
