@@ -2859,59 +2859,51 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    
    if thissignint == 0xffffffff then
       destructivedecrementmagnitude(thismagnitude)
-      
-      thislen = #thismagnitude
-      longerlen = max(thislen, thatlen)
-      
-      
-      if finalsignint == 0xffffffff then
-         for i = 0, longerlen - 1 do
-            thismagnitude[longerlen - i] = bitnot(bitwisefunction(
-                  bitnot(thismagnitude[thislen - i] or 0),
-                  thatwordarray[thatlen - i] or thatsignint))
-         end
-         
-         destructivestripleadingzeros(thismagnitude)
-         destructiveincrementmagnitude(thismagnitude)
-         
-      else
-         for i = 0, longerlen - 1 do
-            thismagnitude[longerlen - i] = bitwisefunction(
-                  bitnot(thismagnitude[thislen - i] or 0),
-                  thatwordarray[thatlen - i] or thatsignint)
-         end
-         
-         destructivestripleadingzeros(thismagnitude)
-      end
-      
-   else
-      thislen = #thismagnitude
-      longerlen = max(thislen, thatlen)
-      
-      
-      if finalsignint == 0xffffffff then
-         for i = 0, longerlen - 1 do
-            thismagnitude[longerlen - i] = bitnot(bitwisefunction(
-                  thismagnitude[thislen - i] or 0,
-                  thatwordarray[thatlen - i] or thatsignint))
-         end
-         
-         destructivestripleadingzeros(thismagnitude)
-         destructiveincrementmagnitude(thismagnitude)
-      
-      else
-         for i = 0, longerlen - 1 do
-            thismagnitude[longerlen - i] = bitwisefunction(
-                  thismagnitude[thislen - i] or 0,
-                  thatwordarray[thatlen - i] or thatsignint)
-         end
-         
-         destructivestripleadingzeros(thismagnitude)
-      end
    end
    
    
+   thislen = #thismagnitude
+   longerlen = max(thislen, thatlen)
+   
+   
+   if thissignint == 0xffffffff then
+      if finalsignint == 0xffffffff then
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitnot(bitwisefunction(
+                  bitnot(thismagnitude[thislen - i] or 0),
+                  thatwordarray[thatlen - i] or thatsignint))
+         end
+         
+      else
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitwisefunction(
+                  bitnot(thismagnitude[thislen - i] or 0),
+                  thatwordarray[thatlen - i] or thatsignint)
+         end
+      end
+      
+   else
+      if finalsignint == 0xffffffff then
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitnot(bitwisefunction(
+                  thismagnitude[thislen - i] or 0,
+                  thatwordarray[thatlen - i] or thatsignint))
+         end
+         
+      else
+         for i = 0, longerlen - 1 do
+            thismagnitude[longerlen - i] = bitwisefunction(
+                  thismagnitude[thislen - i] or 0,
+                  thatwordarray[thatlen - i] or thatsignint)
+         end
+      end
+   end
+   
+   destructivestripleadingzeros(thismagnitude)
+   
+   
    if finalsignint == 0xffffffff then
+      destructiveincrementmagnitude(thismagnitude)
       thisbigint.sign = -1
    
    else
