@@ -2236,6 +2236,8 @@ function constructorwordarraytrusted(array)
    
    if sign == -1 then
       destructivenegatewordarray(array)
+   else
+      destructivestripleadingzeros(array)
    end
    
    
