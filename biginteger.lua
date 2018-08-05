@@ -2234,6 +2234,8 @@ function constructorwordarraytrusted(array)
    --[[ Use the word-array as the magnitude object ]]
    sign = getwordarraysign(array)
    
+   
+   --[[ Negate if needed, but otherwise strip any leading zeros ]]
    if sign == -1 then
       destructivenegatewordarray(array)
    else
@@ -2787,6 +2789,9 @@ end
 --[ Generic Bitwise ]
 --]=================]
 
+--[==[
+-- Performs the binary bitwise operation on the two word-arrays
+--]==]
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    local thisarray, thatarray
    local thislength, thatlength, longerlength
@@ -2798,16 +2803,24 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
          thatvalue,
          "bitwise-" .. opname))
    
+   
+   --[[ Convert to word arrays ]]
    thisarray = getwordarray(thisvalue)
    thatarray = getwordarray(thatvalue)
    
+   
+   --[[ Cache the lengths and determine the longer length ]]
    thislength = #thisarray
    thatlength = #thatarray
    longerlength = max(thislength, thatlength)
    
+   
+   --[[ Get the sign-words to sign extend the word-arrays ]]
    thissignint = getwordarraysignword(thisarray)
    thatsignint = getwordarraysignword(thatarray)
    
+   
+   --[[ Perform the bitwise function on every word, sign-extending if needed ]]
    for i = 0, longerlength - 1 do
       destination[longerlength - i] = bitwisefunction(
             thisarray[thislength - i] or thissignint,
@@ -3168,6 +3181,7 @@ end
 --[         | |                                                   ]
 --[         |_|                                                   ]
 --]===============================================================]
+
 function destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
    local word, bit, length
    
