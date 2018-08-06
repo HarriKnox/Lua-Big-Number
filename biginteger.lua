@@ -716,6 +716,18 @@ end
 
 
 --[==[
+-- Returns the type of the object based on their validity using the testing
+-- functions.
+--]==]
+function gettype(thing)
+   return (isvalidinteger(thing) and 'integer') or
+          (isvalidbiginteger(thing) and 'biginteger') or
+          (isvalidwordarray(thing) and 'word-array') or
+          type(thing)
+end
+
+
+--[==[
 -- Tests if the passed value is either a integer, word-array, or biginteger
 -- that the library can use.
 --]==]
@@ -1812,26 +1824,8 @@ end
 --]===========================================]
 
 --[======[
---[ Type ]
---]======]
-
---[==[
--- Returns the type of the object based on their validity using the testing
--- functions.
---]==]
-function gettype(thing)
-   return (isvalidinteger(thing) and 'integer') or
-          (isvalidbiginteger(thing) and 'biginteger') or
-          (isvalidwordarray(thing) and 'word-array') or
-          type(thing)
-end
-
-
-
---[======[
 --[ Sign ]
 --]======]
-
 
 --[==[
 -- Returns the sign of the word-array.
