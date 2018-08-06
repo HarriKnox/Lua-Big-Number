@@ -2266,7 +2266,7 @@ end
 -- Constructs a biginteger from a user-specified word-array.
 --]==]
 function constructorwordarray(array)
-   return constructorwordarraytrusted(getwordarray(array))
+   return constructorsignmagnitudetrusted(getwordarraysignandmagnitude(array))
 end
 
 
