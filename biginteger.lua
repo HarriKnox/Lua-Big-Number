@@ -2865,32 +2865,36 @@ end
 -- bits and adding 1 to the magnitude to make bitwise-notting quick.
 --]==]
 function mutablebitwisenot(bigint)
+   local mag
+   
    assert(isvalidbiginteger(bigint))
+   
+   mag = bigint.magnitude
    
    
    --[[ No need to perform a bitnot on the whole magnitude ]]
    if bigint.sign == 0 then
       --[[ ~0 == -1 ]]
       bigint.sign = -1
-      bigint.magnitude[1] = 1
+      mag[1] = 1
    
    else
       if bigint.sign == 1 then
          --[[ positive -> negative, increment magnitude: ~1 == -2 ]]
-         destructiveincrementmagnitude(bigint.magnitude)
+         destructiveincrementmagnitude(mag)
       
       else
          --[[ negative -> positive, decrement magnitude: ~(-2) == 1 ]]
-         destructivedecrementmagnitude(bigint.magnitude)
+         destructivedecrementmagnitude(mag)
       end
       
       
       --[[ Cover bitnotting from -1 to 0 ]]
-      if #bigint.magnitude == 0 then
-         bigint.sign = 0
+      if mag[1] then
+         bigint.sign = -bigint.sign
       
       else
-         bigint.sign = -bigint.sign
+         bigint.sign = 0
       end
    end
    
