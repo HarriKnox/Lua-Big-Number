@@ -1890,8 +1890,8 @@ end
 --[==[
 -- Returns the sign of any operable value.
 --
--- Don't use this function if you know the type of the value being passed in or
--- if you're also getting the magnitude at the same time.
+-- Don't use this function if you're also getting the magnitude at the same
+-- time.
 --]==]
 function getsign(value, valuetype)
    --[[ Figure out what type the value is and call the associated function ]]
@@ -1994,8 +1994,8 @@ end
 -- Returns a copy of the magnitude of any operable value.
 --
 -- This returns a copy of the magnitude every time it's run. Don't use this
--- function if you know the type of the value being passed in or if you're also
--- getting the sign at the same time.
+-- function if you already have the magnitude or if you're also getting the
+-- sign at the same time.
 --]==]
 function getmagnitude(value, valuetype)
    --[[ Figure out what type the value is and call the associated function ]]
@@ -2046,8 +2046,6 @@ end
 
 --[==[
 -- Returns both the sign and magnitude of any operable value.
---
--- Don't use this function if you know the type of the value being passed in.
 --]==]
 function getsignandmagnitude(value, valuetype)
    --[[ Figure out what type the value is and call the associated function ]]
@@ -2619,6 +2617,7 @@ end
 function compare(thisvalue, thatvalue)
    local thistype, thattype, reason
          = arebothvalidoperablevalues(thisvalue, thatvalue, "comparison")
+   
    
    assert(thistype, reason)
    
