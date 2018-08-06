@@ -1685,7 +1685,7 @@ end
 -- Destructively finds the absolute difference between `thatmag` and
 -- `thismag` and puts the result in `thismag`.
 --
--- This uses the Austrian Method fo calculting the difference:
+-- This uses the Austrian Method fo calculating the difference:
 -- https://en.wikipedia.org/wiki/Subtraction#Austrian_method
 --]==]
 function destructivesubtractmagnitudes(thismag, thatmag)
@@ -2601,7 +2601,7 @@ end
 
 
 --[==[
--- Compares the two values and returns wheter they are equal. Returns `false`
+-- Compares the two values and returns whether they are equal. Returns `false`
 -- by default if either value is non-operable.
 --]==]
 function equals(thisbigint, thatbigint)
