@@ -2790,7 +2790,8 @@ end
 --]=================]
 
 --[==[
--- Performs the binary bitwise operation on the two operable values.
+-- Performs the binary bitwise operation on the two operable values and returns
+-- the result in a new biginteger value.
 --]==]
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    local thisarray, thatarray
