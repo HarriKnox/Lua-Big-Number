@@ -2621,14 +2621,14 @@ end
 -- Compares the two values and returns whether they are equal. Returns `false`
 -- by default if either value is non-operable.
 --]==]
-function equals(thisbigint, thatbigint)
+function equals(thisvalue, thatvalue)
    --[[ If either are not operable, then I can't be sure they're equal ]]
-   if not arebothvalidoperablevalues(thisbigint, thatbigint, "") then
+   if not arebothvalidoperablevalues(thisvalue, thatvalue, "") then
       return false
    end
    
    
-   return compare(thisbigint, thatbigint) == 0
+   return compare(thisvalue, thatvalue) == 0
 end
 
 
