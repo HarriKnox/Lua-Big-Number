@@ -2658,24 +2658,46 @@ end
 -- Returns the smallest value (closest to negative infinity) of a bunch of
 -- operable values.
 --
--- This function does not run the check of operability until it gets to the
--- value in the list. If you have a long list of particularly large values then
--- it will take longer to find that the value at the end is non-operable.
---
--- This function is also horribly inefficient: for example, in the comparison
--- it checks that the smallest value is an operable value every time.
+-- This function checks the operability of every value but does so in the same
+-- pass as it compares all the values.
 --]==]
 function minimum(...)
    local list = {...}
-   local smallest = list[1]
+   local smallestsign, smallestmag, smallestindex
+   local valuesign, valuemag
+   local valuetype, reason = isvalidoperablevalue(list[1])
+   
+   
+   assert(valuetype, "bad argument #1: " .. reason)
+   
+   
+   --[[ Keep the first value as our current smallest ]]
+   smallestsign, smallestmag = getsignandmagnitude(list[1], valuetype)
+   smallestindex = 1
+   
    
    for i = 2, #list do
-      if compare(list[i], smallest) < 0 then
-         smallest = list[i]
+      --[[ For each remaining argument, validate first ]]
+      valuetype, reason = isvalidoperablevalue(list[i])
+      
+      assert(valuetype, "bad argument #" .. i .. ": " .. reason)
+      
+      
+      --[[ Get the sign and magnitude and compare to the current smallest ]]
+      valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
+      
+      if comparesignmagnitude(
+            valuesign, valuemag,
+            smallestsign, smallestmag) < 0 then
+         smallestsign = valuesign
+         smallestmag = valuemag
+         smallestindex = i
       end
    end
    
-   return smallest
+   
+   --[[ Return the original item passed in using the saved index value ]]
+   return list[smallestindex]
 end
 
 
@@ -2683,55 +2705,108 @@ end
 -- Returns the largest value (closest to positive infinity) of a bunch of
 -- operable values.
 --
--- This function does not run the check of operability until it gets to the
--- value in the list. If you have a long list of particularly large values then
--- it will take longer to find that the value at the end is non-operable.
---
--- This function is also horribly inefficient: for example, in the comparison
--- it checks that the largest value is an operable value every time.
+-- This function checks the operability of every value but does so in the same
+-- pass as it compares all the values.
 --]==]
 function maximum(...)
    local list = {...}
-   local largest = list[1]
+   local largestsign, largestmag, largestindex
+   local valuesign, valuemag
+   local valuetype, reason = isvalidoperablevalue(list[1])
+   
+   
+   assert(valuetype, "bad argument #1: " .. reason)
+   
+   
+   --[[ Keep the first value as our current largest ]]
+   largestsign, largestmag = getsignandmagnitude(list[1], valuetype)
+   largestindex = 1
+   
    
    for i = 2, #list do
-      if compare(list[i], largest) > 0 then
-         largest = list[i]
+      --[[ For each remaining argument, validate first ]]
+      valuetype, reason = isvalidoperablevalue(list[i])
+      
+      assert(valuetype, "bad argument #" .. i .. ": " .. reason)
+      
+      
+      --[[ Get the sign and magnitude and compare to the current largest ]]
+      valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
+      
+      if comparesignmagnitude(
+            valuesign, valuemag,
+            largestsign, largestmag) > 0 then
+         largestsign = valuesign
+         largestmag = valuemag
+         largestindex = i
       end
    end
    
-   return list[1]
+   
+   --[[ Return the original item passed in using the saved index value ]]
+   return list[largestindex]
 end
 
 
 --[==[
 -- Returns both the smallest and largest values of a bunch of operable values.
 --
--- This function does not run the check of operability until it gets to the
--- value in the list. If you have a long list of particularly large values then
--- it will take longer to find that the value at the end is non-operable.
---
--- This function is more inefficient than the last two. In addition to checking
--- that the smallest value is operable at every loop, and that the largest
--- value is operable at every loop, this also checks that the word being tested
--- is operable twice per loop.
+-- This function checks the operability of every value but does so in the same
+-- pass as it compares all the values. Call this function if you need both the
+-- min and the max since this will halve the number validation checks from
+-- calling both `minimum` and `maximum`.
 --]==]
 function minmax(...)
    local list = {...}
-   local smallest = list[1]
-   local largest = list[1]
+   local smallestsign, smallestmag, smallestindex
+   local largestsign, largestmag, largestindex
+   local valuesign, valuemag
+   local valuetype, reason = isvalidoperablevalue(list[1])
+   
+   
+   assert(valuetype, "bad argument #1: " .. reason)
+   
+   
+   --[[ Keep the first value as our current smallest and largest ]]
+   smallestsign, smallestmag = getsignandmagnitude(list[1], valuetype)
+   smallestindex = 1
+   
+   largestsign, largestmag = smallestsign, smallestmag
+   largestindex = 1
+   
    
    for i = 2, #list do
-      if compare(list[i], smallest) < 0 then
-         smallest = list[i]
+      --[[ For each remaining argument, validate first ]]
+      valuetype, reason = isvalidoperablevalue(list[i])
+      
+      assert(valuetype, "bad argument #" .. i .. ": " .. reason)
+      
+      
+      --[[ Get the sign and magnitude and compare to the current smallest ]]
+      valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
+      
+      if comparesignmagnitude(
+            valuesign, valuemag,
+            smallestsign, smallestmag) < 0 then
+         smallestsign = valuesign
+         smallestmag = valuemag
+         smallestindex = i
       end
       
-      if compare(list[i], largest) > 0 then
-         largest = list[i]
+      
+      --[[ Also compare to the current largest ]]
+      if comparesignmagnitude(
+            valuesign, valuemag,
+            largestsign, largestmag) > 0 then
+         largestsign = valuesign
+         largestmag = valuemag
+         largestindex = i
       end
    end
    
-   return smallest, largest
+   
+   --[[ Return the original items passed in using the saved index values ]]
+   return list[smallestindex], list[largestindex]
 end
 
 
