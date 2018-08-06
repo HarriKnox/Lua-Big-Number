@@ -738,45 +738,53 @@ end
 
 
 --[==[
--- Tests if the passed value is either a integer, word-array, or biginteger
--- that the library can use.
+-- Tests if the passed value is either a integer, biginteger, or word-array
+-- that the library can use. Returns the type of the value if it is, or `nil`
+-- if it isn't.
 --]==]
 function isvalidoperablevalue(value)
-   --[[ Check if the value is either an integer, word-array, or biginteger ]]
-   if isvalidinteger(value)
-         or isvalidwordarray(value)
-         or isvalidbiginteger(value) then
-      return true
+   local valuetype = gettype(value)
+   
+   if istypeoperable(valuetype) then
+      return valuetype
    end
    
    
-   return false, "not a valid operable value: it's a " .. type(value)
+   return nil, "not a valid operable value: it's a " .. valuetype
 end
 
 
 --[==[
 -- Tests if the passed values are both operable values and fails if either are
--- not.
+-- not. Returns the types of the values if they are, or `nil` for both if they
+-- aren't.
 --
--- The second return value (the reason it failed) will incorporate the
+-- The third return value (the reason it failed) will incorporate the
 -- operation attempted, thus the `operation` parameter is a string of what the
 -- operation was (such as "addition" or "multiplication").
 --]==]
 function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
+   local thistype, thattype
+   
+   thistype = gettype(thisvalue)
+   thattype = gettype(thatvalue)
+   
+   
    --[[ Check if both values are operable values ]]
-   if isvalidoperablevalue(thisvalue) and isvalidoperablevalue(thatvalue) then
-      return true
+   if istypeoperable(thistype) and istypeoperable(thattype) then
+      return thistype, thattype
    end
    
    
-   return false, "attempt to perform " .. operation .. " on "
-         .. gettype(thisvalue) .. " and " .. gettype(thatvalue)
+   return nil, "attempt to perform " .. operation .. " on "
+         .. thistype .. " and " .. thattype
 end
 
 
 --[==[
 -- Tests if the first value is a biginteger and the second value is an operable
--- value.
+-- value. Returns the type of the second value if they are, or `nil` if they
+-- aren't.
 --
 -- The second return value (the reason it failed) will incorporate the
 -- operation attempted, thus the `operation` parameter is a string of what the
@@ -785,15 +793,18 @@ end
 function arevalidbigintegerandoperablevalue(bigint, value, operation)
    local ok, reason
    
+   local biginttype = gettype(bigint)
+   local valuetype = gettype(value)
+   
    
    --[[ Check first value is biginteger and second is operable ]]
-   if isvalidbiginteger(bigint) and isvalidoperablevalue(value) then
-      return true
+   if biginttype == 'biginteger' and istypeoperable(valuetype) then
+      return valuetype
    end
    
    
-   return false, "attempt to perform " .. operation .. " on "
-         .. gettype(bigint) .. " and " .. gettype(value)
+   return nil, "attempt to perform " .. operation .. " on "
+         .. biginttype .. " and " .. valuetype
 end
 
 
