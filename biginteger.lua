@@ -4869,7 +4869,7 @@ end
 function makestring(thisval, radix)
    local thissign, thismag
    local str
-   local thistype, reason = isvalidoperablevalue(value)
+   local thistype, reason = isvalidoperablevalue(thisval)
    
    assert(thistype, reason)
    
@@ -4879,7 +4879,7 @@ function makestring(thisval, radix)
       radix = 10
    end
    
-   thissign, thismag = getsignandmagnitude(thisval, value)
+   thissign, thismag = getsignandmagnitude(thisval, thistype)
    
    if thissign == 0 then
       return "0"
