@@ -728,6 +728,16 @@ end
 
 
 --[==[
+-- Returns whether the type is for an operable value.
+--]==]
+function istypeoperable(valuetype)
+   return valuetype == 'integer'
+         or valuetype == 'biginteger'
+         or valuetype == 'word-array'
+end
+
+
+--[==[
 -- Tests if the passed value is either a integer, word-array, or biginteger
 -- that the library can use.
 --]==]
