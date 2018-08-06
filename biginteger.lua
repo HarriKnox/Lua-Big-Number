@@ -1893,21 +1893,21 @@ end
 -- Don't use this function if you know the type of the value being passed in or
 -- if you're also getting the magnitude at the same time.
 --]==]
-function getsign(value)
+function getsign(value, valuetype)
    --[[ Figure out what type the value is and call the associated function ]]
-   if isvalidbiginteger(value) then
+   if valuetype == 'biginteger' then
       return value.sign
       
-   elseif isvalidwordarray(value) then
+   elseif valuetype == 'word-array' then
       return getwordarraysign(value)
       
-   elseif isvalidinteger(value) then
+   elseif valuetype == 'integer' then
       return getintegersign(value)
    end
    
    
    --[[ Precautionary error that should not run ]]
-   error("cannot obtain sign of " .. gettype(value))
+   error("cannot obtain sign of " .. valuetype)
 end
 
 
@@ -1997,21 +1997,21 @@ end
 -- function if you know the type of the value being passed in or if you're also
 -- getting the sign at the same time.
 --]==]
-function getmagnitude(value)
+function getmagnitude(value, valuetype)
    --[[ Figure out what type the value is and call the associated function ]]
-   if isvalidbiginteger(value) then
+   if valuetype == 'biginteger' then
       return copyarray(value.magnitude)
       
-   elseif isvalidwordarray(value) then
+   elseif valuetype == 'word-array' then
       return getwordarraymagnitude(value)
       
-   elseif isvalidinteger(value) then
+   elseif valuetype == 'integer' then
       return getintegermagnitude(value)
    end
    
    
    --[[ Precautionary error that should not run ]]
-   error("cannot obtain magnitude of " .. gettype(value))
+   error("cannot obtain magnitude of " .. valuetype)
 end
 
 
@@ -2049,21 +2049,21 @@ end
 --
 -- Don't use this function if you know the type of the value being passed in.
 --]==]
-function getsignandmagnitude(value)
+function getsignandmagnitude(value, valuetype)
    --[[ Figure out what type the value is and call the associated function ]]
-   if isvalidbiginteger(value) then
+   if valuetype == 'biginteger' then
       return value.sign, copyarray(value.magnitude)
       
-   elseif isvalidwordarray(value) then
+   elseif valuetype == 'word-array' then
       return getwordarraysignandmagnitude(value)
       
-   elseif isvalidinteger(value) then
+   elseif valuetype == 'integer' then
       return getintegersignandmagnitude(value)
    end
    
    
    --[[ Precautionary error that should not run ]]
-   error("cannot obtain sign and magnitude of " .. gettype(value))
+   error("cannot obtain sign and magnitude of " .. valuetype)
 end
 
 
@@ -2571,9 +2571,10 @@ end
 function compare(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "comparison")
    
-   
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "comparison"))
+   assert(thistype, reason)
    
    
    --[[
@@ -2591,8 +2592,8 @@ function compare(thisvalue, thatvalue)
    
    
    --[[ Get the signs and magnitudes of each value ]]
-   thissign, thismag = getsignandmagnitude(thisvalue)
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   thissign, thismag = getsignandmagnitude(thisvalue, thistype)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    
    --[[ If the signs differ, then they can't be equal ]]
@@ -3157,11 +3158,13 @@ end
 
 function bitwiseshift(value, displacement, right)
    local sign, mag
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   
+   assert(valuetype, reason)
    assert(isvalidabsolute32bitinteger(displacement))
    
-   sign, mag = getsignandmagnitude(value)
+   sign, mag = getsignandmagnitude(value, valuetype)
    destructivebitwiseshift(mag, displacement, right)
    
    if #mag == 0 then
@@ -3341,11 +3344,13 @@ end
 
 function negate(value)
    local sign, magnitude
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   
+   assert(valuetype, reason)
    
    
-   sign, magnitude = getsignandmagnitude(value)
+   sign, magnitude = getsignandmagnitude(value, valuetype)
    
    
    return constructorsignmagnitudetrusted(-sign, magnitude)
@@ -3363,11 +3368,13 @@ end
 
 function absolutevalue(value)
    local sign, magnitude
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   
+   assert(valuetype, reason)
    
    
-   sign, magnitude = getsignandmagnitude(value)
+   sign, magnitude = getsignandmagnitude(value, valuetype)
    
    
    return constructorsignmagnitudetrusted(sign == -1 and 1 or sign, magnitude)
@@ -3408,11 +3415,15 @@ function add(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    local comparison
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "addition")
    
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "addition"))
    
-   thissign, thismag = getsignandmagnitude(thisvalue)
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   assert(thistype, reason)
+   
+   
+   thissign, thismag = getsignandmagnitude(thisvalue, thistype)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    if thissign == 0 then
       return thatvalue
@@ -3445,10 +3456,15 @@ end
 
 function mutableadd(thisbigint, thatvalue)
    local thatsign, thatmag
+   local thattype, reason
+         = arevalidbigintegerandoperablevalue(
+               thisbigint, thatvalue, "addition")
    
-   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "addition"))
    
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   assert(thattype, reason)
+   
+   
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    if thisbigint.sign == 0 then
       if thatsign ~= 0 then
@@ -3490,10 +3506,13 @@ function subtract(thisvalue, thatvalue)
    local thismag, thatmag
    local comparison
    
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "subtraction"))
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "subtraction")
    
-   thissign, thismag = getsignandmagnitude(thisvalue)
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   assert(thistype, reason)
+   
+   thissign, thismag = getsignandmagnitude(thisvalue, thistype)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    if thissign == 0 then
       return negate(thatvalue)
@@ -3526,10 +3545,13 @@ end
 
 function mutablesubtract(thisbigint, thatvalue)
    local thatsign, thatmag
+   local thattype, reason
+         = arevalidbigintegerandoperablevalue(
+               thisbigint, thatvalue, "subtraction")
    
-   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "subtraction"))
+   assert(thattype, reason)
    
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    if thisbigint.sign == 0 then
       if thatsign ~= 0 then
@@ -3813,10 +3835,11 @@ end
 
 function square(value)
    local sign, mag
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   assert(valuetype, reason)
    
-   sign, mag = getsignandmagnitude(value)
+   sign, mag = getsignandmagnitude(value, valuetype)
    
    if sign == 0 then
       return value
@@ -4068,10 +4091,13 @@ function multiply(thisvalue, thatvalue)
    local thissign, thismag
    local thatsign, thatmag
    
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "multiplication"))
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "multiplication")
    
-   thissign, thismag = getsignandmagnitude(thisvalue)
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   assert(thistype, reason)
+   
+   thissign, thismag = getsignandmagnitude(thisvalue, thistype)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    if thissign == 0 then
       return thisvalue
@@ -4099,10 +4125,13 @@ end
 function mutablemultiply(thisbigint, thatvalue)
    local mag
    local thatsign, thatmag
+   local thattype, reason
+         = arevalidbigintegerandoperablevalue(
+               thisbigint, thatvalue, "multiplication")
    
-   assert(arevalidbigintegerandoperablevalue(thisbigint, thatvalue, "multiplication"))
+   assert(thattype, reason)
    
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    if thisbigint.sign == 0 then
       return thisbigint
@@ -4201,8 +4230,9 @@ function pow(value, exponent)
    local sign, mag
    local highest, lowest
    local result
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   assert(valuetype, reason)
    assert(isvalidint(exponent))
    
    
@@ -4217,7 +4247,7 @@ function pow(value, exponent)
       return value
    end
    
-   sign, mag = getsignandmagnitude(value)
+   sign, mag = getsignandmagnitude(value, valuetype)
    
    if sign == 0 then
       -- 0^n == 0 for n is an integer and n > 0
@@ -4691,10 +4721,11 @@ function division(thisvalue, thatvalue)
    local thatsign, thatmag
    local sign, quotient, remainder
    
-   assert(arebothvalidoperablevalues(thisvalue, thatvalue, "division"))
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "division")
    
-   thissign, thismag = getsignandmagnitude(thisvalue)
-   thatsign, thatmag = getsignandmagnitude(thatvalue)
+   thissign, thismag = getsignandmagnitude(thisvalue, thistype)
+   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    quotient, remainder = dividemagnitudes(thismag, thatmag)
    sign = thissign * thatsign
@@ -4830,8 +4861,9 @@ end
 function makestring(thisval, radix)
    local thissign, thismag
    local str
+   local thistype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(thisval))
+   assert(thistype, reason)
    
    if radix then
       assert(isvalidradix(radix))
@@ -4839,7 +4871,7 @@ function makestring(thisval, radix)
       radix = 10
    end
    
-   thissign, thismag = getsignandmagnitude(thisval)
+   thissign, thismag = getsignandmagnitude(thisval, value)
    
    if thissign == 0 then
       return "0"
