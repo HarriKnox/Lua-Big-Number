@@ -711,7 +711,7 @@ function isvalidstringnumber(str, radix)
    
    return false,
          "not a valid string-number: contains non-digit character at index "
-         .. tostring(index) .. ": '" .. char .. "'"
+         .. tostring(index) .. ": '" .. c .. "'"
 end
 
 
@@ -1605,9 +1605,9 @@ function getlowestsetbit(array)
    --[[ Loop through each word from the least-significant ]]
    for i = length, 1, -1 do
       --[[ If the word has set bits (is non-zero) ... ]]
-      if mag[i] ~= 0 then
+      if array[i] ~= 0 then
          --[[ ... get the lowest bit and return its index (using math) ]]
-         return (length - i) * 32 + numberoftrailingzeros(mag[i])
+         return (length - i) * 32 + numberoftrailingzeros(array[i])
       end
    end
    
@@ -3464,6 +3464,7 @@ end
 
 function mutableadd(thisbigint, thatvalue)
    local thatsign, thatmag
+   local comparison
    local thattype, reason
          = arevalidbigintegerandoperablevalue(
                thisbigint, thatvalue, "addition")
@@ -3553,6 +3554,7 @@ end
 
 function mutablesubtract(thisbigint, thatvalue)
    local thatsign, thatmag
+   local comparison
    local thattype, reason
          = arevalidbigintegerandoperablevalue(
                thisbigint, thatvalue, "subtraction")
@@ -3637,7 +3639,7 @@ function squarecolinplumb(mag)
 -- 
 -- So diagonal + 2 * triangles
 --]]
-   local maglength
+   local maglength, resultlength
    local resultlengh, index
    local diagonal, triangle
    local carry, piece
@@ -3891,7 +3893,7 @@ function multiplycolinplumb(thismag, thatmag)
    local thislength, thatlength
    local resultlength, result
    local producthigh, productlow, carry
-   local index
+   local index, extraint
    
    thislength = #thismag
    thatlength = #thatmag
@@ -3959,7 +3961,7 @@ end
 function multiplytoomcook(thismag, thatmag)
    local a2, a1, a0, b2, b1, b0, ss, _
    local v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1
-   local vm1sign
+   local vm1sign, v2sign
    -- This algorithm takes advantage of magnitude destruction to avoid making
    -- extra unnecessary arrays and biginteger objects. Only one number
    -- calculated has the potential to be negative (all others are non-negative),
@@ -4278,7 +4280,7 @@ function pow(value, exponent)
 end
 
 function mutablepow(bigint, exponent)
-   local highest, lowest
+   local highest, lowest, sign
    local parttosquare, result
    
    assert(isvalidbiginteger(bigint))
@@ -4543,6 +4545,7 @@ end
 function divide2n1n(a, b)
    local a123, a4, q1, r, s
    local n, halfn
+   local quotient
    
    n = #b
    
