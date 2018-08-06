@@ -2747,7 +2747,7 @@ end
 -- Performs a bitwise-not in-place on the passed biginteger.
 --
 -- This function uses the fact that Two's complement negation is flipping the
--- bits and adding 1 to make bitwise-notting quick.
+-- bits and adding 1 to the magnitude to make bitwise-notting quick.
 --]==]
 function mutablebitwisenot(bigint)
    assert(isvalidbiginteger(bigint))
