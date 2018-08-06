@@ -2114,13 +2114,14 @@ end
 --
 -- If the thing is already a word-array then this returns a copy of it.
 --]==]
-function getwordarray(thing)
-   if isvalidwordarray(thing) then
+function getwordarray(thing, thingtype)
+   if thingtype == 'word-array' then
       return copyarray(thing)
    end
    
    
-   return gettrustedsignmagnitudewordarray(getsignandmagnitude(thing))
+   return gettrustedsignmagnitudewordarray(
+         getsignandmagnitude(thing, thingtype))
 end
 
 
@@ -2741,13 +2742,14 @@ end
 --]==]
 function bitwisenot(value)
    local wordarray
+   local valuetype, reason = isvalidoperablevalue(value)
    
    
-   assert(isvalidoperablevalue(value))
+   assert(valuetype, reason)
    
    
    --[[ Get the word-array and bitnot every word ]]
-   wordarray = getwordarray(value)
+   wordarray = getwordarray(value, valuetype)
 
    for i = 1, #wordarray do
       wordarray[i] = bitnot(wordarray[i])
@@ -2815,16 +2817,18 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    local thissignint, thatsignint
    local destination = {}
    
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(
+               thisvalue,
+               thatvalue,
+               "bitwise-" .. opname)
    
-   assert(arebothvalidoperablevalues(
-         thisvalue,
-         thatvalue,
-         "bitwise-" .. opname))
+   assert(thistype, reason)
    
    
    --[[ Convert to word arrays ]]
-   thisarray = getwordarray(thisvalue)
-   thatarray = getwordarray(thatvalue)
+   thisarray = getwordarray(thisvalue, thistype)
+   thatarray = getwordarray(thatvalue, thattype)
    
    
    --[[ Cache the lengths and determine the longer length ]]
@@ -2862,17 +2866,18 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    local thismagnitude, thatwordarray
    local thislen, thatlen, longerlen
    local finalsignint
+   local thattype, reason
+         = arevalidbigintegerandoperablevalue(
+               thisbigint,
+               thatvalue,
+               "bitwise-" .. opname)
    
-   
-   assert(arevalidbigintegerandoperablevalue(
-         thisbigint,
-         thatvalue,
-         "bitwise-" .. opname))
+   assert(thattype, reason)
    
    
    --[[ Get the word arrays ]]
    thismagnitude = thisbigint.magnitude
-   thatwordarray = getwordarray(thatvalue)
+   thatwordarray = getwordarray(thatvalue, thattype)
    
    
    --[[ Get the sign-words for the input and the result ]]
@@ -3258,11 +3263,13 @@ end
 
 function bitwiseatbit(value, bitfromend, bitwisefunction)
    local wordarray
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   
+   assert(valuetype, reason)
    assert(isvalidbitindex(bitfromend))
    
-   wordarray = getwordarray(value)
+   wordarray = getwordarray(value, valuetype)
    destructivebitwiseatbit(wordarray, bitfromend, bitwisefunction)
    
    return constructorwordarraytrusted(wordarray)
@@ -3308,12 +3315,13 @@ end
 function testbit(value, bitfromend)
    local wordarray, length
    local word, bit
+   local valuetype, reason = isvalidoperablevalue(value)
    
-   assert(isvalidoperablevalue(value))
+   assert(valuetype, reason)
    assert(isvalidbitindex(bitfromend))
    
    word, bit = splitlongtowordsandbits(bitfromend)
-   wordarray = getwordarray(value)
+   wordarray = getwordarray(value, valuetype)
    length = #wordarray
    
    if word >= length then
