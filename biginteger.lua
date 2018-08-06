@@ -2834,7 +2834,6 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
 end
 
 
-
 --[==[
 -- Performs a binary bitwise operation in-place on the passed biginteger and
 -- operable value.
@@ -2942,25 +2941,41 @@ end
 --[ Bitwise And ]
 --]=============]
 
+--[==[
+-- Performs a bitwise-and on the two operable values and returns the result in
+-- a new biginteger value.
+--]==]
 function bitwiseand(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitand, "and")
 end
 
 
+--[==[
+-- Performs a bitwise-and in-place on the passed biginteger and operable value.
+--]==]
 function mutablebitwiseand(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitand, "and")
 end
+
 
 
 --[=================[
 --[ Bitwise And-Not ]
 --]=================]
 
+--[==[
+-- Performs a bitwise-and-not on the two operable values and returns the result
+-- in a new biginteger value.
+--]==]
 function bitwiseandnot(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitandnot, "and-not")
 end
 
 
+--[==[
+-- Performs a bitwise-and-not in-place on the passed biginteger and operable
+-- value.
+--]==]
 function mutablebitwiseandnot(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitandnot, "and-not")
 end
@@ -2971,11 +2986,18 @@ end
 --[ Bitwise Or ]
 --]============]
 
+--[==[
+-- Performs a bitwise-or on the two operable values and returns the result in a
+-- new biginteger value.
+--]==]
 function bitwiseor(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitor, "or")
 end
 
 
+--[==[
+-- Performs a bitwise-or in-place on the passed biginteger and operable value.
+--]==]
 function mutablebitwiseor(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitor, "or")
 end
@@ -2986,11 +3008,18 @@ end
 --[ Bitwise Xor ]
 --]=============]
 
+--[==[
+-- Performs a bitwise-xor on the two operable values and returns the result in
+-- a new biginteger value.
+--]==]
 function bitwisexor(thisvalue, thatvalue)
    return binarybitwise(thisvalue, thatvalue, bitxor, "xor")
 end
 
 
+--[==[
+-- Performs a bitwise-xor in-place on the passed biginteger and operable value.
+--]==]
 function mutablebitwisexor(thisbigint, thatvalue)
    return mutablebinarybitwise(thisbigint, thatvalue, bitxor, "xor")
 end
