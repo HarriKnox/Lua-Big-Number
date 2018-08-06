@@ -2562,20 +2562,27 @@ end
 
 
 --[==[
--- Compares the values of the two operable values and returns the sign of the
--- difference.
---
--- result < 0   ->   thisvalue < thatvalue
--- result > 0   ->   thisvalue > thatvalue
--- result = 0   ->   thisvalue = thatvalue
+-- Compares the two values represented by the sign-magnitude pairs and returns
+-- the sign of the difference.
 --]==]
-function compare(thisvalue, thatvalue)
+function comparesignmagnitudes(thissign, thismag, thatsign, thatmag)
+   --[[ If the signs differ, then they can't be equal ]]
+   if thissign ~= thatsign then
+      return thissign > thatsign and 1 or -1
+   end
+   
+   
+   --[[ Otherwise, compare the magnitudes ]]
+   return comparemagnitudes(thismag, thatmag)
+end
+
+
+--[==[
+-- Compares the two values after they have been checked by validity functions.
+--]==]
+function comparevalues(thisvalue, thistype, thatvalue, thattype)
    local thissign, thismag
    local thatsign, thatmag
-   local thistype, thattype, reason
-         = arebothvalidoperablevalues(thisvalue, thatvalue, "comparison")
-   
-   assert(thistype, reason)
    
    
    --[[
@@ -2597,14 +2604,26 @@ function compare(thisvalue, thatvalue)
    thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    
-   --[[ If the signs differ, then they can't be equal ]]
-   if thissign ~= thatsign then
-      return thissign > thatsign and 1 or -1
-   end
+   return comparesignmagnitudes(thissign, thismag, thatsign, thatmag)
+end
+
+
+--[==[
+-- Compares the values of the two operable values and returns the sign of the
+-- difference.
+--
+-- result < 0   ->   thisvalue < thatvalue
+-- result > 0   ->   thisvalue > thatvalue
+-- result = 0   ->   thisvalue = thatvalue
+--]==]
+function compare(thisvalue, thatvalue)
+   local thistype, thattype, reason
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "comparison")
+   
+   assert(thistype, reason)
    
    
-   --[[ Otherwise, compare the magnitudes ]]
-   return comparemagnitudes(thismag, thatmag)
+   return comparevalues(thisvalue, thistype, thatvalue, thattype)
 end
 
 
@@ -2622,13 +2641,17 @@ end
 -- by default if either value is non-operable.
 --]==]
 function equals(thisvalue, thatvalue)
+   local thistype, thattype, _
+         = arebothvalidoperablevalues(thisvalue, thatvalue, "")
+   
+   
    --[[ If either are not operable, then I can't be sure they're equal ]]
-   if not arebothvalidoperablevalues(thisvalue, thatvalue, "") then
+   if not thistype then
       return false
    end
    
    
-   return compare(thisvalue, thatvalue) == 0
+   return comparevalues(thisvalue, thistype, thatvalue, thattype) == 0
 end
 
 
