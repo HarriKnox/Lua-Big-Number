@@ -739,8 +739,8 @@ end
 
 --[==[
 -- Tests if the passed value is either a integer, biginteger, or word-array
--- that the library can use. Returns the type of the value if it is, or `nil`
--- if it isn't.
+-- that the library can use. Returns the type of the value if it is operable or
+-- `nil` if it isn't.
 --]==]
 function isvalidoperablevalue(value)
    local valuetype = gettype(value)
@@ -756,8 +756,8 @@ end
 
 --[==[
 -- Tests if the passed values are both operable values and fails if either are
--- not. Returns the types of the values if they are, or `nil` for both if they
--- aren't.
+-- not. Returns the types of the values if they are operable, or `nil` for both
+-- if either are not.
 --
 -- The third return value (the reason it failed) will incorporate the
 -- operation attempted, thus the `operation` parameter is a string of what the
@@ -776,15 +776,15 @@ function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
    end
    
    
-   return nil, "attempt to perform " .. operation .. " on "
+   return nil, nil, "attempt to perform " .. operation .. " on "
          .. thistype .. " and " .. thattype
 end
 
 
 --[==[
 -- Tests if the first value is a biginteger and the second value is an operable
--- value. Returns the type of the second value if they are, or `nil` if they
--- aren't.
+-- value. Returns the type of the second value if they are operable or `nil` if
+-- either are not operable.
 --
 -- The second return value (the reason it failed) will incorporate the
 -- operation attempted, thus the `operation` parameter is a string of what the
