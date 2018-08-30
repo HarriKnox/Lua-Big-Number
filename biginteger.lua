@@ -2104,6 +2104,40 @@ end
 
 
 --[==[
+-- Returns a word-array that equals the value of the passed int.
+--]==]
+function getintegerwordarray(int)
+   local mag = getintegermagnitude(int)
+   
+   
+   if int > 0 then
+      if mag[1] >= negativemask then
+         tableinsert(mag, 1, 0)
+      end
+   
+   elseif int < 0 then
+      if mag[2] then
+         if mag[2] == 0 then
+            mag[1] = bitnot(mag[1]) + 1
+         else
+            mag[1] = bitnot(mag[1])
+            mag[2] = bitnot(mag[2]) + 1
+         end
+      else
+         mag[1] = bitnot(mag[1]) + 1
+      end
+      
+      if mag[1] < negativemask then
+         tableinsert(mag, 1, 0xffffffff)
+      end
+   end
+   
+   
+   return mag
+end
+
+
+--[==[
 -- Returns a word-array that equals the value of the passed thing.
 --
 -- If the thing is already a word-array then this returns a copy of it.
