@@ -2138,18 +2138,25 @@ end
 
 
 --[==[
--- Returns a word-array that equals the value of the passed thing.
+-- Returns a word-array that equals the value of the passed value.
 --
--- If the thing is already a word-array then this returns a copy of it.
+-- If the value is already a word-array then this returns a copy of it.
 --]==]
-function getwordarray(thing, thingtype)
-   if thingtype == 'word-array' then
-      return copyarray(thing)
+function getwordarray(value, valuetype)
+   --[[ Figure out what type the value is and call the associated function ]]
+   if valuetype == 'biginteger' then
+      return getsignmagnitudewordarray(value.sign, value.magnitude)
+      
+   elseif valuetype == 'word-array' then
+      return copyarray(value)
+      
+   elseif valuetype == 'integer' then
+      return getintegerwordarray(value)
    end
    
    
-   return gettrustedsignmagnitudewordarray(
-         getsignandmagnitude(thing, thingtype))
+   --[[ Precautionary error that should not run ]]
+   error("cannot obtain sign and magnitude of " .. valuetype)
 end
 
 
