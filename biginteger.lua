@@ -2071,39 +2071,35 @@ end
 --]============]
 
 --[==[
--- Destructively converts the magnitude to a word-array with the given sign.
---
--- This is for internal use only and is really only here to avoid repeated
--- code.
+-- Returns a word-array with the value of the magnitude and the passed sign.
 --]==]
-function gettrustedsignmagnitudewordarray(sign, mag)
+function getsignmagnitudewordarray(sign, mag)
+   local wordarray
+   
+   
    if sign == -1 then
-      --[[ Word-array needs to be negative, so negate `mag` ]]
-      destructivenegatewordarray(mag)
+      --[[ Word-array needs to be negative, so negate (surprisingly) ]]
+      wordarray = copyandnegatewordarray(mag)
       
       
-      --[[ Ensure the word-array is negative ]]
-      if mag[1] < negativemask then
-         tableinsert(mag, 1, 0xffffffff)
+      --[[ Ensure the word-array will be interpreted as negative ]]
+      if wordarray[1] < negativemask then
+         tableinsert(wordarray, 1, 0xffffffff)
       end
    
-   elseif sign == 1 then
-      --[[ Ensure the word-array is positive ]]
-      if mag[1] >= negativemask then
-         tableinsert(mag, 1, 0)
+   else
+      --[[ Otherwise return a copy ]]
+      wordarray = copyarray(mag)
+      
+      
+      --[[ Ensure the word-array will be interpreted as positive ]]
+      if wordarray[1] and wordarray[1] >= negativemask then
+         tableinsert(wordarray, 1, 0)
       end
    end
    
    
-   return mag
-end
-
-
---[==[
--- Returns a word-array with the value of the magnitude and the passed sign.
---]==]
-function getsignmagnitudewordarray(sign, mag)
-   return gettrustedsignmagnitudewordarray(sign, copyarray(mag))
+   return wordarray
 end
 
 
