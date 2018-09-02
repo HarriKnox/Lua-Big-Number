@@ -305,24 +305,21 @@ local powercache = {
 --  * Not a float
 --]==]
 function isvalidinteger(int)
-   local r = "not a valid integer: "
-   
-   
    --[[ Check that the value is actually a number ]]
    if type(int) ~= 'number' then
-      return false, r .. "it's a " .. type(int)
+      return false, "not a valid integer: it's a " .. type(int)
    end
    
    
    --[[ Now check that it's in range ]]
    if int >= maxinteger or int <= -maxinteger then
-      return false, r .. "outside allowable range"
+      return false, "not a valid integer: outside allowable range"
    end
    
    
    --[[ Now check that it's not a float ]]
    if int % 1 ~= 0 then
-      return false, r .. "it's a float"
+      return false, "not a valid integer: it's a float"
    end
    
    
@@ -337,24 +334,21 @@ end
 --  * Not a float
 --]==]
 function isvalidbitindex(int)
-   local r = "not a valid bit-index: "
-   
-   
    --[[ Check that the value is actually a number ]]
    if type(int) ~= 'number' then
-      return false, r .. "it's a " .. type(int)
+      return false, "not a valid bit-index: it's a " .. type(int)
    end
    
    
    --[[ Now check that it's in range ]]
    if int >= 0 or int <= -maxinteger then
-      return false, r .. "outside allowable range"
+      return false, "not a valid bit-index: outside allowable range"
    end
    
    
    --[[ Now check that it's not a float ]]
    if int % 1 ~= 0 then
-      return false, r .. "it's a float"
+      return false, "not a valid bit-index: it's a float"
    end
    
    
@@ -369,30 +363,27 @@ end
 --  * Not a float
 --]==]
 function isvalidint(int)
-   local r = "not a valid int: "
-   
-   
    --[[ First, check that it is a number ]]
    if type(int) ~= 'number' then
-      return false, r .. "it's a " .. type(int)
+      return false, "not a valid int: it's a " .. type(int)
    end
    
    
    --[[ Ensure that it doesn't exceed 32 bits ]]
    if int > 0xffffffff then
-      return false, r .. "outside 32 bits"
+      return false, "not a valid int: outside 32 bits"
    end
    
    
    --[[ Ensure that it's not negative ]]
    if int < 0 then
-      return false, r .. "negative"
+      return false, "not a valid int: negative"
    end
    
    
    --[[ Ensure that it's not a float ]]
    if int % 1 ~= 0 then
-      return false, r .. "it's a float"
+      return false, "not a valid int: it's a float"
    end
    
    
@@ -412,14 +403,13 @@ end
 -- [-4294967295, 4294967295].
 --]==]
 function isvalidabsolute32bitinteger(int)
-   local r = "not a valid absolute 32-bit integer: "
    
    local ok, reason
    
    
    --[[ Check if it's a number ]]
    if type(int) ~= 'number' then
-      return false, r .. "it's a " .. type(int)
+      return false, "not a valid absolute 32-bit integer: it's a " .. type(int)
    end
    
    
@@ -427,7 +417,7 @@ function isvalidabsolute32bitinteger(int)
    ok, reason = isvalidint(abs(int))
    
    
-   return ok, r .. reason
+   return ok, "not a valid absolute 32-bit integer: " .. reason
 end
 
 
@@ -441,21 +431,18 @@ end
 -- the length operator (#) in a `for i = 1, #array do` loop.
 --]==]
 function isvalidwordarray(array)
-   local r = "not a valid word-array: "
-   
    local ok, reason
    
    
    --[[ First check that it's a table ]]
    if type(array) ~= 'table' then
-      return false, r .. "not an array (table): it's a " .. type(array)
+      return false, "not a valid word-array: not an array (table): it's a " .. type(array)
    end
    
    
    --[[ Next, if it could be terated as a biginteger, then fail ]]
    if isvalidbiginteger(array) then
-      return false, r
-            .. "it's a biginteger and will not be treated as a word-array"
+      return false, "not a valid word-array: it's a biginteger"
    end
    
    
@@ -465,7 +452,7 @@ function isvalidwordarray(array)
       
       
       if not ok then
-         return false, r .. "element " .. i .. " " .. reason
+         return false, "not a valid word-array: element " .. i .. " " .. reason
       end
    end
    
@@ -480,8 +467,6 @@ end
 --  * No leading zeros
 --]==]
 function isvalidmagnitude(mag)
-   local r = "not a valid magnitude: "
-   
    local ok, reason
    
    
@@ -489,19 +474,19 @@ function isvalidmagnitude(mag)
    ok, reason = isvalidwordarray(mag)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid magnitude: " .. reason
    end
    
    
    --[[ Ensure the length of the array doesn't exceed the maximum length ]]
    if #mag >= maxmagnitudelength then
-      return false, r .. "too large (overflow)"
+      return false, "not a valid magnitude: too large"
    end
    
    
    --[[ Ensure there are no leading zeros ]]
    if mag[1] == 0 then
-      return false, r .. "has leading zeros"
+      return false, "not a valid magnitude: has leading zeros"
    end
    
    
@@ -515,18 +500,15 @@ end
 --  * Either -1, 0, or 1
 --]==]
 function isvalidsign(sign)
-   local r = "not a valid sign: "
-   
-   
    --[[ Check that the value is a number ]]
    if type(sign) ~= 'number' then
-      return false, r .. "not a number: it's a " .. type(sign)
+      return false, "not a valid sign: not a number: it's a " .. type(sign)
    end
    
    
    --[[ Use a super-complex algorithm to see if it equals -1, 0, or +1 ]]
    if sign ~= -1 and sign ~= 0 and sign ~= 1 then
-      return false, r .. "not in {-1, 0, 1}"
+      return false, "not a valid sign: not in {-1, 0, 1}"
    end
    
    
@@ -548,8 +530,6 @@ end
 -- test later.
 --]==]
 function isvalidsignmagnitudecombination(sign, mag)
-   local r = "not a valid sign-magnitude pair: "
-   
    local ok, reason
    
    
@@ -557,7 +537,7 @@ function isvalidsignmagnitudecombination(sign, mag)
    ok, reason = isvalidsign(sign)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid sign-magnitude pair: " .. reason
    end
    
    
@@ -565,19 +545,21 @@ function isvalidsignmagnitudecombination(sign, mag)
    ok, reason = isvalidmagnitude(mag)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid sign-magnitude pair: " .. reason
    end
    
    
    --[[ A value that is not positive nor negative nor zero isn't supported ]]
    if sign == 0 and #mag ~= 0 then
-      return false, r .. "non-zero magnitude with zero sign"
+      return false,
+            "not a valid sign-magnitude pair: non-zero mag with zero sign"
    end
    
    
    --[[ Positive and negative zeros aren't allowed to ensure uniqueness ]]
    if sign ~= 0 and #mag == 0 then
-      return false, r .. "non-zero sign with zero magnitude"
+      return false,
+            "not a valid sign-magnitude pair: non-zero sign with zero mag"
    end
    
    
@@ -593,14 +575,13 @@ end
 --  * Contains a valid sign-magnitude pair
 --]==]
 function isvalidbiginteger(bigint)
-   local r = "not a valid biginteger: "
-   
    local ok, reason
    
    
    --[[ Make sure the value is a table (Lua's object) ]]
    if type(bigint) ~= 'table' then
-      return false, r .. "not a table: it's a " .. type(bigint)
+      return false,
+            "not a valid biginteger: not a table: it's a " .. type(bigint)
    end
    
    
@@ -608,7 +589,7 @@ function isvalidbiginteger(bigint)
    ok, reason = isvalidsign(bigint.sign)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid biginteger: " .. reason
    end
    
    
@@ -616,7 +597,7 @@ function isvalidbiginteger(bigint)
    ok, reason = isvalidmagnitude(bigint.magnitude)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid biginteger: " .. reason
    end
    
    
@@ -624,7 +605,7 @@ function isvalidbiginteger(bigint)
    ok, reason = isvalidsignmagnitudecombination(bigint.sign, bigint.magnitude)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid biginteger: " .. reason
    end
    
    
@@ -638,8 +619,6 @@ end
 --  * In the range [2, 36]
 --]==]
 function isvalidradix(radix)
-   local r = "not a valid radix: "
-   
    local ok, reason
    
    
@@ -647,13 +626,13 @@ function isvalidradix(radix)
    ok, reason = isvalidinteger(radix)
    
    if not ok then
-      return false, r .. reason
+      return false, "not a valid radix: " .. reason
    end
    
    
    --[[ Check that it's in the bounds of 2 <= r <= 36 ]]
    if radix < 2 or radix > 36 then
-      return false, r .. "outside allowable range"
+      return false, "not a valid radix: outside allowable range"
    end
    
    
@@ -667,7 +646,6 @@ end
 --  * Contains only characters that are valid with the given radix
 --]==]
 function isvalidstringnumber(str, radix)
-   local r = "not a valid string-number: "
    local highest = radix - 1
    
    local set, index, c, _
@@ -675,13 +653,14 @@ function isvalidstringnumber(str, radix)
    
    --[[ First make sure the thing is a string ]]
    if type(str) ~= 'string' then
-      return false, r .. "not a string: it's a" .. type(str)
+      return false,
+            "not a valid string-number: not a string: it's a" .. type(str)
    end
    
    
    --[[ See if the string has no digits in it and fail if so ]]
    if stringmatch(str, '^[-+]?$') then
-      return false, r .. "zero-length string"
+      return false, "not a valid string-number: zero-length string"
    end
    
    
