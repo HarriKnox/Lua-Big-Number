@@ -2123,7 +2123,6 @@ end
 function constructorinteger(int)
    assert(isvalidinteger(int))
    
-   
    return createbiginteger(getintegersignandmagnitude(int))
 end
 
@@ -2137,7 +2136,6 @@ function constructorsignmagnitudetrusted(sign, mag)
    assert(isvalidmagnitude(mag))
    assert(isvalidsignmagnitudecombination(sign, mag))
    
-   
    return createbiginteger(sign, mag)
 end
 
@@ -2147,7 +2145,6 @@ end
 --]==]
 function constructorsignmagnitude(sign, mag)
    assert(isvalidwordarray(mag))
-   
    
    return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
 end
@@ -2567,9 +2564,7 @@ function compare(thisvalue, thatvalue)
    local thistype, thattype, reason
          = arebothvalidoperablevalues(thisvalue, thatvalue, "comparison")
    
-   
    assert(thistype, reason)
-   
    
    return comparevalues(thisvalue, thistype, thatvalue, thattype)
 end
@@ -2613,7 +2608,6 @@ end
 function minimum(...)
    local list = {...}
    local valuetype, reason = isvalidoperablevalue(list[1])
-   
    
    assert(valuetype, "bad argument #1: " .. reason)
    
@@ -2659,7 +2653,6 @@ function maximum(...)
    local list = {...}
    local valuetype, reason = isvalidoperablevalue(list[1])
    
-   
    assert(valuetype, "bad argument #1: " .. reason)
    
    
@@ -2704,7 +2697,6 @@ end
 function minmax(...)
    local list = {...}
    local valuetype, reason = isvalidoperablevalue(list[1])
-   
    
    assert(valuetype, "bad argument #1: " .. reason)
    
@@ -2781,7 +2773,6 @@ end
 --]==]
 function bitwisenot(value)
    local valuetype, reason = isvalidoperablevalue(value)
-   
    
    assert(valuetype, reason)
    
