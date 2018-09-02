@@ -403,10 +403,6 @@ end
 -- [-4294967295, 4294967295].
 --]==]
 function isvalidabsolute32bitinteger(int)
-   
-   local ok, reason
-   
-   
    --[[ Check if it's a number ]]
    if type(int) ~= 'number' then
       return false, "not a valid absolute 32-bit integer: it's a " .. type(int)
@@ -414,7 +410,7 @@ function isvalidabsolute32bitinteger(int)
    
    
    --[[ Now check if the absolute value is an int ]]
-   ok, reason = isvalidint(abs(int))
+   local ok, reason = isvalidint(abs(int))
    
    
    return ok, "not a valid absolute 32-bit integer: " .. reason
@@ -431,9 +427,6 @@ end
 -- the length operator (#) in a `for i = 1, #array do` loop.
 --]==]
 function isvalidwordarray(array)
-   local ok, reason
-   
-   
    --[[ First check that it's a table ]]
    if type(array) ~= 'table' then
       return false, "not a valid word-array: not an array (table): it's a " .. type(array)
@@ -448,7 +441,7 @@ function isvalidwordarray(array)
    
    --[[ Now test every element from 1 to #array to ensure each is an int ]]
    for i = 1, #array do
-      ok, reason = isvalidint(array[i])
+      local ok, reason = isvalidint(array[i])
       
       
       if not ok then
@@ -467,11 +460,8 @@ end
 --  * No leading zeros
 --]==]
 function isvalidmagnitude(mag)
-   local ok, reason
-   
-   
    --[[ Make sure the magnitude is an actual array ]]
-   ok, reason = isvalidwordarray(mag)
+   local ok, reason = isvalidwordarray(mag)
    
    if not ok then
       return false, "not a valid magnitude: " .. reason
@@ -530,11 +520,8 @@ end
 -- test later.
 --]==]
 function isvalidsignmagnitudecombination(sign, mag)
-   local ok, reason
-   
-   
    --[[ Check that the sign is a proper sign ]]
-   ok, reason = isvalidsign(sign)
+   local ok, reason = isvalidsign(sign)
    
    if not ok then
       return false, "not a valid sign-magnitude pair: " .. reason
@@ -575,9 +562,6 @@ end
 --  * Contains a valid sign-magnitude pair
 --]==]
 function isvalidbiginteger(bigint)
-   local ok, reason
-   
-   
    --[[ Make sure the value is a table (Lua's object) ]]
    if type(bigint) ~= 'table' then
       return false,
@@ -586,7 +570,7 @@ function isvalidbiginteger(bigint)
    
    
    --[[ Make sure there exists a bigint.sign and that it is a sign ]]
-   ok, reason = isvalidsign(bigint.sign)
+   local ok, reason = isvalidsign(bigint.sign)
    
    if not ok then
       return false, "not a valid biginteger: " .. reason
@@ -619,11 +603,8 @@ end
 --  * In the range [2, 36]
 --]==]
 function isvalidradix(radix)
-   local ok, reason
-   
-   
    --[[ Make sure it's a number ]]
-   ok, reason = isvalidinteger(radix)
+   local ok, reason = isvalidinteger(radix)
    
    if not ok then
       return false, "not a valid radix: " .. reason
@@ -646,11 +627,6 @@ end
 --  * Contains only characters that are valid with the given radix
 --]==]
 function isvalidstringnumber(str, radix)
-   local highest = radix - 1
-   
-   local set, index, c, _
-   
-   
    --[[ First make sure the thing is a string ]]
    if type(str) ~= 'string' then
       return false,
@@ -668,6 +644,9 @@ function isvalidstringnumber(str, radix)
    -- Use the highest valid value of the radix to determine the upper bound to
    -- the set of characters.
    --]]
+   local highest = radix - 1
+   local set
+   
    if highest < 10 then
       set = '0-' .. tostring(highest)
    
@@ -690,7 +669,8 @@ function isvalidstringnumber(str, radix)
    
    
    --[[ Attempt to match a non-digit character ]]
-   _, index, c = stringfind(str, '^[-+]?[' .. set .. ']*([^' .. set .. '])')
+   local _, index, c = stringfind(str,
+         '^[-+]?[' .. set .. ']*([^' .. set .. '])')
    
    return false,
          "not a valid string-number: contains non-digit character at index "
@@ -747,10 +727,8 @@ end
 -- operation was (such as "addition" or "multiplication").
 --]==]
 function arebothvalidoperablevalues(thisvalue, thatvalue, operation)
-   local thistype, thattype
-   
-   thistype = gettype(thisvalue)
-   thattype = gettype(thatvalue)
+   local thistype = gettype(thisvalue)
+   local thattype = gettype(thatvalue)
    
    
    --[[ Check if both values are operable values ]]
@@ -774,8 +752,6 @@ end
 -- operation was (such as "addition" or "multiplication").
 --]==]
 function arevalidbigintegerandoperablevalue(bigint, value, operation)
-   local ok, reason
-   
    local biginttype = gettype(bigint)
    local valuetype = gettype(value)
    
@@ -933,17 +909,14 @@ end
 -- multiplications) for speed.
 --]==]
 function numberofleadingzeros(int)
-   local n
-   
-   
    --[[ Special case that is easy to check ]]
    if int == 0 then
       return 32
    end
    
    
-   --[[ Initialize 'n' to 0 ]]
-   n = 0
+   --[[ 'n' is the number of leading zeros ]]
+   local n = 0
    
    
    --[[ Check if the highest 16 bits are zeros ]]
@@ -995,21 +968,18 @@ end
 -- because this function is rarely called in comparison to its counterpart.
 --]==]
 function numberoftrailingzeros(int)
-   local y, n
-   
-   
    --[[ Quick check for zero ]]
    if int == 0 then
       return 32
    end
    
    
-   --[[ Initialize 'n' ]]
-   n = 32
+   --[[ 'n' is the number of trailing zeros ]]
+   local n = 32
    
    
    --[[ Check if lowest 16 bits are zeros ]]
-   y = bitleftshift(int, 16)
+   local y = bitleftshift(int, 16)
    
    if y ~= 0 then
       n = n - 16
@@ -1159,17 +1129,17 @@ end
 -- Clears `array` and copies into it the entries of `newvalues`.
 --]==]
 function clearandcopyintoarray(array, newvalues)
-   local arraylength = #array
+   --[[ Copy the values in from the start ]]
    local newvalueslength = #newvalues
    
-   
-   --[[ Copy the values in from the start ]]
    for i = 1, newvalueslength do
       array[i] = newvalues[i]
    end
    
    
    --[[ If `array` was longer, clear the remaining entries ]]
+   local arraylength = #array
+   
    for i = newvalueslength + 1, arraylength do
       array[i] = nil
    end
@@ -1216,12 +1186,6 @@ end
 -- two arrays, even in the cases where the array isn't split.
 --]==]
 function splitarray(mag, length)
-   local maglength = #mag
-   local upperlength = maglength - length
-   
-   local upper, lower
-   
-   
    --[[ If the length is zero/negative, 'lower' is empty ]]
    if length <= 0 then
       return copyarray(mag), {}
@@ -1229,17 +1193,21 @@ function splitarray(mag, length)
    
    
    --[[ If the length is the entire array or more, 'upper' is empty ]]
+   local maglength = #mag
+   
    if length >= maglength then
       return {}, copyarray(mag)
    end
    
    
    --[[ Initialize the sub-arrays ]]
-   upper = {}
-   lower = {}
+   local upper = {}
+   local lower = {}
    
    
    --[[ Copy the first values into 'upper' ]]
+   local upperlength = maglength - length
+   
    for i = 1, upperlength do
       upper[i] = mag[i]
    end
@@ -1333,15 +1301,11 @@ end
 --]==]
 function splitmagtoomcook(mag, size)
    local maglength = #mag
-   local lowersize = min(size, maglength)
-   local middlesize = min(size, maglength - lowersize)
-   local uppersize = min(size, maglength - lowersize - middlesize)
-   
-   local lowerslice, middleslice, upperslice
    
    
    --[[ Copy the least-significant slice ]]
-   lowerslice = {}
+   local lowerslice = {}
+   local lowersize = min(size, maglength)
    
    for i = 0, lowersize - 1 do
       lowerslice[lowersize - i] = mag[maglength - i]
@@ -1349,7 +1313,8 @@ function splitmagtoomcook(mag, size)
    
    
    --[[ Copy the middle slice ]]
-   middleslice = {}
+   local middleslice = {}
+   local middlesize = min(size, maglength - lowersize)
    
    for i = 0, middlesize - 1 do
       middleslice[middlesize - i] = mag[maglength - lowersize - i]
@@ -1357,7 +1322,8 @@ function splitmagtoomcook(mag, size)
    
    
    --[[ Copy the most significant slice ]]
-   upperslice = {}
+   local upperslice = {}
+   local uppersize = min(size, maglength - lowersize - middlesize)
    
    for i = 0, uppersize - 1 do
       upperslice[uppersize - i] = mag[maglength - lowersize - middlesize - i]
@@ -1375,12 +1341,9 @@ end
 -- Destructively sign extends the provided word-array.
 --]==]
 function signextendwordarray(array, newlength)
-   local length = #array
-   local signwords = newlength - length
-   local signint = getwordarraysignword(array[1])
-   
-   
    --[[ If no extra words, then exit ]]
+   local signwords = newlength - #array
+   
    if signwords <= 0 then
       return array
    end
@@ -1393,6 +1356,8 @@ function signextendwordarray(array, newlength)
    
    
    --[[ Prepend the sign-words at the beginning ]]
+   local signint = getwordarraysignword(array[1])
+   
    for i = 1, signwords do
       array[i] = signint
    end
@@ -1417,9 +1382,6 @@ end
 function stripleadingzerosto(source, destination)
    local length = #source
    
-   local difference
-   local endpoint
-   
    
    --[[
    -- Find the number of leading zeros. If the entire array was zeros, the 'if'
@@ -1427,7 +1389,7 @@ function stripleadingzerosto(source, destination)
    -- `difference` is initialized to `length` for this case where the whole
    -- array needs to be stripped.
    --]]
-   difference = length
+   local difference = length
    
    
    for i = 1, length do
@@ -1453,7 +1415,7 @@ function stripleadingzerosto(source, destination)
    
    
    --[[ Calculate the endpoint of the destination array ]]
-   endpoint = length - difference
+   local endpoint = length - difference
    
    
    --[[ Copy all the non-leading-zero words shifted up ]]
@@ -1510,11 +1472,10 @@ end
 --]==]
 function negatewordarrayto(source, destination)
    local length = #source
-   local addend
    
    
    --[[ Initialize `addend` as the 1 to add after flipping the bits ]]
-   addend = 1
+   local addend = 1
    
    
    --[[ Loop through each word, flip the bits, and add 1 ]]
@@ -1611,17 +1572,10 @@ end
 -- the first one (`thismag`).
 --]==]
 function destructiveaddmagnitudes(thismag, thatmag)
-   local thislength, thatlength, longerlength
-   local carry
-   
-   
    --[[ Cache the lengths of the inputs; output will be the longest length ]]
-   thislength = #thismag
-   thatlength = #thatmag
-   longerlength = max(thislength, thatlength)
-   
-   
-   carry = 0
+   local thislength = #thismag
+   local thatlength = #thatmag
+   local longerlength = max(thislength, thatlength)
    
    
    --[[
@@ -1630,6 +1584,8 @@ function destructiveaddmagnitudes(thismag, thatmag)
    -- and put the resulting word in `thismag` at the index with respect to the
    -- longer length.
    --]]
+   local carry = 0
+   
    for i = 0, longerlength - 1 do
       carry, thismag[longerlength - i] = splitlong(
             --[[ If the word is above the most significant word, say it's 0 ]]
@@ -1706,14 +1662,8 @@ end
 -- https://en.wikipedia.org/wiki/Subtraction#Austrian_method
 --]==]
 function destructivesubtractmagnitudes(thismag, thatmag)
-   local borrow, difference
-   local larger, largerlength
-   local smaller, smallerlength
-   local cmp
-   
-   
    --[[ Get the larger and smaller of the two magnitudes ]]
-   cmp = comparemagnitudes(thismag, thatmag)
+   local cmp = comparemagnitudes(thismag, thatmag)
    
    if cmp == 0 then
       --[[ Shortcut return if they equal ]]
@@ -1732,18 +1682,17 @@ function destructivesubtractmagnitudes(thismag, thatmag)
    
    
    --[[ Cache the lengths ]]
-   largerlength = #larger
-   smallerlength = #smaller
-   
-   
-   borrow = 0
-   difference = 0
+   local largerlength = #larger
+   local smallerlength = #smaller
    
    
    --[[
    -- Word-by-word, from the least significant, find the difference between
    -- corresponding words of the two magnitudes and put the result in thismag
    --]]
+   local borrow = 0
+   local difference = 0
+   
    for i = 0, largerlength - 1 do
       difference = (larger[largerlength - i] or 0) -
                    (smaller[smallerlength - i] or 0) -
@@ -2218,14 +2167,11 @@ end
 -- BigInteger constructors.
 --]==]
 function constructorbitsrng(bitlength, randomnumbergenerator)
-   local mag = {}
-   local numberofwords, excessbits
-   
-   
    assert(isvalidbitindex(bitlength))
    
    
-   numberofwords = floor((bitlength + 31) / 32)
+   local numberofwords = floor((bitlength + 31) / 32)
+   local mag = {}
    
    for i = 1, numberofwords do
       --[[
@@ -2238,7 +2184,7 @@ function constructorbitsrng(bitlength, randomnumbergenerator)
    
    
    --[[ Truncate the highest word to the number of extra bits needed ]]
-   excessbits = bitlength % 32
+   local excessbits = bitlength % 32
    
    if excessbits ~= 0 then
       mag[1] = bitand(mag[1], 2 ^ excessbits - 1)
@@ -2256,14 +2202,11 @@ end
 -- Constructs a biginteger from a trusted word-array. Used internally only.
 --]==]
 function constructorwordarraytrusted(array)
-   local sign
-   
-   
    assert(isvalidwordarray(array))
    
    
    --[[ Use the word-array as the magnitude object ]]
-   sign = getwordarraysign(array)
+   local sign = getwordarraysign(array)
    
    
    --[[ Negate if needed, but otherwise strip any leading zeros ]]
@@ -2292,12 +2235,10 @@ end
 -- Used internally only for construction with strings.
 --]==]
 function destructivemultiplyandadd(mag, factor, addend)
+   --[[ Run the multiplication on the magnitude ]]
    local maglength = #mag
-   local product = 0
    local carry = 0
    
-   
-   --[[ Run the multiplication on the magnitude ]]
    for i = maglength, 1, -1 do
       carry, mag[i] = intmultiplyint(factor, mag[i], carry)
    end
@@ -2345,47 +2286,40 @@ end
 -- value in the accumulator by the base and add the value of the group.
 --]==]
 function constructorstringradix(str, radix)
-   local mag = {}
-   local strlength = #str
-   local sign, numberofdigits, digitsperintegerradix
-   local numberofbits, numberofwords
-   local firstgrouplength, superradix, group, groupvalue
-   local _, cursor, endcursor
-   
-   
    assert(isvalidradix(radix))
    assert(isvalidstringnumber(str, radix))
    
    
    --[[ Shortcut return if the string is all zeros ]]
    if stringmatch(str, '^[-+]?0+$') then
-      return createbiginteger(mag, 0)
+      return createbiginteger({}, 0)
    end
    
    
    --[[ Get the sign of the integer in the string ]]
-   sign = stringmatch(str, '^-') and -1 or 1
+   local sign = stringmatch(str, '^-') and -1 or 1
    
    
    --[[ Skip all leading zeros and get the starting index of the rest ]]
-   _, cursor = stringfind(str, '^[-+]?0*')
+   local _, cursor = stringfind(str, '^[-+]?0*')
    cursor = cursor + 1
    
    
    --[[ Calculate the number of remaining digits of the string ]]
-   numberofdigits = strlength - cursor + 1
+   local strlength = #str
+   local numberofdigits = strlength - cursor + 1
    
    
    --[[ Estimate whether the number would cause the biginteger to overflow ]]
-   numberofbits = floor(numberofdigits * bitsperdigit[radix] / 1024) + 1
+   local numberofbits = floor(numberofdigits * bitsperdigit[radix] / 1024) + 1
    
    assert(numberofbits + 31 <= maxinteger,
          "biginteger would overflow supported range")
    
    
    --[[ Cache the values for quick access later ]]
-   digitsperintegerradix = digitsperinteger[radix]
-   superradix = intradix[radix]
+   local digitsperintegerradix = digitsperinteger[radix]
+   local superradix = intradix[radix]
    
    
    --[[
@@ -2404,13 +2338,15 @@ function constructorstringradix(str, radix)
    --     ^
    --     first group
    --]]
-   firstgrouplength = numberofdigits % digitsperintegerradix
+   local firstgrouplength = numberofdigits % digitsperintegerradix
    
    
    --[[ Process first group if there's an uneven number of digits ]]
+   local mag = {}
+   
    if firstgrouplength ~= 0 then
       --[[ Get the end index of the group ]]
-      endcursor = cursor + firstgrouplength
+      local endcursor = cursor + firstgrouplength
       
       
       --[[ Grab the substring, get the number value, and store it ]]
@@ -2425,7 +2361,7 @@ function constructorstringradix(str, radix)
    --[[ Process remaining groups ]]
    while cursor <= strlength do
       --[[ Get the end index of the group ]]
-      endcursor = cursor + digitsperintegerradix
+      local endcursor = cursor + digitsperintegerradix
       
       
       --[[ Grab the substring, get the number value, and add it ]]
@@ -2596,10 +2532,6 @@ end
 -- Compares the two values after they have been checked by validity functions.
 --]==]
 function comparevalues(thisvalue, thistype, thatvalue, thattype)
-   local thissign, thismag
-   local thatsign, thatmag
-   
-   
    --[[
    -- Shortcut return
    --
@@ -2615,8 +2547,8 @@ function comparevalues(thisvalue, thistype, thatvalue, thattype)
    
    
    --[[ Get the signs and magnitudes of each value ]]
-   thissign, thismag = getsignandmagnitude(thisvalue, thistype)
-   thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
+   local thissign, thismag = getsignandmagnitude(thisvalue, thistype)
+   local thatsign, thatmag = getsignandmagnitude(thatvalue, thattype)
    
    
    return comparesignmagnitudes(thissign, thismag, thatsign, thatmag)
@@ -2680,8 +2612,6 @@ end
 --]==]
 function minimum(...)
    local list = {...}
-   local smallestsign, smallestmag, smallestindex
-   local valuesign, valuemag
    local valuetype, reason = isvalidoperablevalue(list[1])
    
    
@@ -2689,13 +2619,13 @@ function minimum(...)
    
    
    --[[ Keep the first value as our current smallest ]]
-   smallestsign, smallestmag = getsignandmagnitude(list[1], valuetype)
-   smallestindex = 1
+   local smallestsign, smallestmag = getsignandmagnitude(list[1], valuetype)
+   local smallestindex = 1
    
    
    for i = 2, #list do
       --[[ For each remaining argument, validate first ]]
-      valuetype, reason = isvalidoperablevalue(list[i])
+      local valuetype, reason = isvalidoperablevalue(list[i])
       
       assert(valuetype, "bad argument #" .. i .. ": " .. reason)
       
@@ -2727,8 +2657,6 @@ end
 --]==]
 function maximum(...)
    local list = {...}
-   local largestsign, largestmag, largestindex
-   local valuesign, valuemag
    local valuetype, reason = isvalidoperablevalue(list[1])
    
    
@@ -2736,8 +2664,8 @@ function maximum(...)
    
    
    --[[ Keep the first value as our current largest ]]
-   largestsign, largestmag = getsignandmagnitude(list[1], valuetype)
-   largestindex = 1
+   local largestsign, largestmag = getsignandmagnitude(list[1], valuetype)
+   local largestindex = 1
    
    
    for i = 2, #list do
@@ -2748,7 +2676,7 @@ function maximum(...)
       
       
       --[[ Get the sign and magnitude and compare to the current largest ]]
-      valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
+      local valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
       
       if comparesignmagnitude(
             valuesign, valuemag,
@@ -2775,9 +2703,6 @@ end
 --]==]
 function minmax(...)
    local list = {...}
-   local smallestsign, smallestmag, smallestindex
-   local largestsign, largestmag, largestindex
-   local valuesign, valuemag
    local valuetype, reason = isvalidoperablevalue(list[1])
    
    
@@ -2785,11 +2710,11 @@ function minmax(...)
    
    
    --[[ Keep the first value as our current smallest and largest ]]
-   smallestsign, smallestmag = getsignandmagnitude(list[1], valuetype)
-   smallestindex = 1
+   local smallestsign, smallestmag = getsignandmagnitude(list[1], valuetype)
+   local smallestindex = 1
    
-   largestsign, largestmag = smallestsign, smallestmag
-   largestindex = 1
+   local largestsign, largestmag = smallestsign, smallestmag
+   local largestindex = 1
    
    
    for i = 2, #list do
@@ -2800,7 +2725,7 @@ function minmax(...)
       
       
       --[[ Get the sign and magnitude and compare to the current smallest ]]
-      valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
+      local valuesign, valuemag = getsignandmagnitude(list[i], valuetype)
       
       if comparesignmagnitude(
             valuesign, valuemag,
@@ -2855,7 +2780,6 @@ end
 -- in a new biginteger object.
 --]==]
 function bitwisenot(value)
-   local wordarray
    local valuetype, reason = isvalidoperablevalue(value)
    
    
@@ -2863,7 +2787,7 @@ function bitwisenot(value)
    
    
    --[[ Get the word-array and bitnot every word ]]
-   wordarray = getwordarray(value, valuetype)
+   local wordarray = getwordarray(value, valuetype)
 
    for i = 1, #wordarray do
       wordarray[i] = bitnot(wordarray[i])
@@ -2882,14 +2806,12 @@ end
 -- bits and adding 1 to the magnitude to make bitwise-notting quick.
 --]==]
 function mutablebitwisenot(bigint)
-   local mag
-   
    assert(isvalidbiginteger(bigint))
-   
-   mag = bigint.magnitude
    
    
    --[[ No need to perform a bitnot on the whole magnitude ]]
+   local mag = bigint.magnitude
+   
    if bigint.sign == 0 then
       --[[ ~0 == -1 ]]
       bigint.sign = -1
@@ -2930,11 +2852,6 @@ end
 -- the result in a new biginteger value.
 --]==]
 function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
-   local thisarray, thatarray
-   local thislength, thatlength, longerlength
-   local thissignint, thatsignint
-   local destination = {}
-   
    local thistype, thattype, reason
          = arebothvalidoperablevalues(
                thisvalue,
@@ -2945,22 +2862,24 @@ function binarybitwise(thisvalue, thatvalue, bitwisefunction, opname)
    
    
    --[[ Convert to word arrays ]]
-   thisarray = getwordarray(thisvalue, thistype)
-   thatarray = getwordarray(thatvalue, thattype)
+   local thisarray = getwordarray(thisvalue, thistype)
+   local thatarray = getwordarray(thatvalue, thattype)
    
    
    --[[ Cache the lengths and determine the longer length ]]
-   thislength = #thisarray
-   thatlength = #thatarray
-   longerlength = max(thislength, thatlength)
+   local thislength = #thisarray
+   local thatlength = #thatarray
+   local longerlength = max(thislength, thatlength)
    
    
    --[[ Get the sign-words to sign extend the word-arrays ]]
-   thissignint = getwordarraysignword(thisarray)
-   thatsignint = getwordarraysignword(thatarray)
+   local thissignint = getwordarraysignword(thisarray)
+   local thatsignint = getwordarraysignword(thatarray)
    
    
    --[[ Perform the bitwise function on every word, sign-extending if needed ]]
+   local destination = {}
+   
    for i = 0, longerlength - 1 do
       destination[longerlength - i] = bitwisefunction(
             thisarray[thislength - i] or thissignint,
@@ -2980,10 +2899,6 @@ end
 -- negation if this biginteger is negative, or if the result is negative.
 --]==]
 function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
-   local thissignint, thatsignint
-   local thismagnitude, thatwordarray
-   local thislen, thatlen, longerlen
-   local finalsignint
    local thattype, reason
          = arevalidbigintegerandoperablevalue(
                thisbigint,
@@ -2994,15 +2909,15 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    
    
    --[[ Get the word arrays ]]
-   thismagnitude = thisbigint.magnitude
-   thatwordarray = getwordarray(thatvalue, thattype)
+   local thismagnitude = thisbigint.magnitude
+   local thatwordarray = getwordarray(thatvalue, thattype)
    
    
    --[[ Get the sign-words for the input and the result ]]
-   thissignint = getintegersignword(thisbigint.sign)
-   thatsignint = getwordarraysignword(thatwordarray)
+   local thissignint = getintegersignword(thisbigint.sign)
+   local thatsignint = getwordarraysignword(thatwordarray)
    
-   finalsignint = bitwisefunction(thissignint, thatsignint)
+   local finalsignint = bitwisefunction(thissignint, thatsignint)
    
    
    --[[ If the bigint is negative, decrement for two's complement ]]
@@ -3012,9 +2927,9 @@ function mutablebinarybitwise(thisbigint, thatvalue, bitwisefunction, opname)
    
    
    --[[ Get the word array lengths ]]
-   thislen = #thismagnitude
-   thatlen = #thatwordarray
-   longerlen = max(thislen, thatlen)
+   local thislen = #thismagnitude
+   local thatlen = #thatwordarray
+   local longerlen = max(thislen, thatlen)
    
    
    --[[ Branch on whether we need to negate this magnitude or the result ]]
