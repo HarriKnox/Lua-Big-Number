@@ -670,6 +670,10 @@ function isvalidstringnumber(str, radix)
    --]]
    if highest < 10 then
       set = '0-' .. tostring(highest)
+   
+   elseif highest == 10 then
+      set = '0-9Aa'
+   
    else
       set = '0-9A-' .. stringchar(highest + 55) .. 'a-'
          .. stringchar(highest + 87)
