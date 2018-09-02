@@ -926,10 +926,11 @@ end
 
 
 --[==[
--- Returns the number of leading zeros in the int. This uses one of the
--- Hacker's Delight algorithms featured in HD Figure 5-6. Some optimizing
--- modifications were made (switching the bit-shifts to multiplications) for
--- speed.
+-- Returns the number of leading zeros in the int.
+--
+-- This uses one of the Hacker's Delight algorithms featured in HD Figure 5-6.
+-- Some optimizing modifications were made (switching the bit-shifts to
+-- multiplications) for speed.
 --]==]
 function numberofleadingzeros(int)
    local n
