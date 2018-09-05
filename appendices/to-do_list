@@ -2,8 +2,6 @@ GCD
 
 Modulus
 
-Quick increment and decrement
-
 Prime number stuff
 
 Serializable magnitude/wordarray string
@@ -22,12 +20,6 @@ Proper encapsulation
 Make it fast
    functional overhead for bitwise operations is high, but Lua 5.2 doesn't
    support bitwise sigils
-
-Avoid checking validity of operable values twice in entry functions
-   values are type checked twice in various entry functions: once in
-      `assert(isvalidoperablevalue(value))`
-   and the second time in
-      `sign, mag = getsignandmagnitude(value)`
 
 Immutability
 
