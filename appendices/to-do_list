@@ -4,24 +4,24 @@ Modulus
 
 Prime number stuff
 
-Serializable magnitude/wordarray string
-
 String and file reading
    "Harrison is cool" -> {0x48617272, 0x69736f6e, 0x20697320, 0x636f6f6c})
                              H a r r     i s o n       i s       c o o l
 
 Metatable
 
-Ratio and complex number module
-
 Proper encapsulation
    surprisingly, not all functions are supposed to be public
+
+Immutability
+
+Ratio and complex number module
 
 Make it fast
    functional overhead for bitwise operations is high, but Lua 5.2 doesn't
    support bitwise sigils
 
-Immutability
+Serializable magnitude/wordarray string
 
 Number Namer
 
