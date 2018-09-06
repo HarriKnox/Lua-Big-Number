@@ -3090,20 +3090,16 @@ end
 --]====================================================================]
 
 function destructiveleftshift(mag, displacement)
-   local maglength
-   local numberofbits, numberofwords
-   local shiftmultiplier, carry
-   
    if displacement == 0 then
       return mag
    end
    
-   maglength = #mag
+   local maglength = #mag
    
-   numberofwords, numberofbits = splitlongtowordsandbits(displacement)
+   local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
    
-   shiftmultiplier = bitleftshift(1, numberofbits)
-   carry = 0
+   local shiftmultiplier = bitleftshift(1, numberofbits)
+   local carry = 0
    
    if numberofbits ~= 0 then
       for i = maglength, 1, -1 do
@@ -3123,17 +3119,12 @@ function destructiveleftshift(mag, displacement)
 end
 
 function destructiverightshift(mag, displacement)
-   local maglength
-   local numberofbits, numberofwords
-   local numberofbitsadjusted
-   local shiftmultiplier, lowbits, carry, oldcarry
-   
    if displacement == 0 then
       return mag
    end
    
-   maglength = #mag
-   numberofwords, numberofbits = splitlongtowordsandbits(displacement)
+   local maglength = #mag
+   local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
    
    if numberofwords >= maglength then
       -- when right-shifting more bits than there are in the array, the result
@@ -3141,10 +3132,10 @@ function destructiverightshift(mag, displacement)
       return cleararray(mag)
    end
    
-   numberofbitsadjusted = 32 - numberofbits
-   shiftmultiplier = bitleftshift(1, numberofbitsadjusted)
-   carry = 0
-   oldcarry = 0
+   local numberofbitsadjusted = 32 - numberofbits
+   local shiftmultiplier = bitleftshift(1, numberofbitsadjusted)
+   local carry = 0
+   local oldcarry = 0
    
    if numberofbits ~= 0 then
       for i = 1, maglength do
