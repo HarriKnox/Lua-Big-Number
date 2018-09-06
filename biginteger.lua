@@ -1588,7 +1588,7 @@ function destructiveaddmagnitudes(thismag, thatmag)
    
    for i = 0, longerlength - 1 do
       carry, thismag[longerlength - i] = splitlong(
-            --[[ If the word is above the most significant word, say it's 0 ]]
+            --[[ Sign-extend (0) if the word is above most significant word ]]
             (thismag[thislength - i] or 0)
                   + (thatmag[thatlength - i] or 0)
                   + carry)
@@ -3089,15 +3089,23 @@ end
 --[            |_|                                                     ]
 --]====================================================================]
 
+--[==[
+-- Destructively left shifts the magnitude by the number of bits determined by
+-- the displacement value.
+--]==]
 function destructiveleftshift(mag, displacement)
+   --[[ If no movement necessary, don't do anything ]]
    if displacement == 0 then
       return mag
    end
    
-   local maglength = #mag
    
+   --[[ Get number of extra words and number of bits to shift every word by ]]
    local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
    
+   
+   --[[ Shift every word left by multiplying by the shift multiplier ]]
+   local maglength = #mag
    
    if numberofbits ~= 0 then
       local shiftmultiplier = bitleftshift(1, numberofbits)
@@ -3107,11 +3115,14 @@ function destructiveleftshift(mag, displacement)
          carry, mag[i] = intmultiplyint(mag[i], shiftmultiplier, carry)
       end
       
+      --[[ Account for overflow ]]
       if carry ~= 0 then
          tableinsert(mag, 1, carry)
       end
    end
    
+   
+   --[[ Append zeros to least significant words to shift in multiples of 32 ]]
    for i = 1, numberofwords do
       mag[maglength + i] = 0
    end
@@ -3120,20 +3131,27 @@ function destructiveleftshift(mag, displacement)
    return mag
 end
 
+
+--[==[
+-- Destructively right shifts the magnitude by the number of bits determined by
+-- the displacement value. Clears the magnitude if the displacement exceeds the
+-- size of the magnitude.
+--]==]
 function destructiverightshift(mag, displacement)
+   --[[ If no movement necessary, don't do anything ]]
    if displacement == 0 then
       return mag
    end
    
-   local maglength = #mag
    local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
+   local maglength = #mag
    
    if numberofwords >= maglength then
-      -- when right-shifting more bits than there are in the array, the result
-      -- is -1 for negative values and 0 for non-negative values
       return cleararray(mag)
    end
    
+   
+   --[[ Remove the number of words first ]]
    for i = maglength, maglength - numberofwords + 1 do
       mag[i] = nil
    end
@@ -3141,6 +3159,10 @@ function destructiverightshift(mag, displacement)
    maglength = maglength - numberofwords
    
    
+   --[[
+   -- Right shift each word by left shifting to split the long and taking the
+   -- highest bits
+   --]]
    local shiftmultiplier = bitleftshift(1, 32 - numberofbits)
    local carry = 0
    local oldcarry = 0
@@ -3153,16 +3175,21 @@ function destructiverightshift(mag, displacement)
       end
    end
    
+   
+   --[[ After this process there will be no more than one leading zero word ]]
    if mag[1] == 0 then
       tableremove(mag, 1)
    end
    
+   
    return mag
 end
+
 
 function copyandleftshift(mag, displacement)
    return destructiveleftshift(copyarray(mag), displacement)
 end
+
 
 function copyandrightshift(mag, displacement)
    return destructiverightshift(copyarray(mag), displacement)
@@ -3183,6 +3210,7 @@ function destructivebitwiseshift(mag, displacement, right)
    
    return mag
 end
+
 
 function bitwiseshift(value, displacement, right)
    local sign, mag
