@@ -3098,12 +3098,17 @@ function destructiveleftshift(mag, displacement)
    
    local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
    
-   local shiftmultiplier = bitleftshift(1, numberofbits)
-   local carry = 0
    
    if numberofbits ~= 0 then
+      local shiftmultiplier = bitleftshift(1, numberofbits)
+      local carry = 0
+      
       for i = maglength, 1, -1 do
          carry, mag[i] = intmultiplyint(mag[i], shiftmultiplier, carry)
+      end
+      
+      if carry ~= 0 then
+         tableinsert(mag, 1, carry)
       end
    end
    
@@ -3111,9 +3116,6 @@ function destructiveleftshift(mag, displacement)
       mag[maglength + i] = 0
    end
    
-   if carry ~= 0 then
-      tableinsert(mag, 1, carry)
-   end
    
    return mag
 end
@@ -3132,8 +3134,14 @@ function destructiverightshift(mag, displacement)
       return cleararray(mag)
    end
    
-   local numberofbitsadjusted = 32 - numberofbits
-   local shiftmultiplier = bitleftshift(1, numberofbitsadjusted)
+   for i = maglength, maglength - numberofwords + 1 do
+      mag[i] = nil
+   end
+   
+   maglength = maglength - numberofwords
+   
+   
+   local shiftmultiplier = bitleftshift(1, 32 - numberofbits)
    local carry = 0
    local oldcarry = 0
    
@@ -3145,11 +3153,11 @@ function destructiverightshift(mag, displacement)
       end
    end
    
-   for i = 0, numberofwords - 1 do
-      mag[maglength - i] = nil
+   if mag[1] == 0 then
+      tableremove(mag, 1)
    end
    
-   return destructivestripleadingzeros(mag)
+   return mag
 end
 
 function copyandleftshift(mag, displacement)
