@@ -1380,17 +1380,14 @@ end
 -- It isn't called directly except by the entry functions.
 --]==]
 function stripleadingzerosto(source, destination)
-   local length = #source
-   
-   
    --[[
    -- Find the number of leading zeros. If the entire array was zeros, the 'if'
    -- inside the 'for' will never run and `difference` will never be set, thus
    -- `difference` is initialized to `length` for this case where the whole
    -- array needs to be stripped.
    --]]
+   local length = #source
    local difference = length
-   
    
    for i = 1, length do
       if source[i] ~= 0 then
