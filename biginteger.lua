@@ -1600,8 +1600,7 @@ function addmagnitudesto(thismag, thatmag, destination)
    end
    
    
-   --[[ Clean up and return ]]
-   return destructivestripleadingzeros(thismag)
+   return destination
 end
 
 
