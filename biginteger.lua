@@ -1565,10 +1565,12 @@ end
 --]=====]
 
 --[==[
--- Destructively adds the contents of the two magnitudes and puts the result in
--- the first one (`thismag`).
+-- Adds the values of the two magnitudes and puts the result in `destination`.
+--
+-- This is the "work" function; it does the work for the two entry functions.
+-- It isn't called directly except by the entry functions.
 --]==]
-function destructiveaddmagnitudes(thismag, thatmag)
+function addmagnitudesto(thismag, thatmag, destination)
    --[[ Cache the lengths of the inputs; output will be the longest length ]]
    local thislength = #thismag
    local thatlength = #thatmag
@@ -1584,7 +1586,7 @@ function destructiveaddmagnitudes(thismag, thatmag)
    local carry = 0
    
    for i = 0, longerlength - 1 do
-      carry, thismag[longerlength - i] = splitlong(
+      carry, destination[longerlength - i] = splitlong(
             --[[ Sign-extend (0) if the word is above most significant word ]]
             (thismag[thislength - i] or 0)
                   + (thatmag[thatlength - i] or 0)
@@ -1594,7 +1596,7 @@ function destructiveaddmagnitudes(thismag, thatmag)
    
    --[[ If the addition overflows, add the overflow ]]
    if carry ~= 0 then
-      tableinsert(thismag, 1, carry)
+      tableinsert(destination, 1, carry)
    end
    
    
@@ -1606,9 +1608,22 @@ end
 --[==[
 -- Adds the contents of the two magnitudes and returns a new magnitude with the
 -- sum.
+--
+-- This is one of the entry functions.
 --]==]
 function copyandaddmagnitudes(thismag, thatmag)
-   return destructiveaddmagnitudes(copyarray(thismag), thatmag)
+   return addmagnitudesto(thismag, thatmag, {})
+end
+
+
+--[==[
+-- Destructively adds the contents of the two magnitudes and puts the result in
+-- the first one (`thismag`).
+--
+-- This is one of the entry functions.
+--]==]
+function destructiveaddmagnitudes(thismag, thatmag)
+   return addmagnitudesto(thismag, thatmag, thismag)
 end
 
 
@@ -1652,15 +1667,20 @@ end
 --]==========]
 
 --[==[
--- Destructively finds the absolute difference between `thatmag` and
--- `thismag` and puts the result in `thismag`.
+-- Finds the absolute difference between the two magnitudes and puts the result
+-- in `destination`.
 --
 -- This uses the Austrian Method fo calculating the difference:
 -- https://en.wikipedia.org/wiki/Subtraction#Austrian_method
+--
+-- This is the "work" function; it does the work for the two entry functions.
+-- It isn't called directly except by the entry functions.
 --]==]
-function destructivesubtractmagnitudes(thismag, thatmag)
+function subtractmagnitudesto(thismag, thatmag, destination)
    --[[ Get the larger and smaller of the two magnitudes ]]
    local cmp = comparemagnitudes(thismag, thatmag)
+   
+   local larger, smaller
    
    if cmp == 0 then
       --[[ Shortcut return if they equal ]]
@@ -1705,12 +1725,12 @@ function destructivesubtractmagnitudes(thismag, thatmag)
       
       
       --[[ Store the positive, 32-bit constrained value of the difference ]]
-      thismag[largerlength - i] = difference % 0x100000000
+      destination[largerlength - i] = difference % 0x100000000
    end
    
    
    --[[ Clean up and return ]]
-   return destructivestripleadingzeros(thismag)
+   return destructivestripleadingzeros(destination)
 end
 
 
@@ -1719,7 +1739,16 @@ end
 -- magnitude with the difference.
 --]==]
 function copyandsubtractmagnitudes(thismag, thatmag)
-   return destructivesubtractmagnitudes(copyarray(thismag), thatmag)
+   return subtractmagnitudesto(thismag, thatmag, {})
+end
+
+
+--[==[
+-- Destructively finds the absolute difference between `thatmag` and
+-- `thismag` and puts the result in `thismag`.
+--]==]
+function destructivesubtractmagnitudes(thismag, thatmag)
+   return subtractmagnitudesto(thismag, thatmag, thismag)
 end
 
 
