@@ -1461,8 +1461,8 @@ end
 --]==========]
 
 --[==[
--- Performs a Two's complement negation on the word-array in `source` and
--- copies the result into `destination`.
+-- Performs a Two's complement negation on the word-array in `source` and puts
+-- the result into `destination`.
 --
 -- This is the "work" function; it does the work for the two entry functions.
 -- It isn't called directly except by the entry functions.
