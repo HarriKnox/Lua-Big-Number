@@ -2153,25 +2153,12 @@ end
 
 
 --[==[
--- Constructs a biginteger from a sign and a trusted magnitude. Used internally
--- only.
---]==]
-function constructorsignmagnitudetrusted(sign, mag)
-   assert(isvalidsign(sign))
-   assert(isvalidmagnitude(mag))
-   assert(isvalidsignmagnitudecombination(sign, mag))
-   
-   return createbiginteger(sign, mag)
-end
-
-
---[==[
 -- Constructs a biginteger from a sign and a user-specified magnitude.
 --]==]
 function constructorsignmagnitude(sign, mag)
-   assert(isvalidwordarray(mag))
+   assert(isvalidsignmagnitudecombination(sign, mag))
    
-   return constructorsignmagnitudetrusted(sign, copyandstripleadingzeros(mag))
+   return createbiginteger(sign, copyarray(mag))
 end
 
 
@@ -2239,7 +2226,7 @@ function constructorwordarraytrusted(array)
    end
    
    
-   return constructorsignmagnitudetrusted(sign, array)
+   return createbiginteger(sign, array)
 end
 
 
@@ -2247,7 +2234,7 @@ end
 -- Constructs a biginteger from a user-specified word-array.
 --]==]
 function constructorwordarray(array)
-   return constructorsignmagnitudetrusted(getwordarraysignandmagnitude(array))
+   return createbiginteger(getwordarraysignandmagnitude(array))
 end
 
 
@@ -2400,7 +2387,7 @@ function constructorstringradix(str, radix)
    destructivestripleadingzeros(mag)
    
    
-   return constructorsignmagnitudetrusted(sign, mag)
+   return createbiginteger(sign, mag)
 end
 
 
@@ -3256,7 +3243,7 @@ function bitwiseshift(value, displacement, right)
       end
    end
    
-   return constructorsignmagnitudetrusted(sign, mag)
+   return createbiginteger(sign, mag)
 end
 
 function mutablebitwiseshift(bigint, displacement, right)
@@ -3437,7 +3424,7 @@ function negate(value)
    sign, magnitude = getsignandmagnitude(value, valuetype)
    
    
-   return constructorsignmagnitudetrusted(-sign, magnitude)
+   return createbiginteger(-sign, magnitude)
 end
 
 
@@ -3461,7 +3448,7 @@ function absolutevalue(value)
    sign, magnitude = getsignandmagnitude(value, valuetype)
    
    
-   return constructorsignmagnitudetrusted(sign == -1 and 1 or sign, magnitude)
+   return createbiginteger(sign == -1 and 1 or sign, magnitude)
 end
 
 
@@ -3535,7 +3522,7 @@ function add(thisvalue, thatvalue)
       sign = 0
    end
    
-   return constructorsignmagnitudetrusted(sign, mag)
+   return createbiginteger(sign, mag)
 end
 
 function mutableadd(thisbigint, thatvalue)
@@ -3625,7 +3612,7 @@ function subtract(thisvalue, thatvalue)
       sign = 0
    end
    
-   return constructorsignmagnitudetrusted(sign, mag)
+   return createbiginteger(sign, mag)
 end
 
 function mutablesubtract(thisbigint, thatvalue)
@@ -4817,7 +4804,7 @@ function division(thisvalue, thatvalue)
    quotient, remainder = dividemagnitudes(thismag, thatmag)
    sign = thissign * thatsign
    
-   return constructorsignmagnitudetrusted(#quotient == 0 and 0 or sign, quotient), constructorsignmagnitudetrusted(#remainder == 0 and 0 or thissign, remainder)
+   return createbiginteger(#quotient == 0 and 0 or sign, quotient), createbiginteger(#remainder == 0 and 0 or thissign, remainder)
 end
 
 function divideandremainder(thisvalue, thatvalue)
