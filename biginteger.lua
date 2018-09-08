@@ -341,7 +341,7 @@ function isvalidbitindex(int)
    
    
    --[[ Now check that it's in range ]]
-   if int >= 0 or int <= -maxinteger then
+   if int < 0 or int > maxinteger then
       return false, "not a valid bit-index: outside allowable range"
    end
    
