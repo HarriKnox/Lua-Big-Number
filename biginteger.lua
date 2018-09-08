@@ -1508,6 +1508,179 @@ end
 
 
 --[============[
+--[ Left Shift ]
+--]============]
+
+--[==[
+-- Performs a left shift on the magnitude in `mag` by the number of bits
+-- specified in `displacement` and puts the result into `destination`.
+--
+-- This function assumes `displacement` is non-negative and no greater than
+-- `maxinteger` (2^51).
+--
+-- This is the "work" function; it does the work for the two entry functions.
+-- It isn't called directly except by the entry functions.
+--]==]
+function leftshiftmagnitudeto(mag, displacement, destination)
+   --[[ If no movement necessary, don't do anything ]]
+   if displacement <= 0 then
+      if destination ~= mag then
+         clearandcopyintoarray(destination, mag)
+      end
+      
+      return destination
+   end
+   
+   
+   --[[ Get number of extra words and number of bits to shift every word by ]]
+   local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
+   
+   
+   --[[ Shift every word left by multiplying by the shift multiplier ]]
+   local maglength = #mag
+   
+   if numberofbits ~= 0 then
+      local shiftmultiplier = bitleftshift(1, numberofbits)
+      local carry = 0
+      
+      for i = maglength, 1, -1 do
+         carry, destination[i] = intmultiplyint(mag[i], shiftmultiplier, carry)
+      end
+      
+      
+      --[[ Account for overflow ]]
+      if carry ~= 0 then
+         tableinsert(destination, 1, carry)
+      end
+   end
+   
+   
+   --[[ Append zeros to least significant words to shift in multiples of 32 ]]
+   for i = 1, numberofwords do
+      destination[maglength + i] = 0
+   end
+   
+   
+   return destination
+end
+
+
+--[==[
+-- Left shifts the magnitude by the number of bits determined by `displacement`
+-- and returns the result in a new magnitude.
+--
+-- If the displacement is zero, this function just returns a copy of `mag`.
+--]==]
+function copyandleftshiftmagnitude(mag, displacement)
+   return leftshiftmagnitudeto(mag, displacement, {})
+end
+
+
+--[==[
+-- Destructively left shifts the magnitude by the number of bits determined by
+-- the displacement value.
+--
+-- If the displacement is zero, this function doesn't do anything.
+--]==]
+function destructiveleftshiftmagnitude(mag, displacement)
+   return leftshiftmagnitudeto(mag, displacement, mag)
+end
+
+
+--[=============[
+--[ Right Shift ]
+--]=============]
+
+--[==[
+-- Performs a right shift on the magnitude in `mag` by the number of bits
+-- specified in `displacement` and puts the result into `destination`.
+--
+-- This function assumes `displacement` is non-negative and no greater than
+-- `maxinteger` (2^51).
+--
+-- This is the "work" function; it does the work for the two entry functions.
+-- It isn't called directly except by the entry functions.
+--]==]
+function rightshiftmagnitudeto(mag, displacement, destination)
+   --[[ If no movement necessary, don't do anything ]]
+   if displacement <= 0 then
+      if destination ~= mag then
+         clearandcopyintoarray(destination, mag)
+      end
+      
+      return destination
+   end
+   
+   
+   --[[ If the shift amount exceeds the length of the magnitude, clear it ]]
+   local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
+   local maglength = #mag
+   
+   if numberofwords >= maglength then
+      return cleararray(destination)
+   end
+   
+   
+   --[[ Remove the number of words first ]]
+   if destination == mag then
+      for i = maglength, maglength - numberofwords + 1 do
+         destination[i] = nil
+      end
+   end
+   
+   maglength = maglength - numberofwords
+   
+   
+   --[[
+   -- Right shift each word by left shifting to split the long and taking the
+   -- highest bits
+   --]]
+   local shiftmultiplier = bitleftshift(1, 32 - numberofbits)
+   local carry = 0
+   local oldcarry = 0
+   
+   if numberofbits ~= 0 then
+      for i = 1, maglength do
+         lowbits, carry = intmultiplyint(mag[i], shiftmultiplier, 0)
+         destination[i] = lowbits + oldcarry
+         oldcarry = carry
+      end
+   end
+   
+   
+   --[[ After this process there will be no more than one leading zero word ]]
+   if destination[1] == 0 then
+      tableremove(destination, 1)
+   end
+   
+   
+   return mag
+end
+
+
+--[==[
+-- Right shifts the magnitude by the number of bits determined by
+-- `displacement` and returns the result in a new magnitude.
+--
+-- If the displacement is zero, this function just returns a copy of `mag`.
+--]==]
+function copyandrightshiftmagnitude(mag, displacement)
+   return rightshiftmagnitudeto(mag, displacement, {})
+end
+
+
+--[==[
+-- Destructively right shifts the magnitude by the number of bits determined by
+-- the displacement value.
+--
+-- If the displacement is zero, this function doesn't do anything.
+--]==]
+function destructiverightshiftmagnitude(mag, displacement)
+   return rightshiftmagnitudeto(mag, displacement, mag)
+end
+
+
+--[============[
 --[ Bit Bounds ]
 --]============]
 
@@ -3101,180 +3274,46 @@ end
 --[            |_|                                                     ]
 --]====================================================================]
 
---[==[
--- Destructively left shifts the magnitude by the number of bits determined by
--- the displacement value.
---]==]
-function destructiveleftshift(mag, displacement)
-   --[[ If no movement necessary, don't do anything ]]
-   if displacement == 0 then
-      return mag
-   end
-   
-   
-   --[[ Get number of extra words and number of bits to shift every word by ]]
-   local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
-   
-   
-   --[[ Shift every word left by multiplying by the shift multiplier ]]
-   local maglength = #mag
-   
-   if numberofbits ~= 0 then
-      local shiftmultiplier = bitleftshift(1, numberofbits)
-      local carry = 0
-      
-      for i = maglength, 1, -1 do
-         carry, mag[i] = intmultiplyint(mag[i], shiftmultiplier, carry)
-      end
-      
-      --[[ Account for overflow ]]
-      if carry ~= 0 then
-         tableinsert(mag, 1, carry)
-      end
-   end
-   
-   
-   --[[ Append zeros to least significant words to shift in multiples of 32 ]]
-   for i = 1, numberofwords do
-      mag[maglength + i] = 0
-   end
-   
-   
-   return mag
-end
-
-
---[==[
--- Destructively right shifts the magnitude by the number of bits determined by
--- the displacement value. Clears the magnitude if the displacement exceeds the
--- size of the magnitude.
---]==]
-function destructiverightshift(mag, displacement)
-   --[[ If no movement necessary, don't do anything ]]
-   if displacement == 0 then
-      return mag
-   end
-   
-   local numberofwords, numberofbits = splitlongtowordsandbits(displacement)
-   local maglength = #mag
-   
-   if numberofwords >= maglength then
-      return cleararray(mag)
-   end
-   
-   
-   --[[ Remove the number of words first ]]
-   for i = maglength, maglength - numberofwords + 1 do
-      mag[i] = nil
-   end
-   
-   maglength = maglength - numberofwords
-   
-   
-   --[[
-   -- Right shift each word by left shifting to split the long and taking the
-   -- highest bits
-   --]]
-   local shiftmultiplier = bitleftshift(1, 32 - numberofbits)
-   local carry = 0
-   local oldcarry = 0
-   
-   if numberofbits ~= 0 then
-      for i = 1, maglength do
-         lowbits, carry = intmultiplyint(mag[i], shiftmultiplier, 0)
-         mag[i] = lowbits + oldcarry
-         oldcarry = carry
-      end
-   end
-   
-   
-   --[[ After this process there will be no more than one leading zero word ]]
-   if mag[1] == 0 then
-      tableremove(mag, 1)
-   end
-   
-   
-   return mag
-end
-
-
-function copyandleftshift(mag, displacement)
-   return destructiveleftshift(copyarray(mag), displacement)
-end
-
-
-function copyandrightshift(mag, displacement)
-   return destructiverightshift(copyarray(mag), displacement)
-end
-
-
-function destructivebitwiseshift(mag, displacement, right)
-   if displacement < 0 then
-      displacement = -displacement
-      right = not right
-   end
-   
-   if right then
-      destructiverightshift(mag, displacement)
-   else
-      destructiveleftshift(mag, displacement)
-   end
-   
-   return mag
-end
-
-
-function bitwiseshift(value, displacement, right)
-   local sign, mag
-   local valuetype, reason = isvalidoperablevalue(value)
-   
-   
-   assert(valuetype, reason)
-   assert(isvalidabsolute32bitinteger(displacement))
-   
-   sign, mag = getsignandmagnitude(value, valuetype)
-   destructivebitwiseshift(mag, displacement, right)
-   
-   if #mag == 0 then
-      if sign == -1 then
-         mag[1] = 0x01
-      else
-         sign = 0
-      end
-   end
-   
-   return createbiginteger(sign, mag)
-end
-
-function mutablebitwiseshift(bigint, displacement, right)
-   assert(isvalidbiginteger(bigint))
-   assert(isvalidabsolute32bitinteger(displacement))
-   
-   destructivebitwiseshift(bigint.magnitude, displacement, right)
-   
-   if #bigint.magnitude == 0 then
-      if bigint.sign == -1 then
-         bigint.magnitude[1] = 0x01
-      else
-         bigint.sign = 0
-      end
-   end
-   
-   return bigint
-end
-
-
-
 --[====================[
 --[ Bitwise Left Shift ]
 --]====================]
 
+--[==[
+-- Performs a bitwise left shift on the passed operable value by the number of
+-- bits specified in `displacement` and returns a new result in a new
+-- biginteger value.
+--
+-- `displacement` must be a valid bit-index, which, in short, is a non-negative
+-- integer.
+--]==]
 function bitwiseleftshift(value, displacement)
-   return bitwiseshift(value, displacement, false)
+   local valuetype, reason = isvalidoperablevalue(value)
+   
+   assert(valuetype, reason)
+   assert(isvalidbitindex(displacement))
+   
+   
+   --[[ Get the magnitude, shift, and return; quick and easy ]]
+   local sign, mag = getsignandmagnitude(value, valuetype)
+   destructiveleftshiftmagnitude(mag, displacement)
+   
+   return createbiginteger(sign, mag)
 end
 
+
+--[==[
+-- Performs a bitwise left shift in-place on the passed biginteger object by
+-- the number of bits specified in `displacement`.
+--]==]
 function mutablebitwiseleftshift(bigint, displacement)
-   return mutablebitwiseshift(bigint, displacement, false)
+   assert(isvalidbiginteger(bigint))
+   assert(isvalidbitindex(displacement))
+   
+   
+   --[[ Left shift directly on the magnitude ]]
+   destructiveleftshiftmagnitude(bigint.magnitude, displacement)
+   
+   return bigint
 end
 
 
@@ -3283,12 +3322,75 @@ end
 --[ Bitwise Right Shift ]
 --]=====================]
 
+--[==[
+-- Performs a bitwise right shift on the passed operable value by the number of
+-- bits specified in `displacement` and returns a new result in a new
+-- biginteger value.
+--
+-- `displacement` must be a valid bit-index, which, in short, is a non-negative
+-- integer. If the displacement is greater than the number of bits in the
+-- magnitude, then this returns either 0 or -1, depending on the sign.
+--]==]
 function bitwiserightshift(value, displacement)
-   return bitwiseshift(value, displacement, true)
+   local valuetype, reason = isvalidoperablevalue(value)
+   
+   assert(valuetype, reason)
+   assert(isvalidbitindex(displacement))
+   
+   
+   --[[ Get the magnitude and right shift ]]
+   local sign, mag = getsignandmagnitude(value, valuetype)
+   
+   destructiverightshiftmagnitude(mag, displacement)
+   
+   
+   --[[ If the result is zero change either sign or magnitude to be correct ]]
+   if not mag[1] then
+      --[[ Negative numbers right shifted all the way always equal -1 ]]
+      if sign == -1 then
+         mag[1] = 1
+      
+      --[[ Otherwise it's zero ]]
+      else
+         sign = 0
+      end
+   end
+   
+   return createbiginteger(sign, mag)
 end
 
+
+--[==[
+-- Performs a bitwise right shift in-place on the passed biginteger object by
+-- the number of bits specified in `displacement`.
+--
+-- If the displacement is greater than the number of bits in the magnitude,
+-- then this returns either 0 or -1, depending on the sign.
+--]==]
 function mutablebitwiserightshift(bigint, displacement)
-   return mutablebitwiseshift(bigint, displacement, true)
+   assert(isvalidbiginteger(bigint))
+   assert(isvalidbitindex(displacement))
+   
+   
+   --[[ Do the right shift directly on the magnitude ]]
+   local mag = bigint.magnitude
+   
+   destructiverightshift(mag, displacement)
+   
+   
+   --[[ Change either the sign or magnitude if the result is zero ]]
+   if not mag[1] then
+      --[[ Negative numbers right shifted all the way always equal -1 ]]
+      if biginteger.sign == -1 then
+         mag[1] = 1
+      
+      --[[ Otherwise they're zero ]]
+      else
+         biginteger.sign = 0
+      end
+   end
+   
+   return biginteger
 end
 
 
@@ -3780,11 +3882,11 @@ function squarekaratsuba(mag)
    
    uppersquared = squaremagnitude(upper)
    lowersquared = squaremagnitude(lower)
-   innersquared = destructiveleftshift(multiplymagnitudes(upper, lower), 1)
+   innersquared = destructiveleftshiftmagnitude(multiplymagnitudes(upper, lower), 1)
    
-   destructiveleftshift(uppersquared, shiftup)
+   destructiveleftshiftmagnitude(uppersquared, shiftup)
    destructiveaddmagnitudes(uppersquared, innersquared)
-   destructiveleftshift(uppersquared, shiftup)
+   destructiveleftshiftmagnitude(uppersquared, shiftup)
    destructiveaddmagnitudes(uppersquared, lowersquared)
    
    return uppersquared
@@ -3850,7 +3952,7 @@ function squaretoomcook(mag)
    
    -- v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(); last instance of da1, mutate; square makes copy
    destructiveaddmagnitudes(da1, a2)
-   destructiveleftshift(da1, 1)
+   destructiveleftshiftmagnitude(da1, 1)
    destructivesubtractmagnitudes(da1, a0)
    v2 = squaremagnitude(da1)
    
@@ -3863,7 +3965,7 @@ function squaretoomcook(mag)
    
    -- tm1 = v1.subtract(vm1).shiftRight(1);
    tm1 = copyandsubtractmagnitudes(v1, vm1)
-   destructiverightshift(tm1, 1)
+   destructiverightshiftmagnitude(tm1, 1)
    
    -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
    destructivesubtractmagnitudes(v1, v0)
@@ -3871,27 +3973,27 @@ function squaretoomcook(mag)
    
    -- t2 = t2.subtract(t1).shiftRight(1); mutable
    destructivesubtractmagnitudes(t2, t1)
-   destructiverightshift(t2, 1)
+   destructiverightshiftmagnitude(t2, 1)
    
    -- t1 = t1.subtract(tm1).subtract(vinf); mutable
    destructivesubtractmagnitudes(t1, tm1)
    destructivesubtractmagnitudes(t1, vinf)
    
    -- t2 = t2.subtract(vinf.shiftLeft(1)); mutable
-   destructivesubtractmagnitudes(t2, copyandleftshift(vinf, 1))
+   destructivesubtractmagnitudes(t2, copyandleftshiftmagnitude(vinf, 1))
    
    -- tm1 = tm1.subtract(t2); mutable
    destructivesubtractmagnitudes(tm1, t2)
    
    
    --return vinf.shiftLeft(ss).add(t2).shiftLeft(ss).add(t1).shiftLeft(ss).add(tm1).shiftLeft(ss).add(v0);
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, t2)
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, t1)
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, tm1)
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, v0)
    
    return vinf
@@ -4013,9 +4115,9 @@ function multiplykaratsuba(thismag, thatmag)
    inners = destructiveaddmagnitudes(multiplymagnitudes(thisupper, thatlower),
                                      multiplymagnitudes(thislower, thatupper))
    
-   destructiveleftshift(uppers, shiftup)
+   destructiveleftshiftmagnitude(uppers, shiftup)
    destructiveaddmagnitudes(uppers, inners)
-   destructiveleftshift(uppers, shiftup)
+   destructiveleftshiftmagnitude(uppers, shiftup)
    destructiveaddmagnitudes(uppers, lowers)
    
    return uppers
@@ -4066,12 +4168,12 @@ function multiplytoomcook(thismag, thatmag)
    -- v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
    --      db1.add(b2).shiftLeft(1).subtract(b0)); last instances of da1 and db1, so mutate
    destructiveaddmagnitudes(da1, a2)
-   destructiveleftshift(da1, 1)
+   destructiveleftshiftmagnitude(da1, 1)
    
    destructivesubtractmagnitudes(da1, a0)
    
    destructiveaddmagnitudes(db1, b2)
-   destructiveleftshift(db1, 1)
+   destructiveleftshiftmagnitude(db1, 1)
    
    destructivesubtractmagnitudes(db1, b0)
    
@@ -4099,7 +4201,7 @@ function multiplytoomcook(thismag, thatmag)
       -- in this algorithm, tm1 will never be negative
       destructivesubtractmagnitudes(vm1, v1)
    end
-   destructiverightshift(vm1, 1)
+   destructiverightshiftmagnitude(vm1, 1)
    tm1 = vm1
    
    -- t1 = v1.subtract(v0); last instance of v1, so t1 = v1
@@ -4108,26 +4210,26 @@ function multiplytoomcook(thismag, thatmag)
    
    -- t2 = t2.subtract(t1).shiftRight(1);
    destructivesubtractmagnitudes(t2, t1)
-   destructiverightshift(t2, 1)
+   destructiverightshiftmagnitude(t2, 1)
    
    -- t1 = t1.subtract(tm1).subtract(vinf);
    destructivesubtractmagnitudes(t1, tm1)
    destructivesubtractmagnitudes(t1, vinf)
    
    -- t2 = t2.subtract(vinf.shiftLeft(1));
-   destructivesubtractmagnitudes(t2, copyandleftshift(vinf, 1))
+   destructivesubtractmagnitudes(t2, copyandleftshiftmagnitude(vinf, 1))
    
    -- tm1 = tm1.subtract(t2);
    destructivesubtractmagnitudes(tm1, t2)
    
    -- return vinf.shiftLeft(ss).add(t2).shiftLeft(ss).add(t1).shiftLeft(ss).add(tm1).shiftLeft(ss).add(v0);
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, t2)
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, t1)
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, tm1)
-   destructiveleftshift(vinf, ss)
+   destructiveleftshiftmagnitude(vinf, ss)
    destructiveaddmagnitudes(vinf, v0)
    
    return vinf
@@ -4270,7 +4372,7 @@ function raisemagnitude(mag, exponent)
    --       error("value too large to be exponentiated")
    --    end
    --    
-   --    destructiveleftshift(mag, shifts)
+   --    destructiveleftshiftmagnitude(mag, shifts)
    --    
    --    if bitand(exponent, 1) == 0 then
    --       -- exponent is even
@@ -4474,9 +4576,9 @@ function destructivedivideknuth(dividend, divisor)
    shift = numberofleadingzeros(divisor[1])
    
    -- if shift == 0, it returns a copy
-   div = copyandleftshift(divisor, shift)
+   div = copyandleftshiftmagnitude(divisor, shift)
    
-   remainder = copyandleftshift(dividend, shift)
+   remainder = copyandleftshiftmagnitude(dividend, shift)
    
    quotientlength = #remainder - divisorlength + 1
    quotient = {}
@@ -4575,7 +4677,7 @@ function destructivedivideknuth(dividend, divisor)
       quotient[i] = qhat
    end
    
-   destructiverightshift(remainder, shift)
+   destructiverightshiftmagnitude(remainder, shift)
    
    return destructivestripleadingzeros(quotient),
          destructivestripleadingzeros(remainder)
@@ -4661,7 +4763,7 @@ function divide3n2n(a, b, halfn)
    else
       -- step 3b: Q = (beta^n) - 1,   R = a12 + b1 - b1*2^halfn
       destructiveaddmagnitudes(a12, b1)
-      destructiveleftshift(b1, 32 * halfn)
+      destructiveleftshiftmagnitude(b1, 32 * halfn)
       destructivesubtractmagnitudes(a12, b1)
       remainder = a12
       
@@ -4672,14 +4774,14 @@ function divide3n2n(a, b, halfn)
       end
       
       -- step 4: d = Q * b2 = (beta^halfn - 1) * b2 = b2 * beta^halfn - b2
-      d = copyandleftshift(b2, 32 * halfn)
+      d = copyandleftshiftmagnitude(b2, 32 * halfn)
       destructivesubtractmagnitudes(d, b2)
    end
    
    -- step 5: rh = R*beta^halfn + a3 - d (paper erroneously has a4 instead of a3)
    -- wait until after the loop to subtract d to keep R from going negative
    -- R = rh
-   destructiveleftshift(remainder, 32 * halfn)
+   destructiveleftshiftmagnitude(remainder, 32 * halfn)
    destructiveaddmagnitudes(remainder, a3)
    
    -- step 6: adjust until R is positive
@@ -4712,8 +4814,8 @@ function destructivedivideburnikelziegler(dividend, divisor)
    n32 = n * 32
    sigma = max(n32 - divisorbitlength, 0)
    
-   destructiveleftshift(dividend, sigma)
-   destructiveleftshift(divisor, sigma)
+   destructiveleftshiftmagnitude(dividend, sigma)
+   destructiveleftshiftmagnitude(divisor, sigma)
    t = max(floor((gethighestsetbit(dividend) + 1 + n32) / n32), 2)
    
    blocks = splitarrayintoblocks(dividend, n)
@@ -4734,13 +4836,13 @@ function destructivedivideburnikelziegler(dividend, divisor)
       
       -- does MutableBigInteger.addShifted without a separate function
       -- perhaps I will build an optimized procedure for this, but for now: here
-      destructiveaddmagnitudes(quotient, copyandleftshift(qi, (blocklength + 1 - i) * n * 32))
+      destructiveaddmagnitudes(quotient, copyandleftshiftmagnitude(qi, (blocklength + 1 - i) * n * 32))
    end
    
    qi, ri = divide2n1n(z, divisor)
    destructiveaddmagnitudes(quotient, qi)
    
-   destructiverightshift(ri, sigma)
+   destructiverightshiftmagnitude(ri, sigma)
    
    return quotient, ri
 end
