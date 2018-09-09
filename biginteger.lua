@@ -807,7 +807,7 @@ end
 -- without those 5 bits.
 --]==]
 function splitlongtowordsandbits(number)
-   return floor(number / 32), bitand(number, 0x1f)
+   return floor(number / 32), number % 32
 end
 
 
