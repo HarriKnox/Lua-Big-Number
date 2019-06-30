@@ -2582,26 +2582,16 @@ end
 -- This is the Main Constructor
 --
 -- This will determine which constructor to call depending on the types of the
--- arguments passed in. The arguments are order-sensitive. Any other orders are
--- undefined and will result in an error.
+-- arguments passed in.
 --
--- Interpretation          First Type      Second Type
---    integer                 integer         nil
---    sign-magnitude          integer         word-array
---    bit-length and RNG      integer         function
---    clone                   biginteger      nil
---    word-array              word-array      nil
---    string (radix 10)       string          nil
---    string-radix            string          integer
---
--- On the order-sensitivity of the arguments. For example, a string cannot
--- follow an integer for the string-radix interpretation: it must be string
--- then integer.  There is nothing preventing us from allowing the order of
--- integer then string since it's not taken by a different interpretation;
--- however, only one combination is provided to ensure unambiguity and a
--- parallelism to the parameters of the constructor `constructorstringradix`.
---
--- Perhaps in the future I'll add the other combinations.
+-- First Type      Second Type     Constructor
+--   integer         nil             integer
+--   integer         word-array      sign-magnitude
+--   integer         function        bit-length and RNG
+--   biginteger      nil             clone
+--   word-array      nil             word-array
+--   string          nil             string (radix 10)
+--   string          integer         string-radix
 --]==]
 function biginteger(a, b)
    local typea = gettype(a)
