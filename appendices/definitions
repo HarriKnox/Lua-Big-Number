@@ -5,10 +5,10 @@ library and documentation.
 
 Integer
    A Lua value of type 'number' that has no decimal part (x % 1 == 0).
-   
+
    Because of floating-point limitations in Lua 5.2, the precision of integers
    is 53 bits.
-   
+
       In Lua 5.2 and prior, all numbers were internally handled as 64-bit
       floats (often called doubles). Because of this, there was no "integer"
       type as "integers" were just floats masquerading as integers.
@@ -25,10 +25,10 @@ Byte
 
 Int, Word
    An unsigned 32-bit integer; in the range [0, 4294967295].
-   
+
    Negative numbers can be treated as 32-bit integers if their positive value
    fits in 32-bits, but generally ints are treated as unsigned.
-   
+
    Generally "word" is used more in the context of a word from a word-array and
    "int" is used elsewhere.
 
@@ -36,9 +36,9 @@ Int, Word
 
 XXXX-Word
    A word (int) that represents whatever XXXX is.
-   
+
    A "zero-word" is a word that equals `0`.
-   
+
    A "sign-word" is a word where all bits have the same value and they
    represent a sign-extention of a Two's complement number. Sign-words are
    either `0x00000000` or `0xffffffff`; the former for positive and zero values
@@ -48,7 +48,7 @@ XXXX-Word
 
 Long, Split-Long
    An unsigned integer that can be larger than 32 bits.
-   
+
    Longs are usually 64-bits, but in this project they are any integer too
    large to fit in 32-bits. Because of Lua's use of 64-bit floats, the largest
    integer you can get is 53-bits, so longs are often handled as two ints,
@@ -58,7 +58,7 @@ Long, Split-Long
 
 Array
    A table with sequential integer indices starting at 1.
-   
+
    For testing and iterating through arrays the default length operator (#) is
    used. A valid array must have a sequence of non-nil elements for all indices
    between 1 and #array (that is to say for all 1 <= i <= #array, t[i] ~= nil).
@@ -69,11 +69,11 @@ Array
       index in [1, #array], array[i] is non-nil. Doing so could make some big
       arrays more space efficient at the cost of added complexity in the
       planning department.
-   
+
    Since an array is a table, it may have keys and values that are not in the
    sequence (such as t.name = 'Harri'). These will be treated as arrays looking
    at only the integer indices.
-   
+
    A sub-array of an array is an array that contains a shallow copy of a
    contiguous range of elements of the parent array.
 
@@ -97,11 +97,11 @@ Word-Array
    word is a negative Two's complement number, then the word-array will be
    considered negative. Likewise, if the first element is not negative, the
    word-array will be considered not negative.
-   
+
       {0x0000ffff} = 65'535 (positive)
       {0xffff0000} = -65'536 (negative)
-   
-   
+
+
    Leading sign-words can be used to ensure a particular sign if the sign-word
    is of a different sign than the word-array.
 
@@ -132,14 +132,14 @@ Word-Array
    zero-words. Modify the __len to just return 1000001 (#array == 1000001).
    Modify the __index to say only index 1 has a value `76` and indices in the
    range [2, 1000001] have values `0`, and all other indices have value `nil`.
-   
+
    Since a word-array is a table, it may have keys and values that are not in
    the sequence (such as t.name = 'Harri'). The only tables that would
    otherwise pass the word-array test will fail if they pass the biginteger
    test (word-array iff array of words and not biginteger): this is so tables
    that could be interpreted as bigintegers would be interpreted as bigintegers
    where they may have been interpreted as word-arrays.
-   
+
    One other assumption to word-arrays that is not easily testable is that all
    negative indices are mapped to `nil`. This becomes prevalent when adding two
    word-arrays (or two magnitudes) together and the index of the words to add
@@ -152,10 +152,10 @@ Magnitude, Mag
 
    1. All numbers are treated as unsigned (ignores negatives in Two's
       complement form).
-      
+
        * {            0x0000ffff} = 65'535 (positive)
        * {0xffffffff, 0x0000ffff} = 18'446'744'069'414'649'855 (positive)
-      
+
    2. Leading zeros are not allowed, and thus a magnitude of only zeros is not
       allowed. A zero-length magnitude is the only magnitude equal to 0. This
       ensures every magnitude is unique.
@@ -164,7 +164,7 @@ Magnitude, Mag
       completely internally used: all public functions that interpret arrays of
       words will interpret those arrays of words as word-arrays, not
       magnitudes.
-   
+
    A slice is a like a sub-array of the magnitude, but it will have its leading
    zeros stripped off.
 
@@ -180,13 +180,13 @@ bit-index
 
 Biginteger, Bigint
    A table (object) with two fields (sign and magnitude).
-   
+
    1. Sign is an integer that is either -1, 0, or +1. Sign determines whether
       the biginteger value is negative, zero, or positive, respectively.
-   
+
    2. Magnitude is a valid magnitude as described above.
-   
-   
+
+
    Each real integer is intended to have a unique representation in
    sign-magnitude combination. As such there are two rules to ensure uniqueness
    and unambiguity.
@@ -210,7 +210,7 @@ Operable Value
 
 Destructive Operation
    An operation that modifies the passed array in-place.
-   
+
    Destructive operations are usually more efficient than copying in terms of
    space and time and are used internally so the end-users don't need to worry
    about misusing them.
@@ -220,8 +220,8 @@ Destructive Operation
 Trusted Value
    A value that has had no contact with the outside world and has existed
    solely within the scope of the library.
-   
-   
+
+
    Trusted values can make some operations more efficient. For example, there
    are two sign-magnitude constructors, one for trusted magnitude and one for
    not. If a user passes in an array we want to be sure that the array won't be
@@ -230,7 +230,7 @@ Trusted Value
    However, if the array came from an internal function, then no other
    third-parties will have access to it until that point, so we can trust that
    the value is kosher.
-   
+
    Trusted values can be returned, at which point they are no longer trusted.
    A user may make modifications, or allow a third-party to make modifications,
    but that voids the warranty.

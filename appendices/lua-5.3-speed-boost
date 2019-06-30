@@ -84,18 +84,18 @@ bitwise-ands.
    function integermultiplyandaddtosplitlong(x, ab, c)
       local a = bitrightshift(ab, 16)
       local b = bitand(ab, 0xffff)
-      
+
       local xa = x * a
       local xb = x * b
-      
+
       local xahigh = floor(xa / 0x10000)
       local xalow = bitleftshift(xa, 16)
       local xbhigh = floor(xb / 0x100000000)
       local xblow = xb % 0x100000000
-      
+
       local carry, rlow = splitlong(xalow + xblow + c)
       local rhigh = xahigh + xbhigh + carry
-      
+
       return rhigh, rlow
    end
 
@@ -106,18 +106,18 @@ To speed this function up we could add the following to the library.
       load( [[ function integermultiplyandaddtosplitlong(x, ab, c)
          local a = ab >> 16
          local b = ab & 0xffff
-         
+
          local xa = x * a
          local xb = x * b
-         
+
          local xahigh = xa >> 16
          local xalow = xa << 16
          local xbhigh = xb >> 32
          local xblow = xb & 0xffffffff
-         
+
          local carry, rlow = splitlong(xalow + xblow + c)
          local rhigh = xahigh + xbhigh + carry
-         
+
          return rhigh, rlow
       end ]] )()
    end
