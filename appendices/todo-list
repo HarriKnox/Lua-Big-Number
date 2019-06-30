@@ -28,3 +28,9 @@ Number Namer
 tostring to include separator and group size arguments
 
 Add word-arrays to mutable functions
+
+Minimalist Biginteger / Simplify
+   bigintegers can internally use references to other bigintegers or
+   word-arrays to minimize memory usage at the cost of speed (needing to
+   dereference the pointers), but will come with a `simplify` function that
+   dereferences all pointers and converts the biginteger into a flat object.
