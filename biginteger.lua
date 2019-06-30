@@ -105,21 +105,21 @@ local tableinsert = table.insert
 --]===========]
 
 --[==[
--- The largest number bit32 can work with reliably (despite being a 32-bit
--- library).
+-- The largest integer you can fit in a 64-bit float
 --
--- maxinteger = 2^51 - 1
+-- maxinteger  =  2^53 - 1
 --]==]
-local maxinteger = 0x7ffffffffffff
+local maxinteger = 0x1fffffffffffff
+
 
 
 --[==[
 -- The largest magnitude allowable because of 32 bits per word (allows for up
 -- to `maxinteger` bits).
 --
--- maxmagnitudelength = 2^51 / 32 - 1
+-- maxmagnitudelength  =  (2^53 / 2^5) - 1  =  2^48 - 1
 --]==]
-local maxmagnitudelength = 0x3fffffffffff
+local maxmagnitudelength = 0xffffffffffff
 
 
 --[==[
