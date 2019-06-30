@@ -6,14 +6,15 @@ library and documentation.
 Integer
    A Lua value of type 'number' that has no decimal part (x % 1 == 0).
    
-   In Lua 5.2 and prior, all numbers were internally handled as 64-bit floats
-   (often called doubles). Because of this, there was no "integer" type,
-   per-se. Now in Lua 5.3 and beyond there are internal integer types, but to
-   maintain backwards-compatibility, the built-in `type` function does not
-   distinguish between them (both floats and integers are type 'number'). As a
-   result there is no explicit "integer" type; most integers are just floats
-   masquerading around as integers. So long as we can treat it like an integer,
-   then it must be an integer (duck-typing, yay!).
+   Because of floating-point limitations in Lua 5.2, the precision of integers
+   is 53 bits.
+   
+      In Lua 5.2 and prior, all numbers were internally handled as 64-bit
+      floats (often called doubles). Because of this, there was no "integer"
+      type as "integers" were just floats masquerading as integers.
+
+      Lua 5.3 introduced 64-bit integers, but to maintain simplicity, the
+      53-bit limit is used.
 
 
 
@@ -28,8 +29,8 @@ Int, Word
    Negative numbers can be treated as 32-bit integers if their positive value
    fits in 32-bits, but generally ints are treated as unsigned.
    
-   Generally "word" is used more in the context of a word-array and "int" is
-   used elsewhere.
+   Generally "word" is used more in the context of a word from a word-array and
+   "int" is used elsewhere.
 
 
 
@@ -83,12 +84,14 @@ Word-Array
 
    A zero-length word-array or a word-array of all zeros are logically
    equivalent to zero (0).
-   
+
+
    Generally, internally the word-array is big-endian one-indexed: word 0
    doesn't exist and word 1 is the most significant word. Externally
    (publically) the word-array is little-endian zero-indexed: word 0 is the
-   least significant word, and bit 0 is the least significant bit.
-   
+   least significant word, and bit 0 is the least significant bit. More on this
+   in the section `bit-index`.
+
    The array is interpreted as a Two's complement number: the sign of the whole
    word-array is determined by the sign the most significant word. If the first
    word is a negative Two's complement number, then the word-array will be
@@ -101,29 +104,29 @@ Word-Array
    
    Leading sign-words can be used to ensure a particular sign if the sign-word
    is of a different sign than the word-array.
-   
+
       {            0x0000ffff} = 65'535         (positive because number)
       {0xffffffff, 0x0000ffff} = -4'294'901'761 (negative because sign-word)
-      
+
       {            0xffff0000} = -65'536       (negative because number)
       {0x00000000, 0xffff0000} = 4'294'901'760 (positive because sign-word)
-   
-   
+
+
    If the leading sign-word is the same sign as the word-array, then any number
    of leading sign-words can be prepended without changing the value of the
    number.
-   
+
                                                   {0x0000ffff} = 65'535
                                       {0x00000000, 0x0000ffff} = 65'535
                           {0x00000000, 0x00000000, 0x0000ffff} = 65'535
       {0x00000000, ...ad infinitum..., 0x00000000, 0x0000ffff} = 65'535
-      
+
                                                   {0xffff0000} = -65'536
                                       {0xffffffff, 0xffff0000} = -65'536
                           {0xffffffff, 0xffffffff, 0xffff0000} = -65'536
       {0xffffffff, ...ad infinitum..., 0xffffffff, 0xffff0000} = -65'536
-   
-   
+
+
    To be more space-efficient with large word-arrays you could use custom __len
    and __index metamethods. Suppose you needed a `76` followed by a million
    zero-words. Modify the __len to just return 1000001 (#array == 1000001).
@@ -167,8 +170,16 @@ Magnitude, Mag
 
 
 
+bit-index
+   a non-negative integer that describes the location of a bit in a word-array.
+
+   In public functions, word-arrays are zero-indexed and little-endian: word 0
+   is the least significant word and bit 0 is the least-significant bit.
+
+
+
 Biginteger, Bigint
-   A table with (at minimum) two fields (sign and magnitude).
+   A table (object) with two fields (sign and magnitude).
    
    1. Sign is an integer that is either -1, 0, or +1. Sign determines whether
       the biginteger value is negative, zero, or positive, respectively.
